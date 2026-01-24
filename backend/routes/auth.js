@@ -23,16 +23,19 @@ router.post('/signup', [
 
   const { name, slug, tagline, email, password } = req.body;
 
+  const client = await pool.connect();
   try {
+    await client.query('BEGIN');
     // Check if business already exists
-    const existingBusiness = await pool.query(
-      'SELECT * FROM businesses WHERE email = $1 OR slug = $2',
+    const existingBusiness = await client.query(
+      'SELECT 1 FROM businesses WHERE email = $1 OR slug = $2',
       [email, slug]
     );
 
     if (existingBusiness.rows.length > 0) {
-      return res.status(400).json({ 
-        message: 'Business with this email or slug already exists' 
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        message: 'Business with this email or slug already exists'
       });
     }
 
@@ -44,10 +47,10 @@ router.post('/signup', [
     const logo = name.substring(0, 2).toUpperCase();
 
     // Insert business
-    const result = await pool.query(
-      `INSERT INTO businesses (name, slug, tagline, logo, email, password_hash) 
-       VALUES ($1, $2, $3, $4, $5, $6) 
-       RETURNING id, name, slug, tagline, logo, email`,
+    const result = await client.query(
+      `INSERT INTO businesses (name, slug, tagline, logo, email, password_hash)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, name, slug, tagline, logo, email, is_verified, is_approved`,
       [name, slug, tagline || '', logo, email, passwordHash]
     );
 
@@ -56,18 +59,18 @@ router.post('/signup', [
     // Create default social link entries
     const platforms = ['Instagram', 'TikTok', 'YouTube', 'Facebook', 'X', 'LinkedIn', 'Website'];
     const icons = ['📷', '🎵', '▶️', '👍', '✖️', '💼', '🌐'];
-    
+
     for (let i = 0; i < platforms.length; i++) {
-      await pool.query(
-        `INSERT INTO social_links (business_id, platform, url, icon, display_order) 
+      await client.query(
+        `INSERT INTO social_links (business_id, platform, url, icon, display_order)
          VALUES ($1, $2, $3, $4, $5)`,
         [business.id, platforms[i], '', icons[i], i]
       );
     }
 
     // Get the social links we just created
-    const socialsResult = await pool.query(
-      'SELECT platform, url, icon FROM social_links WHERE business_id = $1 ORDER BY display_order',
+    const socialsResult = await client.query(
+      'SELECT id, platform, url, icon, display_order, is_active FROM social_links WHERE business_id = $1 ORDER BY display_order',
       [business.id]
     );
 
@@ -77,10 +80,14 @@ router.post('/signup', [
     const payload = { businessId: business.id };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
 
+    await client.query('COMMIT');
     res.json({ token, business });
   } catch (err) {
+    await client.query('ROLLBACK');
     console.error('Signup error:', err);
     res.status(500).json({ message: 'Server error' });
+  } finally {
+    client.release();
   }
 });
 
@@ -119,7 +126,7 @@ router.post('/login', [
 
     // Get social links
     const socialsResult = await pool.query(
-      'SELECT platform, url, icon FROM social_links WHERE business_id = $1 ORDER BY display_order',
+      'SELECT id, platform, url, icon, display_order, is_active FROM social_links WHERE business_id = $1 ORDER BY display_order',
       [business.id]
     );
 
@@ -144,7 +151,7 @@ router.post('/login', [
 router.get('/me', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, name, slug, tagline, logo, email FROM businesses WHERE id = $1',
+      'SELECT id, name, slug, tagline, logo, email, is_verified, is_approved FROM businesses WHERE id = $1',
       [req.businessId]
     );
 
@@ -156,7 +163,7 @@ router.get('/me', authenticateToken, async (req, res) => {
 
     // Get social links
     const socialsResult = await pool.query(
-      'SELECT id, platform, url, icon FROM social_links WHERE business_id = $1 ORDER BY display_order',
+      'SELECT id, platform, url, icon, display_order, is_active FROM social_links WHERE business_id = $1 ORDER BY display_order',
       [business.id]
     );
 

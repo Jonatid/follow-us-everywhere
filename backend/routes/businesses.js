@@ -5,21 +5,30 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Get public business profile by username
-router.get('/:username', async (req, res) => {
+// Get public business profile by slug
+router.get('/:slug', async (req, res) => {
   try {
-    const { username } = req.params;
+    const { slug } = req.params;
 
     const result = await db.query(
-      'SELECT id, username, business_name, business_description, bio, profile_image_url FROM businesses WHERE username = $1',
-      [username]
+      'SELECT id, name, slug, tagline, logo FROM businesses WHERE slug = $1',
+      [slug]
     );
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Business not found' });
     }
 
-    res.json(result.rows[0]);
+    const business = result.rows[0];
+
+    const socialsResult = await db.query(
+      'SELECT id, platform, url, icon, display_order, is_active FROM social_links WHERE business_id = $1 ORDER BY display_order',
+      [business.id]
+    );
+
+    business.socials = socialsResult.rows;
+
+    res.json(business);
   } catch (error) {
     console.error('Error fetching business:', error);
     res.status(500).json({ error: 'Failed to fetch business' });
@@ -31,25 +40,21 @@ router.put(
   '/profile/update',
   authenticateToken,
   [
-    body('business_name')
+    body('name')
       .optional()
       .trim()
       .isLength({ min: 1, max: 255 })
       .withMessage('Business name must be between 1 and 255 characters'),
-    body('business_description')
+    body('tagline')
       .optional()
       .trim()
-      .isLength({ max: 1000 })
-      .withMessage('Description must be 1000 characters or less'),
-    body('bio')
+      .isLength({ max: 255 })
+      .withMessage('Tagline must be 255 characters or less'),
+    body('logo')
       .optional()
       .trim()
-      .isLength({ max: 500 })
-      .withMessage('Bio must be 500 characters or less'),
-    body('profile_image_url')
-      .optional()
-      .isURL()
-      .withMessage('Profile image must be a valid URL'),
+      .isLength({ max: 10 })
+      .withMessage('Logo must be 10 characters or less'),
   ],
   async (req, res) => {
     try {
@@ -58,34 +63,28 @@ router.put(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { business_name, business_description, bio, profile_image_url } = req.body;
+      const { name, tagline, logo } = req.body;
 
       // Build dynamic update query
       const fields = [];
       const values = [];
       let paramCount = 1;
 
-      if (business_name !== undefined) {
-        fields.push(`business_name = $${paramCount}`);
-        values.push(business_name);
+      if (name !== undefined) {
+        fields.push(`name = $${paramCount}`);
+        values.push(name);
         paramCount++;
       }
 
-      if (business_description !== undefined) {
-        fields.push(`business_description = $${paramCount}`);
-        values.push(business_description);
+      if (tagline !== undefined) {
+        fields.push(`tagline = $${paramCount}`);
+        values.push(tagline);
         paramCount++;
       }
 
-      if (bio !== undefined) {
-        fields.push(`bio = $${paramCount}`);
-        values.push(bio);
-        paramCount++;
-      }
-
-      if (profile_image_url !== undefined) {
-        fields.push(`profile_image_url = $${paramCount}`);
-        values.push(profile_image_url);
+      if (logo !== undefined) {
+        fields.push(`logo = $${paramCount}`);
+        values.push(logo);
         paramCount++;
       }
 
@@ -94,7 +93,7 @@ router.put(
       }
 
       fields.push(`updated_at = CURRENT_TIMESTAMP`);
-      values.push(req.business.id);
+      values.push(req.businessId);
 
       const query = `UPDATE businesses SET ${fields.join(', ')} WHERE id = $${paramCount} RETURNING *`;
 

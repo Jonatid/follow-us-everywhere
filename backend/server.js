@@ -11,6 +11,10 @@ const socialsRoutes = require('./routes/socials');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+if (!process.env.JWT_SECRET) {
+  console.error('JWT_SECRET is required to start the server.');
+  process.exit(1);
+}
 
 // Middleware
 const corsOptions = {
@@ -19,8 +23,7 @@ const corsOptions = {
     'http://localhost:5173',
     'https://follow-us-everywhere-web.onrender.com',
     process.env.FRONTEND_URL
-  ].filter(Boolean),
-  credentials: true
+  ].filter(Boolean)
 };
 
 app.use(cors(corsOptions));
