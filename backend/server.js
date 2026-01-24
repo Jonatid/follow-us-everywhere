@@ -17,6 +17,7 @@ const corsOptions = {
   origin: [
     'http://localhost:3000',
     'http://localhost:5173',
+    'https://follow-us-everywhere-web.onrender.com',
     process.env.FRONTEND_URL
   ].filter(Boolean),
   credentials: true
