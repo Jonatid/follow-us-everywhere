@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const pool = require('../config/db');
-const auth = require('../middleware/auth');
+const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -141,7 +141,7 @@ router.post('/login', [
 // @route   GET /api/auth/me
 // @desc    Get current business
 // @access  Private
-router.get('/me', auth, async (req, res) => {
+router.get('/me', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
       'SELECT id, name, slug, tagline, logo, email FROM businesses WHERE id = $1',

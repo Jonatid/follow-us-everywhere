@@ -33,12 +33,3 @@ pool.on('connect', () => {
 });
 
 module.exports = pool;
-
-// Graceful shutdown
-process.on('SIGINT', () => {
-  console.log('Closing database connections...');
-  pool.end(() => {
-    console.log('Database pool has ended');
-    process.exit(0);
-  });
-});
