@@ -11,8 +11,6 @@ const socialsRoutes = require('./routes/socials');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-const app = express();
-const PORT = process.env.PORT || 5000;
 
 // Middleware
 const corsOptions = {
