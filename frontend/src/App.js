@@ -335,7 +335,7 @@ const BusinessDashboard = ({ business, onNavigate, onUpdateBusiness }) => {
   const [tempUrl, setTempUrl] = useState('');
 
   const handleCopyLink = () => {
-  const link = `https://follow-us-everywhere-web.onrender.com/${currentBusiness.slug}`;
+  const link = `https://follow-us-everywhere-web.onrender.com/${business.slug}`;
   navigator.clipboard.writeText(link).then(() => {
     alert('Link copied to clipboard!');
   }).catch(() => {
