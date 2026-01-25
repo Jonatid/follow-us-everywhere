@@ -85,6 +85,11 @@ router.post('/signup', [
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Signup error:', err);
+    if (err.code === '23505') {
+      return res.status(400).json({
+        message: 'Business with this email or slug already exists'
+      });
+    }
     res.status(500).json({ message: 'Server error' });
   } finally {
     client.release();
