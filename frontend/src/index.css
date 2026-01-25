@@ -113,6 +113,13 @@ body {
   color: var(--muted);
 }
 
+.public-follow-subtitle {
+  margin-top: 0.5rem;
+  text-align: center;
+  font-style: italic;
+  color: var(--muted);
+}
+
 .muted-text {
   color: var(--muted);
   font-size: 0.95rem;

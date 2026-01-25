@@ -462,9 +462,12 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
               )}
             </div>
             {activeSocials.length > 1 && (
-              <button type="button" onClick={handleFollowEverywhere} className="button button-primary button-full">
-                Follow Us Everywhere
-              </button>
+              <>
+                <button type="button" onClick={handleFollowEverywhere} className="button button-primary button-full">
+                  Tap a link to follow
+                </button>
+                <p className="public-follow-subtitle">Connect with us across the web</p>
+              </>
             )}
           </>
         )}
