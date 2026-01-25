@@ -2,12 +2,13 @@ const { Pool } = require('pg');
 require('dotenv').config();
 
 let pool;
+const useSsl = process.env.DB_SSL === 'true' || Boolean(process.env.DATABASE_URL);
 
 if (process.env.DATABASE_URL) {
   // For Render.com or other cloud services that provide DATABASE_URL
   pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    ssl: useSsl ? { rejectUnauthorized: false } : false,
     max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 2000,
@@ -20,7 +21,7 @@ if (process.env.DATABASE_URL) {
     host: process.env.DB_HOST || 'localhost',
     port: process.env.DB_PORT || 5432,
     database: process.env.DB_NAME || 'linktree_db',
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    ssl: useSsl ? { rejectUnauthorized: false } : false,
   });
 }
 
