@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const pool = require('../config/db');
+const { getMissingTables } = require('../config/schema');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
@@ -93,9 +94,27 @@ router.post('/signup', [
         message: 'Business with this email or slug already exists'
       });
     }
-    if (err.code === '42P01' || err.code === '42703') {
+    if (err.code === '42501') {
+      const dbUser = process.env.DATABASE_URL
+        ? new URL(process.env.DATABASE_URL).username
+        : process.env.DB_USER || process.env.PGUSER || process.env.USER || 'unknown';
       return res.status(500).json({
-        message: 'Database schema is not initialized (or the DB user lacks CREATE privileges). Run the schema setup.'
+        message: `Database user "${dbUser}" lacks CREATE privileges on schema "public".`
+      });
+    }
+    if (err.code === '42P01' || err.code === '42703') {
+      try {
+        const missingTables = await getMissingTables();
+        if (missingTables.length > 0) {
+          return res.status(500).json({
+            message: `Database schema is not initialized: missing tables: ${missingTables.join(', ')}.`
+          });
+        }
+      } catch (schemaError) {
+        console.error('Schema check failed after query error:', schemaError);
+      }
+      return res.status(500).json({
+        message: 'Database schema is not initialized: missing tables could not be verified.'
       });
     }
     if (err.code === 'ECONNREFUSED') {
