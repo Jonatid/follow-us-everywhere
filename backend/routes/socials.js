@@ -21,7 +21,7 @@ router.get('/business/:businessId', async (req, res) => {
     }
 
     const result = await db.query(
-      'SELECT id, platform, url, display_name, icon_url, position FROM social_links WHERE business_id = $1 AND is_active = true ORDER BY position ASC',
+      'SELECT id, platform, url, icon, display_order, is_active FROM social_links WHERE business_id = $1 AND is_active = true ORDER BY display_order ASC',
       [businessId]
     );
 
@@ -32,18 +32,18 @@ router.get('/business/:businessId', async (req, res) => {
   }
 });
 
-// Get social links by username (public)
-router.get('/:username', async (req, res) => {
+// Get social links by slug (public)
+router.get('/:slug', async (req, res) => {
   try {
-    const { username } = req.params;
+    const { slug } = req.params;
 
     const result = await db.query(
-      `SELECT sl.id, sl.platform, sl.url, sl.display_name, sl.icon_url, sl.position 
+      `SELECT sl.id, sl.platform, sl.url, sl.icon, sl.display_order, sl.is_active
        FROM social_links sl
        JOIN businesses b ON sl.business_id = b.id
-       WHERE b.username = $1 AND sl.is_active = true
-       ORDER BY sl.position ASC`,
-      [username]
+       WHERE b.slug = $1 AND sl.is_active = true
+       ORDER BY sl.display_order ASC`,
+      [slug]
     );
 
     res.json(result.rows);
@@ -65,19 +65,15 @@ router.post(
     body('url')
       .isURL()
       .withMessage('URL must be valid'),
-    body('display_name')
+    body('icon')
       .optional()
       .trim()
-      .isLength({ min: 1, max: 255 })
-      .withMessage('Display name must be between 1 and 255 characters'),
-    body('icon_url')
-      .optional()
-      .isURL()
-      .withMessage('Icon URL must be valid'),
-    body('position')
+      .isLength({ max: 10 })
+      .withMessage('Icon must be 10 characters or less'),
+    body('display_order')
       .optional()
       .isInt({ min: 0 })
-      .withMessage('Position must be a non-negative integer'),
+      .withMessage('Display order must be a non-negative integer'),
   ],
   async (req, res) => {
     try {
@@ -86,11 +82,11 @@ router.post(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { platform, url, display_name, icon_url, position } = req.body;
+      const { platform, url, icon, display_order } = req.body;
 
       const result = await db.query(
-        'INSERT INTO social_links (business_id, platform, url, display_name, icon_url, position) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-        [req.business.id, platform, url, display_name || platform, icon_url, position || 0]
+        'INSERT INTO social_links (business_id, platform, url, icon, display_order) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+        [req.businessId, platform, url, icon || '', display_order || 0]
       );
 
       res.status(201).json({
@@ -118,19 +114,15 @@ router.put(
       .optional()
       .isURL()
       .withMessage('URL must be valid'),
-    body('display_name')
+    body('icon')
       .optional()
       .trim()
-      .isLength({ min: 1, max: 255 })
-      .withMessage('Display name must be between 1 and 255 characters'),
-    body('icon_url')
-      .optional()
-      .isURL()
-      .withMessage('Icon URL must be valid'),
-    body('position')
+      .isLength({ max: 10 })
+      .withMessage('Icon must be 10 characters or less'),
+    body('display_order')
       .optional()
       .isInt({ min: 0 })
-      .withMessage('Position must be a non-negative integer'),
+      .withMessage('Display order must be a non-negative integer'),
     body('is_active')
       .optional()
       .isBoolean()
@@ -144,7 +136,7 @@ router.put(
       }
 
       const { id } = req.params;
-      const { platform, url, display_name, icon_url, position, is_active } = req.body;
+      const { platform, url, icon, display_order, is_active } = req.body;
 
       // Verify ownership
       const linkCheck = await db.query(
@@ -156,7 +148,7 @@ router.put(
         return res.status(404).json({ error: 'Social link not found' });
       }
 
-      if (linkCheck.rows[0].business_id !== req.business.id) {
+      if (linkCheck.rows[0].business_id !== req.businessId) {
         return res.status(403).json({ error: 'Unauthorized to update this link' });
       }
 
@@ -177,21 +169,15 @@ router.put(
         paramCount++;
       }
 
-      if (display_name !== undefined) {
-        fields.push(`display_name = $${paramCount}`);
-        values.push(display_name);
+      if (icon !== undefined) {
+        fields.push(`icon = $${paramCount}`);
+        values.push(icon);
         paramCount++;
       }
 
-      if (icon_url !== undefined) {
-        fields.push(`icon_url = $${paramCount}`);
-        values.push(icon_url);
-        paramCount++;
-      }
-
-      if (position !== undefined) {
-        fields.push(`position = $${paramCount}`);
-        values.push(position);
+      if (display_order !== undefined) {
+        fields.push(`display_order = $${paramCount}`);
+        values.push(display_order);
         paramCount++;
       }
 
@@ -238,7 +224,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Social link not found' });
     }
 
-    if (linkCheck.rows[0].business_id !== req.business.id) {
+    if (linkCheck.rows[0].business_id !== req.businessId) {
       return res.status(403).json({ error: 'Unauthorized to delete this link' });
     }
 

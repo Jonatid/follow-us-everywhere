@@ -13,7 +13,7 @@ if (process.env.DATABASE_URL) {
     connectionTimeoutMillis: 2000,
   });
 } else {
-  // For local development
+  // For local development (defaults are intentionally dev-only).
   pool = new Pool({
     user: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',

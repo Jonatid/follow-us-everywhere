@@ -1,11 +1,11 @@
 // =============================================================================
 // COMPLETE API-CONNECTED APP.JS
-// Replace your entire frontend/src/App.js with this code
 // =============================================================================
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+// API base URL (override with REACT_APP_API_URL at build time if needed).
 const API_URL = process.env.REACT_APP_API_URL || 'https://followuseverywhere-api.onrender.com/api';
 
 // =============================================================================
@@ -28,18 +28,18 @@ api.interceptors.request.use((config) => {
 // =============================================================================
 
 const LandingPage = ({ onNavigate }) => (
-  <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center p-4">
-    <div className="max-w-2xl w-full bg-white rounded-2xl shadow-xl p-8 md:p-12">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Follow Us Everywhere</h1>
-        <p className="text-xl text-gray-600 mb-2">One link to connect customers to all your social pages.</p>
-        <p className="text-gray-500">Get your custom link and QR code in minutes.</p>
+  <div className="page page--gradient">
+    <div className="card card--wide text-center">
+      <div className="stack-lg">
+        <h1 className="heading-xxl">Follow Us Everywhere</h1>
+        <p className="subtitle-lg">One link to connect customers to all your social pages.</p>
+        <p className="subtitle">Get your custom link and QR code in minutes.</p>
       </div>
-      <div className="space-y-4">
-        <button onClick={() => onNavigate('signup')} className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors text-lg">
+      <div className="stack-md">
+        <button type="button" onClick={() => onNavigate('signup')} className="button button-primary button-lg">
           Create Your Follow Hub
         </button>
-        <button onClick={() => onNavigate('login')} className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-4 px-6 rounded-lg transition-colors">
+        <button type="button" onClick={() => onNavigate('login')} className="button button-secondary button-lg">
           Business Login
         </button>
       </div>
@@ -57,7 +57,7 @@ const BusinessSignup = ({ onNavigate, onLoginSuccess }) => {
   const [error, setError] = useState('');
 
   const handleChange = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [field]: value,
       ...(field === 'name' && { slug: value.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '') })
@@ -84,44 +84,82 @@ const BusinessSignup = ({ onNavigate, onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
-        <button onClick={() => onNavigate('landing')} className="text-gray-600 hover:text-gray-700 mb-4 text-sm">← Back</button>
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Your Follow Hub</h1>
-          <p className="text-gray-600">Get started in under 2 minutes</p>
+    <div className="page page--gradient">
+      <div className="card card--medium">
+        <button type="button" onClick={() => onNavigate('landing')} className="link-button">← Back</button>
+        <div className="stack-sm text-center">
+          <h1 className="heading-xl">Create Your Follow Hub</h1>
+          <p className="subtitle">Get started in under 2 minutes</p>
         </div>
-        {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>}
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Business Name *</label>
-            <input type="text" value={formData.name} onChange={(e) => handleChange('name', e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="e.g., Joe's Coffee Shop" />
+        {error && <div className="alert alert-error">{error}</div>}
+        <div className="stack-md">
+          <div className="field">
+            <label className="label" htmlFor="signup-name">Business Name *</label>
+            <input
+              id="signup-name"
+              type="text"
+              value={formData.name}
+              onChange={(e) => handleChange('name', e.target.value)}
+              className="input"
+              placeholder="e.g., Joe's Coffee Shop"
+            />
           </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Your Custom Link</label>
-            <div className="flex items-center">
-              <span className="text-gray-500 text-sm mr-2">followuseverywhere.app/</span>
-              <input type="text" value={formData.slug} onChange={(e) => handleChange('slug', e.target.value)} className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="yourname" />
+          <div className="field">
+            <label className="label" htmlFor="signup-slug">Your Custom Link</label>
+            <div className="row">
+              <span className="muted-text">followuseverywhere.app/</span>
+              <input
+                id="signup-slug"
+                type="text"
+                value={formData.slug}
+                onChange={(e) => handleChange('slug', e.target.value)}
+                className="input input-inline"
+                placeholder="yourname"
+              />
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Tagline (Optional)</label>
-            <input type="text" value={formData.tagline} onChange={(e) => handleChange('tagline', e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="e.g., Best Coffee in Town" />
+          <div className="field">
+            <label className="label" htmlFor="signup-tagline">Tagline (Optional)</label>
+            <input
+              id="signup-tagline"
+              type="text"
+              value={formData.tagline}
+              onChange={(e) => handleChange('tagline', e.target.value)}
+              className="input"
+              placeholder="e.g., Best Coffee in Town"
+            />
           </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Email *</label>
-            <input type="email" value={formData.email} onChange={(e) => handleChange('email', e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="you@business.com" />
+          <div className="field">
+            <label className="label" htmlFor="signup-email">Email *</label>
+            <input
+              id="signup-email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => handleChange('email', e.target.value)}
+              className="input"
+              placeholder="you@business.com"
+            />
           </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Password *</label>
-            <input type="password" value={formData.password} onChange={(e) => handleChange('password', e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="Create a password" />
+          <div className="field">
+            <label className="label" htmlFor="signup-password">Password *</label>
+            <input
+              id="signup-password"
+              type="password"
+              value={formData.password}
+              onChange={(e) => handleChange('password', e.target.value)}
+              className="input"
+              placeholder="Create a password"
+            />
           </div>
-          <button onClick={handleSubmit} disabled={loading} className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50">
+          <button type="button" onClick={handleSubmit} disabled={loading} className="button button-primary button-full">
             {loading ? 'Creating Account...' : 'Create Account & Continue'}
           </button>
         </div>
-        <p className="text-center text-sm text-gray-500 mt-4">
-          Already have an account? <button onClick={() => onNavigate('login')} className="text-purple-600 hover:text-purple-700 font-semibold">Login</button>
+        <p className="helper-text text-center">
+          Already have an account?{' '}
+          <button type="button" onClick={() => onNavigate('login')} className="link-button link-button--inline">
+            Login
+          </button>
         </p>
       </div>
     </div>
@@ -158,29 +196,46 @@ const BusinessLogin = ({ onNavigate, onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
-        <button onClick={() => onNavigate('landing')} className="text-gray-600 hover:text-gray-700 mb-4 text-sm">← Back</button>
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Business Login</h1>
-          <p className="text-gray-600">Access your dashboard</p>
+    <div className="page page--gradient">
+      <div className="card card--medium">
+        <button type="button" onClick={() => onNavigate('landing')} className="link-button">← Back</button>
+        <div className="stack-sm text-center">
+          <h1 className="heading-xl">Business Login</h1>
+          <p className="subtitle">Access your dashboard</p>
         </div>
-        {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>}
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Email</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="you@business.com" />
+        {error && <div className="alert alert-error">{error}</div>}
+        <div className="stack-md">
+          <div className="field">
+            <label className="label" htmlFor="login-email">Email</label>
+            <input
+              id="login-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="input"
+              placeholder="you@business.com"
+            />
           </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Password</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="Enter your password" />
+          <div className="field">
+            <label className="label" htmlFor="login-password">Password</label>
+            <input
+              id="login-password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="input"
+              placeholder="Enter your password"
+            />
           </div>
-          <button onClick={handleSubmit} disabled={loading} className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50">
+          <button type="button" onClick={handleSubmit} disabled={loading} className="button button-primary button-full">
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </div>
-        <p className="text-center text-sm text-gray-500 mt-4">
-          Don't have an account? <button onClick={() => onNavigate('signup')} className="text-purple-600 hover:text-purple-700 font-semibold">Sign up</button>
+        <p className="helper-text text-center">
+          Don't have an account?{' '}
+          <button type="button" onClick={() => onNavigate('signup')} className="link-button link-button--inline">
+            Sign up
+          </button>
         </p>
       </div>
     </div>
@@ -198,11 +253,14 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
 
   const handleCopyLink = () => {
     const link = `https://follow-us-everywhere-web.onrender.com/${business.slug}`;
-    navigator.clipboard.writeText(link).then(() => {
-      alert('Link copied to clipboard!');
-    }).catch(() => {
-      alert('Failed to copy. Link: ' + link);
-    });
+    navigator.clipboard
+      .writeText(link)
+      .then(() => {
+        alert('Link copied to clipboard!');
+      })
+      .catch(() => {
+        alert(`Failed to copy. Link: ${link}`);
+      });
   };
 
   const handleEdit = (index) => {
@@ -213,72 +271,87 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
   const handleSave = async (index) => {
     setSaving(true);
     try {
-      const updatedSocials = business.socials.map((s, i) => 
-        i === index ? { platform: s.platform, url: tempUrl } : { platform: s.platform, url: s.url }
-      );
-      await api.put('/socials', { socials: updatedSocials });
+      const social = business.socials[index];
+      await api.put(`/socials/${social.id}`, { url: tempUrl });
       alert('Link updated successfully!');
       setEditingIndex(null);
       onRefresh();
     } catch (err) {
-      alert('Failed to update link: ' + (err.response?.data?.message || 'Unknown error'));
+      alert(`Failed to update link: ${err.response?.data?.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-            <button onClick={onLogout} className="text-gray-600 hover:text-gray-700 text-sm font-semibold">Logout</button>
+    <div className="dashboard">
+      <div className="dashboard-container">
+        <div className="card dashboard-card">
+          <div className="dashboard-header">
+            <h1 className="heading-lg">Dashboard</h1>
+            <button type="button" onClick={onLogout} className="link-button link-button--inline">Logout</button>
           </div>
-          <div className="mb-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-2">{business.name}</h2>
-            <p className="text-gray-600">{business.tagline}</p>
+          <div className="stack-sm">
+            <h2 className="heading-md">{business.name}</h2>
+            <p className="subtitle">{business.tagline}</p>
           </div>
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
-            <p className="text-sm text-gray-600 mb-2">Your Follow Us Everywhere link:</p>
-            <div className="flex items-center gap-2 flex-wrap">
-              <code className="flex-1 bg-white px-3 py-2 rounded border text-sm min-w-0">
+          <div className="callout">
+            <p className="subtitle">Your Follow Us Everywhere link:</p>
+            <div className="row row-wrap">
+              <code className="code-block">
                 https://follow-us-everywhere-web.onrender.com/{business.slug}
               </code>
-              <button onClick={handleCopyLink} className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm font-semibold whitespace-nowrap">
+              <button type="button" onClick={handleCopyLink} className="button button-primary button-sm">
                 Copy Link
               </button>
             </div>
           </div>
-          <button onClick={() => onNavigate('public', business.slug)} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg mb-6">
+          <button type="button" onClick={() => onNavigate('public', business.slug)} className="button button-secondary button-full">
             Preview Public Follow Page
           </button>
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Your Social Profiles</h2>
-          <div className="space-y-3">
+          <h2 className="heading-md">Your Social Profiles</h2>
+          <div className="stack-sm">
             {business.socials.map((social, index) => (
-              <div key={index} className="border rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">{social.icon}</span>
-                    <span className="font-semibold">{social.platform}</span>
+              <div key={social.id || index} className="social-card">
+                <div className="row space-between">
+                  <div className="row">
+                    <span className="social-icon">{social.icon}</span>
+                    <span className="text-strong">{social.platform}</span>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="row">
                     {editingIndex === index ? (
                       <>
-                        <button onClick={() => handleSave(index)} disabled={saving} className="text-green-600 hover:text-green-700 text-sm font-semibold disabled:opacity-50">
+                        <button
+                          type="button"
+                          onClick={() => handleSave(index)}
+                          disabled={saving}
+                          className="link-button link-button--success"
+                        >
                           {saving ? 'Saving...' : 'Save'}
                         </button>
-                        <button onClick={() => setEditingIndex(null)} className="text-gray-600 hover:text-gray-700 text-sm font-semibold">Cancel</button>
+                        <button type="button" onClick={() => setEditingIndex(null)} className="link-button">
+                          Cancel
+                        </button>
                       </>
                     ) : (
-                      <button onClick={() => handleEdit(index)} className="text-purple-600 hover:text-purple-700 text-sm font-semibold">Edit</button>
+                      <button type="button" onClick={() => handleEdit(index)} className="link-button link-button--inline">
+                        Edit
+                      </button>
                     )}
                   </div>
                 </div>
                 {editingIndex === index ? (
-                  <input type="text" value={tempUrl} onChange={(e) => setTempUrl(e.target.value)} className="w-full border rounded px-3 py-2 text-sm" placeholder={`https://${social.platform.toLowerCase()}.com/yourhandle`} />
+                  <input
+                    type="text"
+                    value={tempUrl}
+                    onChange={(e) => setTempUrl(e.target.value)}
+                    className="input"
+                    placeholder={`https://${social.platform.toLowerCase()}.com/yourhandle`}
+                  />
                 ) : (
-                  <p className="text-sm text-gray-600 truncate">{social.url || `Add your ${social.platform} link`}</p>
+                  <p className="muted-text truncate">
+                    {social.url || `Add your ${social.platform} link`}
+                  </p>
                 )}
               </div>
             ))}
@@ -321,45 +394,75 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
   };
 
   const handleFollowEverywhere = () => {
-    const activeSocials = business.socials.filter(s => s.url);
-    activeSocials.forEach(social => window.open(social.url, '_blank'));
+    const activeSocials = business.socials.filter((s) => s.url);
+    activeSocials.forEach((social) => window.open(social.url, '_blank'));
     alert(`Opened ${activeSocials.length} platforms! Click Follow on each to connect.`);
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="text-gray-600">Loading...</div></div>;
-  if (error) return <div className="min-h-screen flex items-center justify-center"><div className="text-red-600">{error}</div></div>;
+  if (loading) {
+    return (
+      <div className="page">
+        <div className="subtitle">Loading...</div>
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="page">
+        <div className="alert alert-error">{error}</div>
+      </div>
+    );
+  }
 
-  const activeSocials = business.socials.filter(s => s.url);
+  const activeSocials = business.socials.filter((s) => s.url);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
-        <button onClick={() => onNavigate('landing')} className="text-gray-600 hover:text-gray-700 mb-4 text-sm">← Back</button>
-        <div className="text-center mb-8">
-          <div className="w-24 h-24 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4">
-            {business.logo}
+    <div className="page page--gradient">
+      <div className="card card--medium">
+        <button type="button" onClick={() => onNavigate('landing')} className="link-button">← Back</button>
+        <div className="stack-md text-center">
+          <div className="avatar">{business.logo}</div>
+          <div>
+            <h1 className="heading-xl">{business.name}</h1>
+            <p className="subtitle">{business.tagline}</p>
+            <p className="muted-text">Follow this business everywhere in two taps.</p>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{business.name}</h1>
-          <p className="text-gray-600 mb-4">{business.tagline}</p>
-          <p className="text-sm text-gray-500">Follow this business everywhere in two taps.</p>
         </div>
         {activeSocials.length === 0 ? (
-          <div className="text-center py-8 text-gray-500"><p>This business hasn't added their social links yet.</p></div>
+          <div className="empty-state">This business hasn't added their social links yet.</div>
         ) : (
           <>
-            <div className="space-y-3 mb-6">
-              {business.socials.map((social, index) => social.url ? (
-                <button key={index} onClick={() => handlePlatformClick(social.platform, social.url)} className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-3 px-4 rounded-lg flex items-center justify-between transition-colors">
-                  <span className="flex items-center gap-3">
-                    <span className="text-2xl">{social.icon}</span>
-                    <span>{social.platform === 'YouTube' ? 'Subscribe on' : social.platform === 'Facebook' ? 'Like on' : social.platform === 'LinkedIn' ? 'Connect on' : social.platform === 'Website' ? 'Visit' : 'Follow on'} {social.platform}</span>
-                  </span>
-                  <span className="text-gray-400">→</span>
-                </button>
-              ) : null)}
+            <div className="stack-sm">
+              {business.socials.map((social, index) =>
+                social.url ? (
+                  <button
+                    key={social.id || index}
+                    type="button"
+                    onClick={() => handlePlatformClick(social.platform, social.url)}
+                    className="button button-muted button-full button-justify"
+                  >
+                    <span className="row">
+                      <span className="social-icon">{social.icon}</span>
+                      <span>
+                        {social.platform === 'YouTube'
+                          ? 'Subscribe on'
+                          : social.platform === 'Facebook'
+                          ? 'Like on'
+                          : social.platform === 'LinkedIn'
+                          ? 'Connect on'
+                          : social.platform === 'Website'
+                          ? 'Visit'
+                          : 'Follow on'}{' '}
+                        {social.platform}
+                      </span>
+                    </span>
+                    <span className="muted-text">→</span>
+                  </button>
+                ) : null
+              )}
             </div>
             {activeSocials.length > 1 && (
-              <button onClick={handleFollowEverywhere} className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-4 px-6 rounded-lg text-lg shadow-lg transition-all">
+              <button type="button" onClick={handleFollowEverywhere} className="button button-primary button-full">
                 Follow Us Everywhere
               </button>
             )}
@@ -423,7 +526,16 @@ export default function App() {
       case 'login':
         return <BusinessLogin onNavigate={handleNavigate} onLoginSuccess={handleLoginSuccess} />;
       case 'dashboard':
-        return currentBusiness ? <BusinessDashboard business={currentBusiness} onNavigate={handleNavigate} onLogout={handleLogout} onRefresh={fetchCurrentBusiness} /> : <LandingPage onNavigate={handleNavigate} />;
+        return currentBusiness ? (
+          <BusinessDashboard
+            business={currentBusiness}
+            onNavigate={handleNavigate}
+            onLogout={handleLogout}
+            onRefresh={fetchCurrentBusiness}
+          />
+        ) : (
+          <LandingPage onNavigate={handleNavigate} />
+        );
       case 'public':
         return <PublicFollowPage slug={publicSlug} onNavigate={handleNavigate} />;
       default:
