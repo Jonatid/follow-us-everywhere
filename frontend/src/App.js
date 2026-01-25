@@ -5,8 +5,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-// API base URL (override with REACT_APP_API_URL at build time if needed).
-const API_URL = process.env.REACT_APP_API_URL || 'https://followuseverywhere-api.onrender.com/api';
+// API base URL (override with VITE_API_BASE_URL at build time if needed).
+const API_URL = import.meta.env?.VITE_API_BASE_URL || 'https://followuseverywhere-api.onrender.com/api';
 
 // =============================================================================
 // API SERVICE
