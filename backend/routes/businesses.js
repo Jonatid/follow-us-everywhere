@@ -1,6 +1,6 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const db = require('../config/db');
+const pool = require('../config/db');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
@@ -15,7 +15,7 @@ router.get('/:slug', async (req, res) => {
       [slug]
     );
 
-    if (result.rows.length === 0) {
+    if (businessResult.rows.length === 0) {
       return res.status(404).json({ error: 'Business not found' });
     }
 
