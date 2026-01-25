@@ -23,8 +23,9 @@ router.post('/signup', [
 
   const { name, slug, tagline, email, password } = req.body;
 
-  const client = await pool.connect();
+  let client;
   try {
+    client = await pool.connect();
     await client.query('BEGIN');
     // Check if business already exists
     const existingBusiness = await client.query(
@@ -83,16 +84,28 @@ router.post('/signup', [
     await client.query('COMMIT');
     res.json({ token, business });
   } catch (err) {
-    await client.query('ROLLBACK');
+    if (client) {
+      await client.query('ROLLBACK');
+    }
     console.error('Signup error:', err);
     if (err.code === '23505') {
       return res.status(400).json({
         message: 'Business with this email or slug already exists'
       });
     }
+    if (err.code === '42P01' || err.code === '42703') {
+      return res.status(500).json({
+        message: 'Database schema is not initialized. Please run the setup.'
+      });
+    }
+    if (err.code === 'ECONNREFUSED') {
+      return res.status(503).json({ message: 'Database connection failed' });
+    }
     res.status(500).json({ message: 'Server error' });
   } finally {
-    client.release();
+    if (client) {
+      client.release();
+    }
   }
 });
 
