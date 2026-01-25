@@ -95,7 +95,7 @@ router.post('/signup', [
     }
     if (err.code === '42P01' || err.code === '42703') {
       return res.status(500).json({
-        message: 'Database schema is not initialized. Please run the setup.'
+        message: 'Database schema is not initialized (or the DB user lacks CREATE privileges). Run the schema setup.'
       });
     }
     if (err.code === 'ECONNREFUSED') {
