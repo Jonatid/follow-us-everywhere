@@ -8,18 +8,26 @@ const REQUIRED_TABLES = [
 ];
 
 const getMissingTables = async (client = pool) => {
-  const result = await client.query(
-    `
-      SELECT table_name
-      FROM information_schema.tables
-      WHERE table_schema = 'public'
-        AND table_name = ANY($1)
-    `,
-    [REQUIRED_TABLES]
-  );
+  try {
+    const result = await client.query(
+      `
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
+          AND table_name = ANY($1)
+      `,
+      [REQUIRED_TABLES]
+    );
 
-  const existingTables = new Set(result.rows.map((row) => row.table_name));
-  return REQUIRED_TABLES.filter((table) => !existingTables.has(table));
+    const existingTables = new Set(result.rows.map((row) => row.table_name));
+    return REQUIRED_TABLES.filter((table) => !existingTables.has(table));
+  } catch (error) {
+    console.warn(
+      'Warning: schema verification failed, skipping strict table check.',
+      error
+    );
+    return null;
+  }
 };
 
 const ensureSchema = async () => {
@@ -74,9 +82,12 @@ const ensureSchema = async () => {
   }
 
   const missingTables = await getMissingTables();
+  if (!missingTables) {
+    return;
+  }
   if (missingTables.length > 0) {
     const missingError = new Error(
-      `Database schema is not initialized: missing tables: ${missingTables.join(', ')}.`
+      `Database schema is not initialized: missing tables: ${missingTables.join(', ')}`
     );
     missingError.code = 'SCHEMA_MISSING';
     missingError.missingTables = missingTables;

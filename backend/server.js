@@ -73,11 +73,7 @@ const startServer = async () => {
   try {
     await ensureSchema();
   } catch (error) {
-    if (error.code === 'INSUFFICIENT_PRIVILEGE' || error.code === 'SCHEMA_MISSING') {
-      console.error(error.message);
-    } else {
-      console.error('Failed to ensure database schema:', error);
-    }
+    console.error('Schema initialization error:', error.message);
     process.exit(1);
   }
 

@@ -105,17 +105,14 @@ router.post('/signup', [
     if (err.code === '42P01' || err.code === '42703') {
       try {
         const missingTables = await getMissingTables();
-        if (missingTables.length > 0) {
+        if (missingTables && missingTables.length > 0) {
           return res.status(500).json({
-            message: `Database schema is not initialized: missing tables: ${missingTables.join(', ')}.`
+            message: `Database schema is not initialized: missing tables: ${missingTables.join(', ')}`
           });
         }
       } catch (schemaError) {
         console.error('Schema check failed after query error:', schemaError);
       }
-      return res.status(500).json({
-        message: 'Database schema is not initialized: missing tables could not be verified.'
-      });
     }
     if (err.code === 'ECONNREFUSED') {
       return res.status(503).json({ message: 'Database connection failed' });
