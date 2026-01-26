@@ -6,14 +6,15 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 // API base URL (override with VITE_API_BASE_URL at build time if needed).
-const API_URL = import.meta.env?.VITE_API_BASE_URL || 'https://followuseverywhere-api.onrender.com/api';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || 'https://followuseverywhere-api.onrender.com/api';
 
 // =============================================================================
 // API SERVICE
 // =============================================================================
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' }
 });
 
