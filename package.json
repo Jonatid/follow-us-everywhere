@@ -1,0 +1,13 @@
+{
+  "name": "follow-us-everywhere",
+  "private": true,
+  "description": "Local dev helpers for running backend and frontend together.",
+  "scripts": {
+    "dev:server": "npm run dev --prefix backend",
+    "dev:web": "npm run dev --prefix frontend",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:web\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

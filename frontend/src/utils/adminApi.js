@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API_BASE_URL =
-  import.meta.env?.VITE_API_BASE_URL || 'https://followuseverywhere-api.onrender.com/api';
+  import.meta.env.VITE_API_BASE_URL || 'https://followuseverywhere-api.onrender.com/api';
 
 const adminApi = axios.create({
   baseURL: API_BASE_URL,
