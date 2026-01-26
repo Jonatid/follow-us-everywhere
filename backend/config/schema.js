@@ -4,7 +4,8 @@ const REQUIRED_TABLES = [
   'businesses',
   'social_links',
   'email_verification_tokens',
-  'password_reset_tokens'
+  'password_reset_tokens',
+  'admins'
 ];
 
 const getMissingTables = async (client = pool) => {
@@ -62,10 +63,21 @@ const ensureSchema = async () => {
       );
     `);
 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS admins (
+        id SERIAL PRIMARY KEY,
+        name TEXT,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     await pool.query('CREATE INDEX IF NOT EXISTS idx_businesses_slug ON businesses(slug);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_businesses_email ON businesses(email);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_social_links_business_id ON social_links(business_id);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_social_links_platform ON social_links(platform);');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_admins_email ON admins(email);');
   } catch (error) {
     if (error.code === '42501') {
       const dbUser = process.env.DATABASE_URL

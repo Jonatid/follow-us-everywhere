@@ -36,11 +36,21 @@ CREATE TABLE IF NOT EXISTS social_links (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Create admins table
+CREATE TABLE IF NOT EXISTS admins (
+    id SERIAL PRIMARY KEY,
+    name TEXT,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Create indexes for better performance
 CREATE INDEX idx_businesses_slug ON businesses(slug);
 CREATE INDEX idx_businesses_email ON businesses(email);
 CREATE INDEX idx_social_links_business_id ON social_links(business_id);
 CREATE INDEX idx_social_links_platform ON social_links(platform);
+CREATE INDEX idx_admins_email ON admins(email);
 
 -- Insert sample data (optional)
 -- INSERT INTO businesses (username, email, password_hash, business_name, business_description, bio)
