@@ -8,6 +8,8 @@ const { ensureSchema } = require('./config/schema');
 const authRoutes = require('./routes/auth');
 const businessesRoutes = require('./routes/businesses');
 const socialsRoutes = require('./routes/socials');
+const adminAuthRoutes = require('./routes/admin-auth');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -55,6 +57,8 @@ app.get('/api/health', async (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/businesses', businessesRoutes);
 app.use('/api/socials', socialsRoutes);
+app.use('/api/admin/auth', adminAuthRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 404 handler
 app.use((req, res) => {
