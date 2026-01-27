@@ -5,7 +5,7 @@ const sendPasswordResetEmail = async ({ toEmail, resetUrl, businessName }) => {
     return;
   }
 
-  const fromEmail = process.env.RESEND_FROM_EMAIL || 'no-reply@followuseverywhere.app';
+  const fromEmail = process.env.RESEND_FROM || process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
   const subject = 'Reset your Follow Us Everywhere password';
   const greeting = businessName ? `Hi ${businessName},` : 'Hello,';
   const html = `
