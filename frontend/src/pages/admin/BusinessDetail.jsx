@@ -9,6 +9,13 @@ import {
   removeBusinessBadge,
 } from '../../utils/adminApi';
 
+const statusLabelMap = {
+  active: 'Active',
+  flagged: 'Flagged (Needs Review)',
+  suspended: 'Suspended',
+  disabled: 'Disabled',
+};
+
 const BusinessDetail = ({ businessId, onBack }) => {
   const [business, setBusiness] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -145,7 +152,7 @@ const BusinessDetail = ({ businessId, onBack }) => {
         </div>
         <div>
           <p className="admin-muted">Status</p>
-          <p>{business.status || (business.isApproved ? 'Approved' : 'Pending')}</p>
+          <p>{statusLabelMap[business.verificationStatus] || 'Active'}</p>
         </div>
       </div>
       <div className="admin-actions" style={{ marginTop: 16 }}>

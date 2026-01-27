@@ -5,6 +5,7 @@ const { body, validationResult } = require('express-validator');
 const pool = require('../config/db');
 const { getMissingTables } = require('../config/schema');
 const { authenticateToken } = require('../middleware/auth');
+const { resolveVerificationStatus } = require('../utils/verification');
 
 const router = express.Router();
 
@@ -52,7 +53,21 @@ router.post('/signup', [
     const result = await client.query(
       `INSERT INTO businesses (name, slug, tagline, logo, email, password_hash)
        VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id, name, slug, tagline, logo, email, is_verified, is_approved, verification_status, community_support_text, community_support_links`,
+       RETURNING id,
+                 name,
+                 slug,
+                 tagline,
+                 logo,
+                 email,
+                 verification_status,
+                 suspended_at,
+                 disabled_at,
+                 last_nudge_at,
+                 nudge_message,
+                 policy_violation_code,
+                 policy_violation_text,
+                 community_support_text,
+                 community_support_links`,
       [name, slug, tagline || '', logo, email, passwordHash]
     );
 
@@ -142,7 +157,27 @@ router.post('/login', [
   try {
     // Check if business exists
     const result = await pool.query(
-      'SELECT * FROM businesses WHERE email = $1',
+      `SELECT id,
+              name,
+              slug,
+              tagline,
+              logo,
+              email,
+              password_hash,
+              verification_status,
+              suspended_at,
+              disabled_at,
+              last_nudge_at,
+              nudge_message,
+              policy_violation_code,
+              policy_violation_text,
+              community_support_text,
+              community_support_links,
+              is_verified,
+              is_approved,
+              suspended_reason
+       FROM businesses
+       WHERE email = $1`,
       [email]
     );
 
@@ -169,7 +204,8 @@ router.post('/login', [
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
 
     // Return business data without password
-    const { password_hash, ...businessData } = business;
+    const { password_hash, is_verified, is_approved, suspended_reason, ...businessData } = business;
+    businessData.verification_status = resolveVerificationStatus(business);
     businessData.socials = socialsResult.rows;
 
     res.json({ token, business: businessData });
@@ -191,11 +227,18 @@ router.get('/me', authenticateToken, async (req, res) => {
               tagline,
               logo,
               email,
+              verification_status,
+              suspended_at,
+              disabled_at,
+              last_nudge_at,
+              nudge_message,
+              policy_violation_code,
+              policy_violation_text,
+              community_support_text,
+              community_support_links,
               is_verified,
               is_approved,
-              verification_status,
-              community_support_text,
-              community_support_links
+              suspended_reason
        FROM businesses
        WHERE id = $1`,
       [req.businessId]
@@ -205,7 +248,8 @@ router.get('/me', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'Business not found' });
     }
 
-    const business = result.rows[0];
+    const { is_verified, is_approved, suspended_reason, ...business } = result.rows[0];
+    business.verification_status = resolveVerificationStatus(result.rows[0]);
 
     // Get social links
     const socialsResult = await pool.query(

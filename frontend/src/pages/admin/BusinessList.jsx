@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { fetchBusinesses } from '../../utils/adminApi';
 
+const statusLabelMap = {
+  active: 'Active',
+  flagged: 'Flagged (Needs Review)',
+  suspended: 'Suspended',
+  disabled: 'Disabled',
+};
+
 const BusinessList = ({ onSelectBusiness }) => {
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -43,7 +50,7 @@ const BusinessList = ({ onSelectBusiness }) => {
               <tr key={business.id || business._id}>
                 <td>{business.name}</td>
                 <td>{business.slug}</td>
-                <td>{business.status || (business.isApproved ? 'Approved' : 'Pending')}</td>
+                <td>{statusLabelMap[business.verificationStatus] || 'Active'}</td>
                 <td>
                   <div className="admin-actions">
                     <button
