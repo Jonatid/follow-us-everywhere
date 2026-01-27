@@ -255,7 +255,18 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
   const [supportLinks, setSupportLinks] = useState([]);
   const [supportSaving, setSupportSaving] = useState(false);
 
-  const canEditCommunitySupport = ['active', 'flagged'].includes(business.verification_status);
+  const verificationStatus = business.verification_status;
+  const canEditBusiness = ['active', 'flagged'].includes(verificationStatus);
+  const canEditCommunitySupport = canEditBusiness;
+  const showStatusBanner = ['flagged', 'suspended', 'disabled'].includes(verificationStatus);
+  const statusBannerMessage =
+    business.nudge_message ||
+    business.policy_violation_text ||
+    (verificationStatus === 'flagged'
+      ? 'Your account requires review. Please confirm your details and respond to the latest request.'
+      : verificationStatus === 'suspended'
+      ? 'Your account is suspended while we review a policy issue.'
+      : 'Your account is disabled. Please contact support if you believe this is a mistake.');
 
   useEffect(() => {
     setSupportText(business.community_support_text || '');
@@ -275,11 +286,17 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
   };
 
   const handleEdit = (index) => {
+    if (!canEditBusiness) {
+      return;
+    }
     setEditingIndex(index);
     setTempUrl(business.socials[index].url);
   };
 
   const handleSave = async (index) => {
+    if (!canEditBusiness) {
+      return;
+    }
     setSaving(true);
     try {
       const social = business.socials[index];
@@ -344,6 +361,21 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
             <h2 className="heading-md">{business.name}</h2>
             <p className="subtitle">{business.tagline}</p>
           </div>
+          {showStatusBanner && (
+            <div className="alert alert-error">
+              <p className="text-strong">
+                {verificationStatus === 'flagged'
+                  ? 'Account flagged for review'
+                  : verificationStatus === 'suspended'
+                  ? 'Account suspended'
+                  : 'Account disabled'}
+              </p>
+              <p>{statusBannerMessage}</p>
+              {business.policy_violation_code && (
+                <p className="muted-text">Policy reference: {business.policy_violation_code}</p>
+              )}
+            </div>
+          )}
           <div className="callout">
             <p className="subtitle">Your Follow Us Everywhere link:</p>
             <div className="row row-wrap">
@@ -359,6 +391,11 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
             Preview Public Follow Page
           </button>
           <h2 className="heading-md">Your Social Profiles</h2>
+          {!canEditBusiness && (
+            <div className="alert alert-error">
+              Social link updates are disabled while your account is suspended or disabled.
+            </div>
+          )}
           <div className="stack-sm">
             {business.socials.map((social, index) => (
               <div key={social.id || index} className="social-card">
@@ -383,7 +420,12 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
                         </button>
                       </>
                     ) : (
-                      <button type="button" onClick={() => handleEdit(index)} className="link-button link-button--inline">
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(index)}
+                        className="link-button link-button--inline"
+                        disabled={!canEditBusiness}
+                      >
                         Edit
                       </button>
                     )}
@@ -396,6 +438,7 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
                     onChange={(e) => setTempUrl(e.target.value)}
                     className="input"
                     placeholder={`https://${social.platform.toLowerCase()}.com/yourhandle`}
+                    disabled={!canEditBusiness}
                   />
                 ) : (
                   <p className="muted-text truncate">
@@ -535,6 +578,20 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
     return (
       <div className="page">
         <div className="alert alert-error">{error}</div>
+      </div>
+    );
+  }
+
+  if (['suspended', 'disabled'].includes(business.verification_status)) {
+    return (
+      <div className="page page--gradient">
+        <div className="card card--medium">
+          <button type="button" onClick={() => onNavigate('landing')} className="link-button">← Back</button>
+          <div className="stack-md text-center">
+            <h1 className="heading-xl">We&apos;ll be right back</h1>
+            <p className="subtitle">This page is temporarily unavailable due to technical difficulties.</p>
+          </div>
+        </div>
       </div>
     );
   }

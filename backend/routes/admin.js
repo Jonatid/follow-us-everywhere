@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const { body, validationResult } = require('express-validator');
 const pool = require('../config/db');
 const { authenticateAdminToken } = require('../middleware/admin-auth');
+const { resolveVerificationStatus } = require('../utils/verification');
 
 const router = express.Router();
 
@@ -18,13 +19,24 @@ router.get('/businesses', async (req, res) => {
               name,
               slug,
               email,
+              verification_status AS "verificationStatus",
               is_approved AS "isApproved",
+              suspended_reason AS "suspendedReason",
               created_at AS "createdAt"
        FROM businesses
        ORDER BY created_at DESC`
     );
 
-    res.json(result.rows);
+    const businesses = result.rows.map((business) => ({
+      id: business.id,
+      name: business.name,
+      slug: business.slug,
+      email: business.email,
+      verificationStatus: resolveVerificationStatus(business),
+      createdAt: business.createdAt,
+    }));
+
+    res.json(businesses);
   } catch (err) {
     console.error('Admin list businesses error:', err);
     res.status(500).json({ message: 'Server error' });
@@ -43,9 +55,10 @@ router.get('/businesses/:id', async (req, res) => {
               tagline,
               logo,
               email,
+              verification_status AS "verificationStatus",
               is_verified AS "isVerified",
               is_approved AS "isApproved",
-              verification_status AS "verificationStatus",
+              suspended_reason AS "suspendedReason",
               community_support_text AS "communitySupportText",
               community_support_links AS "communitySupportLinks",
               created_at AS "createdAt",
@@ -59,7 +72,20 @@ router.get('/businesses/:id', async (req, res) => {
       return res.status(404).json({ message: 'Business not found' });
     }
 
-    res.json(result.rows[0]);
+    const business = result.rows[0];
+    res.json({
+      id: business.id,
+      name: business.name,
+      slug: business.slug,
+      tagline: business.tagline,
+      logo: business.logo,
+      email: business.email,
+      verificationStatus: resolveVerificationStatus(business),
+      communitySupportText: business.communitySupportText,
+      communitySupportLinks: business.communitySupportLinks,
+      createdAt: business.createdAt,
+      updatedAt: business.updatedAt,
+    });
   } catch (err) {
     console.error('Admin get business error:', err);
     res.status(500).json({ message: 'Server error' });
@@ -73,10 +99,12 @@ router.put('/businesses/:id/approve', async (req, res) => {
   try {
     const result = await pool.query(
       `UPDATE businesses
-       SET is_approved = true,
+       SET verification_status = 'active',
+           suspended_at = NULL,
+           disabled_at = NULL,
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $1
-       RETURNING id, name, slug, email, is_approved AS "isApproved"`,
+       RETURNING id, name, slug, email, verification_status AS "verificationStatus"`,
       [req.params.id]
     );
 
@@ -98,10 +126,11 @@ router.put('/businesses/:id/block', async (req, res) => {
   try {
     const result = await pool.query(
       `UPDATE businesses
-       SET is_approved = false,
+       SET verification_status = 'suspended',
+           suspended_at = CURRENT_TIMESTAMP,
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $1
-       RETURNING id, name, slug, email, is_approved AS "isApproved"`,
+       RETURNING id, name, slug, email, verification_status AS "verificationStatus"`,
       [req.params.id]
     );
 

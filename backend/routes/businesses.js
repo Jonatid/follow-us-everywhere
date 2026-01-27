@@ -2,6 +2,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const pool = require('../config/db');
 const { authenticateToken } = require('../middleware/auth');
+const { resolveVerificationStatus } = require('../utils/verification');
 
 const router = express.Router();
 
@@ -16,6 +17,8 @@ router.get('/:slug', async (req, res) => {
               slug,
               tagline,
               logo,
+              verification_status,
+              disabled_at,
               community_support_text,
               community_support_links
        FROM businesses
@@ -28,6 +31,15 @@ router.get('/:slug', async (req, res) => {
     }
 
     const business = result.rows[0];
+    business.verification_status = resolveVerificationStatus(business);
+
+    if (business.verification_status === 'disabled' && business.disabled_at) {
+      const disabledAt = new Date(business.disabled_at);
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      if (disabledAt <= sevenDaysAgo) {
+        return res.status(404).json({ error: 'Business not found' });
+      }
+    }
 
     const hasIsActiveResult = await pool.query(
       `SELECT 1
@@ -64,6 +76,7 @@ router.get('/:slug', async (req, res) => {
     );
 
     business.badges = badgesResult.rows;
+    delete business.disabled_at;
 
     res.json(business);
   } catch (error) {
@@ -118,7 +131,12 @@ router.put(
       }
 
       const statusResult = await pool.query(
-        'SELECT verification_status FROM businesses WHERE id = $1',
+        `SELECT verification_status,
+                is_approved,
+                is_verified,
+                suspended_reason
+         FROM businesses
+         WHERE id = $1`,
         [req.businessId]
       );
 
@@ -126,7 +144,7 @@ router.put(
         return res.status(404).json({ error: 'Business not found' });
       }
 
-      const verificationStatus = statusResult.rows[0].verification_status;
+      const verificationStatus = resolveVerificationStatus(statusResult.rows[0]);
       if (!['active', 'flagged'].includes(verificationStatus)) {
         return res.status(403).json({ error: 'Business is not allowed to update community support' });
       }
@@ -199,6 +217,25 @@ router.put(
       }
 
       const { name, tagline, logo } = req.body;
+
+      const statusResult = await pool.query(
+        `SELECT verification_status,
+                is_approved,
+                is_verified,
+                suspended_reason
+         FROM businesses
+         WHERE id = $1`,
+        [req.businessId]
+      );
+
+      if (statusResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Business not found' });
+      }
+
+      const verificationStatus = resolveVerificationStatus(statusResult.rows[0]);
+      if (!['active', 'flagged'].includes(verificationStatus)) {
+        return res.status(403).json({ error: 'Business is not allowed to update profile information' });
+      }
 
       // Build dynamic update query
       const fields = [];

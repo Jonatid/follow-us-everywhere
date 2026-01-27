@@ -2,6 +2,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const db = require('../config/db');
 const { authenticateToken } = require('../middleware/auth');
+const { resolveVerificationStatus } = require('../utils/verification');
 
 const router = express.Router();
 
@@ -84,6 +85,25 @@ router.post(
 
       const { platform, url, icon, display_order } = req.body;
 
+      const statusResult = await db.query(
+        `SELECT verification_status,
+                is_approved,
+                is_verified,
+                suspended_reason
+         FROM businesses
+         WHERE id = $1`,
+        [req.businessId]
+      );
+
+      if (statusResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Business not found' });
+      }
+
+      const verificationStatus = resolveVerificationStatus(statusResult.rows[0]);
+      if (!['active', 'flagged'].includes(verificationStatus)) {
+        return res.status(403).json({ error: 'Business is not allowed to update social links' });
+      }
+
       const result = await db.query(
         'INSERT INTO social_links (business_id, platform, url, icon, display_order) VALUES ($1, $2, $3, $4, $5) RETURNING *',
         [req.businessId, platform, url, icon || '', display_order || 0]
@@ -137,6 +157,25 @@ router.put(
 
       const { id } = req.params;
       const { platform, url, icon, display_order, is_active } = req.body;
+
+      const statusResult = await db.query(
+        `SELECT verification_status,
+                is_approved,
+                is_verified,
+                suspended_reason
+         FROM businesses
+         WHERE id = $1`,
+        [req.businessId]
+      );
+
+      if (statusResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Business not found' });
+      }
+
+      const verificationStatus = resolveVerificationStatus(statusResult.rows[0]);
+      if (!['active', 'flagged'].includes(verificationStatus)) {
+        return res.status(403).json({ error: 'Business is not allowed to update social links' });
+      }
 
       // Verify ownership
       const linkCheck = await db.query(
@@ -213,6 +252,25 @@ router.put(
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
+
+    const statusResult = await db.query(
+      `SELECT verification_status,
+              is_approved,
+              is_verified,
+              suspended_reason
+       FROM businesses
+       WHERE id = $1`,
+      [req.businessId]
+    );
+
+    if (statusResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Business not found' });
+    }
+
+    const verificationStatus = resolveVerificationStatus(statusResult.rows[0]);
+    if (!['active', 'flagged'].includes(verificationStatus)) {
+      return res.status(403).json({ error: 'Business is not allowed to delete social links' });
+    }
 
     // Verify ownership
     const linkCheck = await db.query(

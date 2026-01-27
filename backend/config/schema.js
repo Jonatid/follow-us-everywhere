@@ -46,7 +46,14 @@ const ensureSchema = async () => {
         password_hash VARCHAR(255) NOT NULL,
         is_verified BOOLEAN DEFAULT false,
         is_approved BOOLEAN DEFAULT false,
+        suspended_reason TEXT,
         verification_status TEXT NOT NULL DEFAULT 'active',
+        suspended_at TIMESTAMP,
+        disabled_at TIMESTAMP,
+        last_nudge_at TIMESTAMP,
+        nudge_message TEXT,
+        policy_violation_code TEXT,
+        policy_violation_text TEXT,
         community_support_text TEXT,
         community_support_links JSONB,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -57,6 +64,13 @@ const ensureSchema = async () => {
     await pool.query(`
       ALTER TABLE businesses
         ADD COLUMN IF NOT EXISTS verification_status TEXT NOT NULL DEFAULT 'active',
+        ADD COLUMN IF NOT EXISTS suspended_reason TEXT,
+        ADD COLUMN IF NOT EXISTS suspended_at TIMESTAMP,
+        ADD COLUMN IF NOT EXISTS disabled_at TIMESTAMP,
+        ADD COLUMN IF NOT EXISTS last_nudge_at TIMESTAMP,
+        ADD COLUMN IF NOT EXISTS nudge_message TEXT,
+        ADD COLUMN IF NOT EXISTS policy_violation_code TEXT,
+        ADD COLUMN IF NOT EXISTS policy_violation_text TEXT,
         ADD COLUMN IF NOT EXISTS community_support_text TEXT,
         ADD COLUMN IF NOT EXISTS community_support_links JSONB;
     `);
