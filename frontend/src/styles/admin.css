@@ -139,3 +139,35 @@
   align-items: center;
   margin-bottom: 20px;
 }
+
+.admin-divider {
+  border-top: 1px solid #e2e8f0;
+  margin: 24px 0;
+}
+
+.admin-section h2 {
+  margin-bottom: 8px;
+}
+
+.admin-badge-list {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.admin-badge-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.admin-badge-fields {
+  display: grid;
+  gap: 8px;
+  flex: 1;
+}

@@ -27,6 +27,13 @@ const AdminLayout = ({ currentPath, onNavigate, onLogout, children }) => {
           >
             Admins
           </button>
+          <button
+            type="button"
+            className={currentPath === '/admin/badges' ? 'active' : ''}
+            onClick={() => onNavigate('/admin/badges')}
+          >
+            Badges
+          </button>
         </nav>
         <button type="button" className="admin-button secondary" onClick={onLogout}>
           Log out

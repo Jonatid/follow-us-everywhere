@@ -52,7 +52,7 @@ router.post('/signup', [
     const result = await client.query(
       `INSERT INTO businesses (name, slug, tagline, logo, email, password_hash)
        VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id, name, slug, tagline, logo, email, is_verified, is_approved`,
+       RETURNING id, name, slug, tagline, logo, email, is_verified, is_approved, verification_status, community_support_text, community_support_links`,
       [name, slug, tagline || '', logo, email, passwordHash]
     );
 
@@ -185,7 +185,19 @@ router.post('/login', [
 router.get('/me', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, name, slug, tagline, logo, email, is_verified, is_approved FROM businesses WHERE id = $1',
+      `SELECT id,
+              name,
+              slug,
+              tagline,
+              logo,
+              email,
+              is_verified,
+              is_approved,
+              verification_status,
+              community_support_text,
+              community_support_links
+       FROM businesses
+       WHERE id = $1`,
       [req.businessId]
     );
 

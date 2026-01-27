@@ -11,7 +11,15 @@ router.get('/:slug', async (req, res) => {
     const { slug } = req.params;
 
     const result = await pool.query(
-      'SELECT id, name, slug, tagline, logo FROM businesses WHERE slug = $1',
+      `SELECT id,
+              name,
+              slug,
+              tagline,
+              logo,
+              community_support_text,
+              community_support_links
+       FROM businesses
+       WHERE slug = $1`,
       [slug]
     );
 
@@ -39,12 +47,128 @@ router.get('/:slug', async (req, res) => {
 
     business.socials = socialsResult.rows;
 
+    const badgesResult = await pool.query(
+      `SELECT bb.id,
+              bb.awarded_at,
+              bb.evidence_url,
+              bb.notes,
+              b.id AS badge_id,
+              b.name,
+              b.description,
+              b.icon
+       FROM business_badges bb
+       JOIN badges b ON bb.badge_id = b.id
+       WHERE bb.business_id = $1
+       ORDER BY bb.awarded_at DESC, b.name ASC`,
+      [business.id]
+    );
+
+    business.badges = badgesResult.rows;
+
     res.json(business);
   } catch (error) {
     console.error('Error fetching business:', error);
     res.status(500).json({ error: 'Failed to fetch business' });
   }
 });
+
+// Update community support (requires authentication)
+router.put(
+  '/community-support',
+  authenticateToken,
+  [
+    body('community_support_text')
+      .optional({ nullable: true })
+      .trim()
+      .isLength({ max: 2000 })
+      .withMessage('Community support text must be 2000 characters or less'),
+    body('community_support_links')
+      .optional({ nullable: true })
+      .custom((value) => {
+        if (value === null) {
+          return true;
+        }
+        if (!Array.isArray(value)) {
+          throw new Error('Community support links must be an array');
+        }
+        value.forEach((link) => {
+          if (!link || typeof link !== 'object') {
+            throw new Error('Each community support link must be an object');
+          }
+          const label = typeof link.label === 'string' ? link.label.trim() : '';
+          const url = typeof link.url === 'string' ? link.url.trim() : '';
+          if (!label || !url) {
+            throw new Error('Each community support link requires a label and url');
+          }
+        });
+        return true;
+      }),
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const { community_support_text, community_support_links } = req.body;
+
+      if (community_support_text === undefined && community_support_links === undefined) {
+        return res.status(400).json({ error: 'No community support fields to update' });
+      }
+
+      const statusResult = await pool.query(
+        'SELECT verification_status FROM businesses WHERE id = $1',
+        [req.businessId]
+      );
+
+      if (statusResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Business not found' });
+      }
+
+      const verificationStatus = statusResult.rows[0].verification_status;
+      if (!['active', 'flagged'].includes(verificationStatus)) {
+        return res.status(403).json({ error: 'Business is not allowed to update community support' });
+      }
+
+      const fields = [];
+      const values = [];
+      let paramCount = 1;
+
+      if (community_support_text !== undefined) {
+        fields.push(`community_support_text = $${paramCount}`);
+        values.push(community_support_text === null ? null : community_support_text.trim());
+        paramCount++;
+      }
+
+      if (community_support_links !== undefined) {
+        const cleanedLinks = community_support_links === null
+          ? null
+          : community_support_links.map((link) => ({
+              label: link.label.trim(),
+              url: link.url.trim(),
+            }));
+        fields.push(`community_support_links = $${paramCount}`);
+        values.push(cleanedLinks);
+        paramCount++;
+      }
+
+      fields.push('updated_at = CURRENT_TIMESTAMP');
+      values.push(req.businessId);
+
+      const query = `UPDATE businesses SET ${fields.join(', ')} WHERE id = $${paramCount} RETURNING community_support_text, community_support_links`;
+      const result = await pool.query(query, values);
+
+      res.json({
+        message: 'Community support updated successfully',
+        communitySupport: result.rows[0],
+      });
+    } catch (error) {
+      console.error('Error updating community support:', error);
+      res.status(500).json({ error: 'Failed to update community support' });
+    }
+  }
+);
 
 // Update business profile (requires authentication)
 router.put(
