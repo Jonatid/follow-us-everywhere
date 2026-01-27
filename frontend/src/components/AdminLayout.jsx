@@ -22,6 +22,13 @@ const AdminLayout = ({ currentPath, onNavigate, onLogout, children }) => {
           </button>
           <button
             type="button"
+            className={currentPath.startsWith('/admin/reviews') ? 'active' : ''}
+            onClick={() => onNavigate('/admin/reviews')}
+          >
+            Reviews
+          </button>
+          <button
+            type="button"
             className={currentPath === '/admin/admins' ? 'active' : ''}
             onClick={() => onNavigate('/admin/admins')}
           >

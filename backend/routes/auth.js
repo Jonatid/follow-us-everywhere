@@ -5,6 +5,7 @@ const { body, validationResult } = require('express-validator');
 const pool = require('../config/db');
 const { getMissingTables } = require('../config/schema');
 const { authenticateToken } = require('../middleware/auth');
+const { autoDisableBusiness } = require('../utils/businessVerification');
 
 const router = express.Router();
 
@@ -50,9 +51,11 @@ router.post('/signup', [
 
     // Insert business
     const result = await client.query(
-      `INSERT INTO businesses (name, slug, tagline, logo, email, password_hash)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id, name, slug, tagline, logo, email, is_verified, is_approved`,
+      `INSERT INTO businesses (name, slug, tagline, logo, email, password_hash, is_approved)
+       VALUES ($1, $2, $3, $4, $5, $6, true)
+       RETURNING id, name, slug, tagline, logo, email, is_verified, is_approved,
+                 account_type, verification_status, policy_violation_code, policy_violation_text,
+                 last_nudge_at, nudge_message, suspended_at, disabled_at`,
       [name, slug, tagline || '', logo, email, passwordHash]
     );
 
@@ -150,7 +153,8 @@ router.post('/login', [
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    const business = result.rows[0];
+    let business = result.rows[0];
+    business = await autoDisableBusiness(pool, business);
 
     // Check password
     const isMatch = await bcrypt.compare(password, business.password_hash);
@@ -185,7 +189,11 @@ router.post('/login', [
 router.get('/me', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, name, slug, tagline, logo, email, is_verified, is_approved FROM businesses WHERE id = $1',
+      `SELECT id, name, slug, tagline, logo, email, is_verified, is_approved,
+              account_type, verification_status, policy_violation_code, policy_violation_text,
+              last_nudge_at, nudge_message, suspended_at, disabled_at
+       FROM businesses
+       WHERE id = $1`,
       [req.businessId]
     );
 
@@ -193,7 +201,8 @@ router.get('/me', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'Business not found' });
     }
 
-    const business = result.rows[0];
+    let business = result.rows[0];
+    business = await autoDisableBusiness(pool, business);
 
     // Get social links
     const socialsResult = await pool.query(

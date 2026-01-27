@@ -46,6 +46,18 @@ export const fetchAdmins = async () => {
   return response.data;
 };
 
+export const fetchReviewBusinesses = async (status) => {
+  const response = await adminApi.get('/admin/reviews/businesses', {
+    params: status ? { status } : undefined,
+  });
+  return response.data;
+};
+
+export const updateReviewBusiness = async (businessId, payload) => {
+  const response = await adminApi.patch(`/admin/reviews/businesses/${businessId}`, payload);
+  return response.data;
+};
+
 export const createAdmin = async (payload) => {
   const response = await adminApi.post('/admin/admins', payload);
   return response.data;

@@ -10,6 +10,7 @@ const businessesRoutes = require('./routes/businesses');
 const socialsRoutes = require('./routes/socials');
 const adminAuthRoutes = require('./routes/admin-auth');
 const adminRoutes = require('./routes/admin');
+const supportRoutes = require('./routes/support');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -59,6 +60,7 @@ app.use('/api/businesses', businessesRoutes);
 app.use('/api/socials', socialsRoutes);
 app.use('/api/admin/auth', adminAuthRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/support', supportRoutes);
 
 // 404 handler
 app.use((req, res) => {

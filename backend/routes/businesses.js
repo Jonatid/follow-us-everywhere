@@ -2,6 +2,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const pool = require('../config/db');
 const { authenticateToken } = require('../middleware/auth');
+const { autoDisableBusiness, ensureEditableBusiness } = require('../utils/businessVerification');
 
 const router = express.Router();
 
@@ -11,7 +12,7 @@ router.get('/:slug', async (req, res) => {
     const { slug } = req.params;
 
     const result = await pool.query(
-      'SELECT id, name, slug, tagline, logo FROM businesses WHERE slug = $1',
+      'SELECT id, name, slug, tagline, logo, verification_status, suspended_at FROM businesses WHERE slug = $1',
       [slug]
     );
 
@@ -19,7 +20,20 @@ router.get('/:slug', async (req, res) => {
       return res.status(404).json({ error: 'Business not found' });
     }
 
-    const business = result.rows[0];
+    let business = result.rows[0];
+    business = await autoDisableBusiness(pool, business);
+
+    if (business.verification_status === 'disabled') {
+      return res.status(404).json({ error: 'Business not found' });
+    }
+
+    if (business.verification_status === 'suspended') {
+      return res.json({
+        verification_status: 'suspended',
+        message: 'Technical difficulties, check back later',
+        socials: [],
+      });
+    }
 
     const hasIsActiveResult = await pool.query(
       `SELECT 1
@@ -38,6 +52,7 @@ router.get('/:slug', async (req, res) => {
     const socialsResult = await pool.query(socialsQuery, [business.id]);
 
     business.socials = socialsResult.rows;
+    business.verification_status = business.verification_status || 'active';
 
     res.json(business);
   } catch (error) {
@@ -75,6 +90,11 @@ router.put(
       }
 
       const { name, tagline, logo } = req.body;
+
+      const { error } = await ensureEditableBusiness(pool, req.businessId);
+      if (error) {
+        return res.status(error.status).json({ error: error.message });
+      }
 
       // Build dynamic update query
       const fields = [];

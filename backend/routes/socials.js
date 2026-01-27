@@ -2,6 +2,15 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const db = require('../config/db');
 const { authenticateToken } = require('../middleware/auth');
+const { sendEmail } = require('../utils/email');
+const {
+  PERSONAL_PROFILE_POLICY,
+  NUDGE_SUBJECT,
+  getNudgeMessage,
+  isLikelyPersonalProfile,
+  autoDisableBusiness,
+  ensureEditableBusiness,
+} = require('../utils/businessVerification');
 
 const router = express.Router();
 
@@ -12,12 +21,20 @@ router.get('/business/:businessId', async (req, res) => {
 
     // Verify business exists
     const businessCheck = await db.query(
-      'SELECT id FROM businesses WHERE id = $1',
+      'SELECT id, verification_status, suspended_at FROM businesses WHERE id = $1',
       [businessId]
     );
 
     if (businessCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Business not found' });
+    }
+
+    const business = await autoDisableBusiness(db, businessCheck.rows[0]);
+    if (business.verification_status === 'disabled') {
+      return res.status(404).json({ error: 'Business not found' });
+    }
+    if (business.verification_status === 'suspended') {
+      return res.json([]);
     }
 
     const result = await db.query(
@@ -37,13 +54,29 @@ router.get('/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
 
-    const result = await db.query(
-      `SELECT sl.id, sl.platform, sl.url, sl.icon, sl.display_order, sl.is_active
-       FROM social_links sl
-       JOIN businesses b ON sl.business_id = b.id
-       WHERE b.slug = $1 AND sl.is_active = true
-       ORDER BY sl.display_order ASC`,
+    const businessCheck = await db.query(
+      'SELECT id, verification_status, suspended_at FROM businesses WHERE slug = $1',
       [slug]
+    );
+
+    if (businessCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Business not found' });
+    }
+
+    const business = await autoDisableBusiness(db, businessCheck.rows[0]);
+    if (business.verification_status === 'disabled') {
+      return res.status(404).json({ error: 'Business not found' });
+    }
+    if (business.verification_status === 'suspended') {
+      return res.json([]);
+    }
+
+    const result = await db.query(
+      `SELECT id, platform, url, icon, display_order, is_active
+       FROM social_links
+       WHERE business_id = $1 AND is_active = true
+       ORDER BY display_order ASC`,
+      [business.id]
     );
 
     res.json(result.rows);
@@ -84,14 +117,59 @@ router.post(
 
       const { platform, url, icon, display_order } = req.body;
 
+      const { error } = await ensureEditableBusiness(db, req.businessId);
+      if (error) {
+        return res.status(error.status).json({ error: error.message });
+      }
+
       const result = await db.query(
         'INSERT INTO social_links (business_id, platform, url, icon, display_order) VALUES ($1, $2, $3, $4, $5) RETURNING *',
         [req.businessId, platform, url, icon || '', display_order || 0]
       );
 
+      let warning = null;
+      if (isLikelyPersonalProfile(url)) {
+        const nudgeMessage = getNudgeMessage();
+        const updateResult = await db.query(
+          `UPDATE businesses
+           SET verification_status = 'flagged',
+               policy_violation_code = $1,
+               policy_violation_text = $2,
+               nudge_message = $3,
+               last_nudge_at = CURRENT_TIMESTAMP,
+               updated_at = CURRENT_TIMESTAMP
+           WHERE id = $4
+           RETURNING name, email, last_nudge_at`,
+          [
+            PERSONAL_PROFILE_POLICY.code,
+            PERSONAL_PROFILE_POLICY.text,
+            nudgeMessage,
+            req.businessId,
+          ]
+        );
+
+        const business = updateResult.rows[0];
+        if (business?.email) {
+          sendEmail({
+            to: business.email,
+            subject: NUDGE_SUBJECT,
+            text: nudgeMessage,
+          }).catch((emailError) => {
+            console.error('Failed to send nudge email:', emailError);
+          });
+        }
+
+        warning = {
+          message: nudgeMessage,
+          policy: PERSONAL_PROFILE_POLICY,
+          lastNudgeAt: business?.last_nudge_at || null,
+        };
+      }
+
       res.status(201).json({
         message: 'Social link added successfully',
         socialLink: result.rows[0],
+        warning,
       });
     } catch (error) {
       console.error('Error adding social link:', error);
@@ -137,6 +215,11 @@ router.put(
 
       const { id } = req.params;
       const { platform, url, icon, display_order, is_active } = req.body;
+
+      const { error } = await ensureEditableBusiness(db, req.businessId);
+      if (error) {
+        return res.status(error.status).json({ error: error.message });
+      }
 
       // Verify ownership
       const linkCheck = await db.query(
@@ -198,9 +281,49 @@ router.put(
 
       const result = await db.query(query, values);
 
+      let warning = null;
+      if (url && isLikelyPersonalProfile(url)) {
+        const nudgeMessage = getNudgeMessage();
+        const updateResult = await db.query(
+          `UPDATE businesses
+           SET verification_status = 'flagged',
+               policy_violation_code = $1,
+               policy_violation_text = $2,
+               nudge_message = $3,
+               last_nudge_at = CURRENT_TIMESTAMP,
+               updated_at = CURRENT_TIMESTAMP
+           WHERE id = $4
+           RETURNING name, email, last_nudge_at`,
+          [
+            PERSONAL_PROFILE_POLICY.code,
+            PERSONAL_PROFILE_POLICY.text,
+            nudgeMessage,
+            req.businessId,
+          ]
+        );
+
+        const business = updateResult.rows[0];
+        if (business?.email) {
+          sendEmail({
+            to: business.email,
+            subject: NUDGE_SUBJECT,
+            text: nudgeMessage,
+          }).catch((emailError) => {
+            console.error('Failed to send nudge email:', emailError);
+          });
+        }
+
+        warning = {
+          message: nudgeMessage,
+          policy: PERSONAL_PROFILE_POLICY,
+          lastNudgeAt: business?.last_nudge_at || null,
+        };
+      }
+
       res.json({
         message: 'Social link updated successfully',
         socialLink: result.rows[0],
+        warning,
       });
     } catch (error) {
       console.error('Error updating social link:', error);
@@ -213,6 +336,11 @@ router.put(
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
+
+    const { error } = await ensureEditableBusiness(db, req.businessId);
+    if (error) {
+      return res.status(error.status).json({ error: error.message });
+    }
 
     // Verify ownership
     const linkCheck = await db.query(

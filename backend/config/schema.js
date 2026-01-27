@@ -44,6 +44,14 @@ const ensureSchema = async () => {
         password_hash VARCHAR(255) NOT NULL,
         is_verified BOOLEAN DEFAULT false,
         is_approved BOOLEAN DEFAULT false,
+        account_type TEXT NOT NULL DEFAULT 'business',
+        verification_status TEXT NOT NULL DEFAULT 'active',
+        policy_violation_code TEXT NULL,
+        policy_violation_text TEXT NULL,
+        last_nudge_at TIMESTAMP NULL,
+        nudge_message TEXT NULL,
+        suspended_at TIMESTAMP NULL,
+        disabled_at TIMESTAMP NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );

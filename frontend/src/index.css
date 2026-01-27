@@ -271,6 +271,43 @@ body {
   border: 1px solid #fecaca;
 }
 
+.alert-success {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.banner {
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 20px;
+  border: 1px solid transparent;
+}
+
+.banner-info {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #312e81;
+}
+
+.banner-warning {
+  background: #fef3c7;
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+.banner-text {
+  margin: 6px 0 0;
+}
+
+.banner-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+  margin-top: 8px;
+}
+
 .dashboard {
   min-height: 100vh;
   background: var(--bg);
