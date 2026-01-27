@@ -2,7 +2,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const db = require('../config/db');
 const { authenticateToken } = require('../middleware/auth');
-const { resolveVerificationStatus } = require('../utils/verification');
+const { resolveVerificationStatus, buildAccountRestrictionError } = require('../utils/verification');
 
 const router = express.Router();
 
@@ -89,7 +89,12 @@ router.post(
         `SELECT verification_status,
                 is_approved,
                 is_verified,
-                suspended_reason
+                suspended_reason,
+                suspended_at,
+                disabled_at,
+                policy_violation_code,
+                policy_violation_text,
+                nudge_message
          FROM businesses
          WHERE id = $1`,
         [req.businessId]
@@ -101,7 +106,8 @@ router.post(
 
       const verificationStatus = resolveVerificationStatus(statusResult.rows[0]);
       if (!['active', 'flagged'].includes(verificationStatus)) {
-        return res.status(403).json({ error: 'Business is not allowed to update social links' });
+        const restrictionError = buildAccountRestrictionError(statusResult.rows[0]);
+        return res.status(403).json(restrictionError);
       }
 
       const result = await db.query(
@@ -162,7 +168,12 @@ router.put(
         `SELECT verification_status,
                 is_approved,
                 is_verified,
-                suspended_reason
+                suspended_reason,
+                suspended_at,
+                disabled_at,
+                policy_violation_code,
+                policy_violation_text,
+                nudge_message
          FROM businesses
          WHERE id = $1`,
         [req.businessId]
@@ -174,7 +185,8 @@ router.put(
 
       const verificationStatus = resolveVerificationStatus(statusResult.rows[0]);
       if (!['active', 'flagged'].includes(verificationStatus)) {
-        return res.status(403).json({ error: 'Business is not allowed to update social links' });
+        const restrictionError = buildAccountRestrictionError(statusResult.rows[0]);
+        return res.status(403).json(restrictionError);
       }
 
       // Verify ownership
@@ -257,7 +269,12 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       `SELECT verification_status,
               is_approved,
               is_verified,
-              suspended_reason
+              suspended_reason,
+              suspended_at,
+              disabled_at,
+              policy_violation_code,
+              policy_violation_text,
+              nudge_message
        FROM businesses
        WHERE id = $1`,
       [req.businessId]
@@ -269,7 +286,8 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 
     const verificationStatus = resolveVerificationStatus(statusResult.rows[0]);
     if (!['active', 'flagged'].includes(verificationStatus)) {
-      return res.status(403).json({ error: 'Business is not allowed to delete social links' });
+      const restrictionError = buildAccountRestrictionError(statusResult.rows[0]);
+      return res.status(403).json(restrictionError);
     }
 
     // Verify ownership
