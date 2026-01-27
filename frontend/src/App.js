@@ -24,6 +24,12 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+const getApiErrorMessage = (error, fallback = 'Something went wrong. Please try again.') =>
+  error?.response?.data?.message ||
+  error?.response?.data?.error ||
+  error?.message ||
+  fallback;
+
 // =============================================================================
 // LANDING PAGE
 // =============================================================================
@@ -254,14 +260,19 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
   const [supportText, setSupportText] = useState('');
   const [supportLinks, setSupportLinks] = useState([]);
   const [supportSaving, setSupportSaving] = useState(false);
+  const [actionError, setActionError] = useState('');
 
   const verificationStatus = business.verification_status;
+  const nudgeMessage = business.nudge_message;
+  const policyText = business.policy_violation_text;
+  const policyCode = business.policy_violation_code;
+  const lastNudgeAt = business.last_nudge_at;
   const canEditBusiness = ['active', 'flagged'].includes(verificationStatus);
   const canEditCommunitySupport = canEditBusiness;
   const showStatusBanner = ['flagged', 'suspended', 'disabled'].includes(verificationStatus);
   const statusBannerMessage =
-    business.nudge_message ||
-    business.policy_violation_text ||
+    nudgeMessage ||
+    policyText ||
     (verificationStatus === 'flagged'
       ? 'Your account requires review. Please confirm your details and respond to the latest request.'
       : verificationStatus === 'suspended'
@@ -298,6 +309,7 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
       return;
     }
     setSaving(true);
+    setActionError('');
     try {
       const social = business.socials[index];
       await api.put(`/socials/${social.id}`, { url: tempUrl });
@@ -305,7 +317,7 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
       setEditingIndex(null);
       onRefresh();
     } catch (err) {
-      alert(`Failed to update link: ${err.response?.data?.message || 'Unknown error'}`);
+      setActionError(getApiErrorMessage(err, 'Failed to update link. Please try again.'));
     } finally {
       setSaving(false);
     }
@@ -332,6 +344,7 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
       return;
     }
     setSupportSaving(true);
+    setActionError('');
     try {
       const filteredLinks = supportLinks
         .map((link) => ({ label: link.label?.trim() || '', url: link.url?.trim() || '' }))
@@ -343,7 +356,7 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
       alert('Community support updated successfully!');
       onRefresh();
     } catch (err) {
-      alert(`Failed to update community support: ${err.response?.data?.message || 'Unknown error'}`);
+      setActionError(getApiErrorMessage(err, 'Failed to update community support. Please try again.'));
     } finally {
       setSupportSaving(false);
     }
@@ -361,6 +374,7 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
             <h2 className="heading-md">{business.name}</h2>
             <p className="subtitle">{business.tagline}</p>
           </div>
+          {actionError && <div className="alert alert-error">{actionError}</div>}
           {showStatusBanner && (
             <div className="alert alert-error">
               <p className="text-strong">
@@ -371,8 +385,15 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
                   : 'Account disabled'}
               </p>
               <p>{statusBannerMessage}</p>
-              {business.policy_violation_code && (
-                <p className="muted-text">Policy reference: {business.policy_violation_code}</p>
+              {nudgeMessage && nudgeMessage !== statusBannerMessage && <p>{nudgeMessage}</p>}
+              {policyText && policyText !== statusBannerMessage && (
+                <p className="muted-text">Policy details: {policyText}</p>
+              )}
+              {policyCode && (
+                <p className="muted-text">Policy reference: {policyCode}</p>
+              )}
+              {lastNudgeAt && (
+                <p className="muted-text">Last update: {new Date(lastNudgeAt).toLocaleString()}</p>
               )}
             </div>
           )}
@@ -582,7 +603,13 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
     );
   }
 
-  if (['suspended', 'disabled'].includes(business.verification_status)) {
+  const publicStatus = business.status || business.verification_status;
+  const publicMessage = business.message || '';
+  const isPublicRestricted =
+    ['suspended', 'disabled'].includes(publicStatus) ||
+    publicMessage.toLowerCase().includes('technical difficulties');
+
+  if (isPublicRestricted) {
     return (
       <div className="page page--gradient">
         <div className="card card--medium">

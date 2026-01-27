@@ -2,7 +2,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const pool = require('../config/db');
 const { authenticateToken } = require('../middleware/auth');
-const { resolveVerificationStatus } = require('../utils/verification');
+const { resolveVerificationStatus, buildAccountRestrictionError } = require('../utils/verification');
 
 const router = express.Router();
 
@@ -32,6 +32,7 @@ router.get('/:slug', async (req, res) => {
 
     const business = result.rows[0];
     business.verification_status = resolveVerificationStatus(business);
+    const isRestricted = ['suspended', 'disabled'].includes(business.verification_status);
 
     if (business.verification_status === 'disabled' && business.disabled_at) {
       const disabledAt = new Date(business.disabled_at);
@@ -57,7 +58,11 @@ router.get('/:slug', async (req, res) => {
     `;
     const socialsResult = await pool.query(socialsQuery, [business.id]);
 
-    business.socials = socialsResult.rows;
+    business.socials = isRestricted ? [] : socialsResult.rows;
+    if (isRestricted) {
+      business.status = business.verification_status;
+      business.message = 'This page is temporarily unavailable due to technical difficulties.';
+    }
 
     const badgesResult = await pool.query(
       `SELECT bb.id,
@@ -134,7 +139,12 @@ router.put(
         `SELECT verification_status,
                 is_approved,
                 is_verified,
-                suspended_reason
+                suspended_reason,
+                suspended_at,
+                disabled_at,
+                policy_violation_code,
+                policy_violation_text,
+                nudge_message
          FROM businesses
          WHERE id = $1`,
         [req.businessId]
@@ -146,7 +156,8 @@ router.put(
 
       const verificationStatus = resolveVerificationStatus(statusResult.rows[0]);
       if (!['active', 'flagged'].includes(verificationStatus)) {
-        return res.status(403).json({ error: 'Business is not allowed to update community support' });
+        const restrictionError = buildAccountRestrictionError(statusResult.rows[0]);
+        return res.status(403).json(restrictionError);
       }
 
       const fields = [];
@@ -222,7 +233,12 @@ router.put(
         `SELECT verification_status,
                 is_approved,
                 is_verified,
-                suspended_reason
+                suspended_reason,
+                suspended_at,
+                disabled_at,
+                policy_violation_code,
+                policy_violation_text,
+                nudge_message
          FROM businesses
          WHERE id = $1`,
         [req.businessId]
@@ -234,7 +250,8 @@ router.put(
 
       const verificationStatus = resolveVerificationStatus(statusResult.rows[0]);
       if (!['active', 'flagged'].includes(verificationStatus)) {
-        return res.status(403).json({ error: 'Business is not allowed to update profile information' });
+        const restrictionError = buildAccountRestrictionError(statusResult.rows[0]);
+        return res.status(403).json(restrictionError);
       }
 
       // Build dynamic update query
