@@ -268,12 +268,20 @@ body {
   padding: 10px 14px;
   font-size: 0.9rem;
   margin-top: 12px;
+  background: #f1f5f9;
+  color: var(--text);
+  border: 1px solid var(--border);
 }
 
 .alert-error {
   background: #fee2e2;
   color: #b91c1c;
   border: 1px solid #fecaca;
+}
+
+.field-error {
+  color: #b91c1c;
+  font-size: 0.85rem;
 }
 
 .dashboard {

@@ -100,6 +100,17 @@ const ensureSchema = async () => {
     `);
 
     await pool.query(`
+      CREATE TABLE IF NOT EXISTS password_reset_tokens (
+        id SERIAL PRIMARY KEY,
+        business_id INTEGER NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+        token VARCHAR(255) UNIQUE NOT NULL,
+        expires_at TIMESTAMP NOT NULL,
+        used_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS badges (
         id SERIAL PRIMARY KEY,
         name TEXT UNIQUE NOT NULL,
@@ -129,6 +140,8 @@ const ensureSchema = async () => {
     await pool.query('CREATE INDEX IF NOT EXISTS idx_admins_email ON admins(email);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_business_badges_business_id ON business_badges(business_id);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_business_badges_badge_id ON business_badges(badge_id);');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token ON password_reset_tokens(token);');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_business_id ON password_reset_tokens(business_id);');
   } catch (error) {
     if (error.code === '42501') {
       const dbUser = process.env.DATABASE_URL

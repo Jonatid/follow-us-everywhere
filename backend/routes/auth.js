@@ -6,21 +6,39 @@ const pool = require('../config/db');
 const { getMissingTables } = require('../config/schema');
 const { authenticateToken } = require('../middleware/auth');
 const { resolveVerificationStatus } = require('../utils/verification');
+const { sendPasswordResetEmail } = require('../utils/email');
+const crypto = require('crypto');
 
 const router = express.Router();
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,64}$/;
+const PASSWORD_ERROR_MESSAGE =
+  'Password must be at least 12 characters and include at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character.';
+
+const handleValidationErrors = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: errors.array()[0].msg });
+  }
+  return null;
+};
 
 // @route   POST /api/auth/signup
 // @desc    Register new business
 // @access  Public
 router.post('/signup', [
   body('email').isEmail(),
-  body('password').isLength({ min: 6 }),
+  body('password').custom((value) => {
+    if (!PASSWORD_REGEX.test(value || '')) {
+      throw new Error(PASSWORD_ERROR_MESSAGE);
+    }
+    return true;
+  }),
   body('name').notEmpty(),
   body('slug').notEmpty()
 ], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+  const errorResponse = handleValidationErrors(req, res);
+  if (errorResponse) {
+    return errorResponse;
   }
 
   const { name, slug, tagline, email, password } = req.body;
@@ -147,9 +165,9 @@ router.post('/login', [
   body('email').isEmail(),
   body('password').exists()
 ], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+  const errorResponse = handleValidationErrors(req, res);
+  if (errorResponse) {
+    return errorResponse;
   }
 
   const { email, password } = req.body;
@@ -211,6 +229,120 @@ router.post('/login', [
     res.json({ token, business: businessData });
   } catch (err) {
     console.error('Login error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/auth/forgot-password
+// @desc    Send reset password email
+// @access  Public
+router.post('/forgot-password', [
+  body('email').isEmail()
+], async (req, res) => {
+  const errorResponse = handleValidationErrors(req, res);
+  if (errorResponse) {
+    return errorResponse;
+  }
+
+  const { email } = req.body;
+  const responseMessage = 'If that email exists, we sent a reset link.';
+
+  try {
+    const businessResult = await pool.query(
+      'SELECT id, name, email FROM businesses WHERE email = $1',
+      [email]
+    );
+
+    if (businessResult.rows.length === 0) {
+      return res.json({ message: responseMessage });
+    }
+
+    const business = businessResult.rows[0];
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+    await pool.query(
+      `UPDATE password_reset_tokens
+       SET used_at = NOW()
+       WHERE business_id = $1 AND used_at IS NULL`,
+      [business.id]
+    );
+
+    await pool.query(
+      `INSERT INTO password_reset_tokens (business_id, token, expires_at)
+       VALUES ($1, $2, $3)`,
+      [business.id, token, expiresAt]
+    );
+
+    const baseUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:3000';
+    const resetUrl = `${baseUrl}/reset-password?token=${token}`;
+
+    await sendPasswordResetEmail({
+      toEmail: business.email,
+      resetUrl,
+      businessName: business.name
+    });
+
+    return res.json({ message: responseMessage });
+  } catch (err) {
+    console.error('Forgot password error:', err);
+    return res.json({ message: responseMessage });
+  }
+});
+
+// @route   POST /api/auth/reset-password
+// @desc    Reset business password with token
+// @access  Public
+router.post('/reset-password', [
+  body('token').notEmpty().withMessage('Reset token is required.'),
+  body('password').custom((value) => {
+    if (!PASSWORD_REGEX.test(value || '')) {
+      throw new Error(PASSWORD_ERROR_MESSAGE);
+    }
+    return true;
+  })
+], async (req, res) => {
+  const errorResponse = handleValidationErrors(req, res);
+  if (errorResponse) {
+    return errorResponse;
+  }
+
+  const { token, password } = req.body;
+
+  try {
+    const tokenResult = await pool.query(
+      `SELECT id, business_id, expires_at, used_at
+       FROM password_reset_tokens
+       WHERE token = $1`,
+      [token]
+    );
+
+    if (tokenResult.rows.length === 0) {
+      return res.status(400).json({ message: 'Reset link is invalid or has expired.' });
+    }
+
+    const resetToken = tokenResult.rows[0];
+    const isExpired = new Date(resetToken.expires_at) < new Date();
+    if (resetToken.used_at || isExpired) {
+      return res.status(400).json({ message: 'Reset link is invalid or has expired.' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    await pool.query(
+      'UPDATE businesses SET password_hash = $1 WHERE id = $2',
+      [passwordHash, resetToken.business_id]
+    );
+
+    await pool.query(
+      'UPDATE password_reset_tokens SET used_at = NOW() WHERE id = $1',
+      [resetToken.id]
+    );
+
+    res.json({ message: 'Password updated successfully. Please log in with your new password.' });
+  } catch (err) {
+    console.error('Reset password error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });

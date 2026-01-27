@@ -55,6 +55,16 @@ CREATE TABLE IF NOT EXISTS admins (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Create password reset tokens table
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id SERIAL PRIMARY KEY,
+    business_id INTEGER NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+    token VARCHAR(255) UNIQUE NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    used_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Create badges table
 CREATE TABLE IF NOT EXISTS badges (
     id SERIAL PRIMARY KEY,
@@ -84,6 +94,8 @@ CREATE INDEX idx_social_links_platform ON social_links(platform);
 CREATE INDEX idx_admins_email ON admins(email);
 CREATE INDEX idx_business_badges_business_id ON business_badges(business_id);
 CREATE INDEX idx_business_badges_badge_id ON business_badges(badge_id);
+CREATE INDEX idx_password_reset_tokens_token ON password_reset_tokens(token);
+CREATE INDEX idx_password_reset_tokens_business_id ON password_reset_tokens(business_id);
 
 -- Insert sample data (optional)
 -- INSERT INTO businesses (username, email, password_hash, business_name, business_description, bio)

@@ -30,6 +30,10 @@ const getApiErrorMessage = (error, fallback = 'Something went wrong. Please try 
   error?.message ||
   fallback;
 
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,64}$/;
+const PASSWORD_HELPER =
+  'Password must be at least 12 characters and include at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character.';
+
 // =============================================================================
 // LANDING PAGE
 // =============================================================================
@@ -59,7 +63,14 @@ const LandingPage = ({ onNavigate }) => (
 // =============================================================================
 
 const BusinessSignup = ({ onNavigate, onLoginSuccess }) => {
-  const [formData, setFormData] = useState({ name: '', slug: '', tagline: '', email: '', password: '' });
+  const [formData, setFormData] = useState({
+    name: '',
+    slug: '',
+    tagline: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -77,10 +88,24 @@ const BusinessSignup = ({ onNavigate, onLoginSuccess }) => {
       setError('Please fill in all required fields');
       return;
     }
+    if (!PASSWORD_REGEX.test(formData.password)) {
+      setError(PASSWORD_HELPER);
+      return;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
 
     setLoading(true);
     try {
-      const response = await api.post('/auth/signup', formData);
+      const response = await api.post('/auth/signup', {
+        name: formData.name,
+        slug: formData.slug,
+        tagline: formData.tagline,
+        email: formData.email,
+        password: formData.password
+      });
       localStorage.setItem('token', response.data.token);
       onLoginSuccess(response.data.business);
     } catch (err) {
@@ -157,6 +182,23 @@ const BusinessSignup = ({ onNavigate, onLoginSuccess }) => {
               className="input"
               placeholder="Create a password"
             />
+            {formData.password && !PASSWORD_REGEX.test(formData.password) && (
+              <span className="field-error">{PASSWORD_HELPER}</span>
+            )}
+          </div>
+          <div className="field">
+            <label className="label" htmlFor="signup-confirm-password">Confirm Password *</label>
+            <input
+              id="signup-confirm-password"
+              type="password"
+              value={formData.confirmPassword}
+              onChange={(e) => handleChange('confirmPassword', e.target.value)}
+              className="input"
+              placeholder="Re-enter your password"
+            />
+            {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+              <span className="field-error">Passwords do not match.</span>
+            )}
           </div>
           <button type="button" onClick={handleSubmit} disabled={loading} className="button button-primary button-full">
             {loading ? 'Creating Account...' : 'Create Account & Continue'}
@@ -239,9 +281,169 @@ const BusinessLogin = ({ onNavigate, onLoginSuccess }) => {
           </button>
         </div>
         <p className="helper-text text-center">
+          <button type="button" onClick={() => onNavigate('forgot')} className="link-button link-button--inline">
+            Forgot password?
+          </button>
+        </p>
+        <p className="helper-text text-center">
           Don't have an account?{' '}
           <button type="button" onClick={() => onNavigate('signup')} className="link-button link-button--inline">
             Sign up
+          </button>
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// =============================================================================
+// BUSINESS FORGOT PASSWORD
+// =============================================================================
+
+const BusinessForgotPassword = ({ onNavigate }) => {
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = async () => {
+    setError('');
+    setMessage('');
+    if (!email) {
+      setError('Please enter your email address.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await api.post('/auth/forgot-password', { email });
+      setMessage(response.data?.message || 'If that email exists, we sent a reset link.');
+    } catch (err) {
+      setMessage('If that email exists, we sent a reset link.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="page page--gradient">
+      <div className="card card--medium">
+        <button type="button" onClick={() => onNavigate('login')} className="link-button">← Back</button>
+        <div className="stack-sm text-center">
+          <h1 className="heading-xl">Reset your password</h1>
+          <p className="subtitle">We&apos;ll email you a secure reset link.</p>
+        </div>
+        {error && <div className="alert alert-error">{error}</div>}
+        {message && <div className="alert">{message}</div>}
+        <div className="stack-md">
+          <div className="field">
+            <label className="label" htmlFor="forgot-email">Email</label>
+            <input
+              id="forgot-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="input"
+              placeholder="you@business.com"
+            />
+          </div>
+          <button type="button" onClick={handleSubmit} disabled={loading} className="button button-primary button-full">
+            {loading ? 'Sending...' : 'Send reset link'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// =============================================================================
+// BUSINESS RESET PASSWORD
+// =============================================================================
+
+const BusinessResetPassword = ({ onNavigate, token }) => {
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+
+  const passwordInvalid = password && !PASSWORD_REGEX.test(password);
+  const confirmMismatch = confirmPassword && password !== confirmPassword;
+
+  const handleSubmit = async () => {
+    setError('');
+    setMessage('');
+    if (!token) {
+      setError('Reset token is missing.');
+      return;
+    }
+    if (!password) {
+      setError('Please enter your new password.');
+      return;
+    }
+    if (!PASSWORD_REGEX.test(password)) {
+      setError(PASSWORD_HELPER);
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await api.post('/auth/reset-password', { token, password });
+      setMessage(response.data?.message || 'Password updated successfully.');
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Unable to reset password. Please try again.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="page page--gradient">
+      <div className="card card--medium">
+        <button type="button" onClick={() => onNavigate('login')} className="link-button">← Back</button>
+        <div className="stack-sm text-center">
+          <h1 className="heading-xl">Choose a new password</h1>
+          <p className="subtitle">Your new password must meet our security requirements.</p>
+        </div>
+        {error && <div className="alert alert-error">{error}</div>}
+        {message && <div className="alert">{message}</div>}
+        <div className="stack-md">
+          <div className="field">
+            <label className="label" htmlFor="reset-password">New Password</label>
+            <input
+              id="reset-password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="input"
+              placeholder="Create a new password"
+            />
+            {passwordInvalid && <span className="field-error">{PASSWORD_HELPER}</span>}
+          </div>
+          <div className="field">
+            <label className="label" htmlFor="reset-confirm-password">Confirm Password</label>
+            <input
+              id="reset-confirm-password"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="input"
+              placeholder="Re-enter your new password"
+            />
+            {confirmMismatch && <span className="field-error">Passwords do not match.</span>}
+          </div>
+          <button type="button" onClick={handleSubmit} disabled={loading} className="button button-primary button-full">
+            {loading ? 'Updating...' : 'Update password'}
+          </button>
+        </div>
+        <p className="helper-text text-center">
+          Remembered your password?{' '}
+          <button type="button" onClick={() => onNavigate('login')} className="link-button link-button--inline">
+            Back to login
           </button>
         </p>
       </div>
@@ -736,8 +938,17 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState('landing');
   const [currentBusiness, setCurrentBusiness] = useState(null);
   const [publicSlug, setPublicSlug] = useState(null);
+  const [resetToken, setResetToken] = useState(null);
 
   useEffect(() => {
+    const { pathname, search } = window.location;
+    if (pathname === '/reset-password') {
+      const params = new URLSearchParams(search);
+      setResetToken(params.get('token'));
+      setCurrentScreen('reset');
+      return;
+    }
+
     const token = localStorage.getItem('token');
     if (token) {
       fetchCurrentBusiness();
@@ -780,6 +991,10 @@ export default function App() {
         return <BusinessSignup onNavigate={handleNavigate} onLoginSuccess={handleLoginSuccess} />;
       case 'login':
         return <BusinessLogin onNavigate={handleNavigate} onLoginSuccess={handleLoginSuccess} />;
+      case 'forgot':
+        return <BusinessForgotPassword onNavigate={handleNavigate} />;
+      case 'reset':
+        return <BusinessResetPassword onNavigate={handleNavigate} token={resetToken} />;
       case 'dashboard':
         return currentBusiness ? (
           <BusinessDashboard
