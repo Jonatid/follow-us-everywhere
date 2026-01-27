@@ -3,6 +3,7 @@ import AdminLayout from '../../components/AdminLayout';
 import AdminDashboard from './AdminDashboard';
 import AdminLogin from './AdminLogin';
 import AdminManagement from './AdminManagement';
+import BadgeManagement from './BadgeManagement';
 import BusinessDetail from './BusinessDetail';
 import BusinessList from './BusinessList';
 
@@ -58,6 +59,8 @@ const AdminApp = () => {
     content = <BusinessDetail businessId={businessId} onBack={() => navigate('/admin/businesses')} />;
   } else if (currentPath === '/admin/admins') {
     content = <AdminManagement />;
+  } else if (currentPath === '/admin/badges') {
+    content = <BadgeManagement />;
   } else {
     content = (
       <div className="admin-card">

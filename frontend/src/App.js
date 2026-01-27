@@ -251,6 +251,16 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
   const [editingIndex, setEditingIndex] = useState(null);
   const [tempUrl, setTempUrl] = useState('');
   const [saving, setSaving] = useState(false);
+  const [supportText, setSupportText] = useState('');
+  const [supportLinks, setSupportLinks] = useState([]);
+  const [supportSaving, setSupportSaving] = useState(false);
+
+  const canEditCommunitySupport = ['active', 'flagged'].includes(business.verification_status);
+
+  useEffect(() => {
+    setSupportText(business.community_support_text || '');
+    setSupportLinks(Array.isArray(business.community_support_links) ? business.community_support_links : []);
+  }, [business]);
 
   const handleCopyLink = () => {
     const link = `https://follow-us-everywhere-web.onrender.com/${business.slug}`;
@@ -281,6 +291,44 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
       alert(`Failed to update link: ${err.response?.data?.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSupportLinkChange = (index, field, value) => {
+    setSupportLinks((prev) =>
+      prev.map((link, linkIndex) =>
+        linkIndex === index ? { ...link, [field]: value } : link
+      )
+    );
+  };
+
+  const handleAddSupportLink = () => {
+    setSupportLinks((prev) => [...prev, { label: '', url: '' }]);
+  };
+
+  const handleRemoveSupportLink = (index) => {
+    setSupportLinks((prev) => prev.filter((_, linkIndex) => linkIndex !== index));
+  };
+
+  const handleSaveCommunitySupport = async () => {
+    if (!canEditCommunitySupport) {
+      return;
+    }
+    setSupportSaving(true);
+    try {
+      const filteredLinks = supportLinks
+        .map((link) => ({ label: link.label?.trim() || '', url: link.url?.trim() || '' }))
+        .filter((link) => link.label && link.url);
+      await api.put('/businesses/community-support', {
+        community_support_text: supportText,
+        community_support_links: filteredLinks.length ? filteredLinks : [],
+      });
+      alert('Community support updated successfully!');
+      onRefresh();
+    } catch (err) {
+      alert(`Failed to update community support: ${err.response?.data?.message || 'Unknown error'}`);
+    } finally {
+      setSupportSaving(false);
     }
   };
 
@@ -357,6 +405,82 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
               </div>
             ))}
           </div>
+          <div className="section-divider" />
+          <div className="stack-sm">
+            <h2 className="heading-md">Community Support</h2>
+            <p className="muted-text">
+              Share how your business supports the community. This appears publicly as “Submitted by business.”
+            </p>
+            {!canEditCommunitySupport && (
+              <div className="alert alert-error">
+                Community support updates are disabled while your account is suspended or disabled.
+              </div>
+            )}
+            <div className="field">
+              <label className="label" htmlFor="community-support-text">Support summary</label>
+              <textarea
+                id="community-support-text"
+                className="input textarea"
+                value={supportText}
+                onChange={(event) => setSupportText(event.target.value)}
+                placeholder="Example: We sponsor local youth programs and donate meals weekly."
+                disabled={!canEditCommunitySupport}
+              />
+            </div>
+            <div className="stack-sm">
+              <div className="row space-between">
+                <p className="text-strong">Support links (optional)</p>
+                <button
+                  type="button"
+                  className="link-button link-button--inline"
+                  onClick={handleAddSupportLink}
+                  disabled={!canEditCommunitySupport}
+                >
+                  + Add link
+                </button>
+              </div>
+              {supportLinks.length === 0 ? (
+                <p className="muted-text">Add links to press coverage, partnerships, or community pages.</p>
+              ) : (
+                supportLinks.map((link, index) => (
+                  <div key={`support-link-${index}`} className="support-link-row">
+                    <input
+                      type="text"
+                      className="input"
+                      value={link.label || ''}
+                      onChange={(event) => handleSupportLinkChange(index, 'label', event.target.value)}
+                      placeholder="Link label"
+                      disabled={!canEditCommunitySupport}
+                    />
+                    <input
+                      type="url"
+                      className="input"
+                      value={link.url || ''}
+                      onChange={(event) => handleSupportLinkChange(index, 'url', event.target.value)}
+                      placeholder="https://"
+                      disabled={!canEditCommunitySupport}
+                    />
+                    <button
+                      type="button"
+                      className="link-button"
+                      onClick={() => handleRemoveSupportLink(index)}
+                      disabled={!canEditCommunitySupport}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+            <button
+              type="button"
+              className="button button-primary"
+              onClick={handleSaveCommunitySupport}
+              disabled={!canEditCommunitySupport || supportSaving}
+            >
+              {supportSaving ? 'Saving...' : 'Save Community Support'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -416,6 +540,8 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
   }
 
   const activeSocials = business.socials.filter((s) => s.url);
+  const supportLinks = Array.isArray(business.community_support_links) ? business.community_support_links : [];
+  const badges = Array.isArray(business.badges) ? business.badges : [];
 
   return (
     <div className="page page--gradient">
@@ -471,6 +597,47 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
               </>
             )}
           </>
+        )}
+        {(business.community_support_text || supportLinks.length > 0) && (
+          <div className="public-section">
+            <h2 className="heading-md">Submitted by business</h2>
+            {business.community_support_text && (
+              <p className="muted-text">{business.community_support_text}</p>
+            )}
+            {supportLinks.length > 0 && (
+              <div className="support-links">
+                {supportLinks.map((link, index) => (
+                  <a
+                    key={`${link.url}-${index}`}
+                    href={link.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="support-link"
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+        {badges.length > 0 && (
+          <div className="public-section">
+            <h2 className="heading-md">Community Impact (Verified)</h2>
+            <div className="badge-grid">
+              {badges.map((badge) => (
+                <div key={badge.id} className="badge-card">
+                  <div className="badge-header">
+                    {badge.icon && <span className="badge-icon">{badge.icon}</span>}
+                    <div>
+                      <p className="text-strong">{badge.name}</p>
+                      <p className="muted-text">{badge.description}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </div>

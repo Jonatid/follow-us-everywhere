@@ -51,4 +51,39 @@ export const createAdmin = async (payload) => {
   return response.data;
 };
 
+export const fetchBadges = async () => {
+  const response = await adminApi.get('/admin/badges');
+  return response.data;
+};
+
+export const createBadge = async (payload) => {
+  const response = await adminApi.post('/admin/badges', payload);
+  return response.data;
+};
+
+export const updateBadge = async (badgeId, payload) => {
+  const response = await adminApi.put(`/admin/badges/${badgeId}`, payload);
+  return response.data;
+};
+
+export const deleteBadge = async (badgeId) => {
+  const response = await adminApi.delete(`/admin/badges/${badgeId}`);
+  return response.data;
+};
+
+export const fetchBusinessBadges = async (businessId) => {
+  const response = await adminApi.get(`/admin/businesses/${businessId}/badges`);
+  return response.data;
+};
+
+export const assignBusinessBadge = async (businessId, payload) => {
+  const response = await adminApi.post(`/admin/businesses/${businessId}/badges`, payload);
+  return response.data;
+};
+
+export const removeBusinessBadge = async (businessId, badgeId) => {
+  const response = await adminApi.delete(`/admin/businesses/${businessId}/badges/${badgeId}`);
+  return response.data;
+};
+
 export default adminApi;

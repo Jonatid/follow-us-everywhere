@@ -5,7 +5,9 @@ const REQUIRED_TABLES = [
   'social_links',
   'email_verification_tokens',
   'password_reset_tokens',
-  'admins'
+  'admins',
+  'badges',
+  'business_badges'
 ];
 
 const getMissingTables = async (client = pool) => {
@@ -44,9 +46,19 @@ const ensureSchema = async () => {
         password_hash VARCHAR(255) NOT NULL,
         is_verified BOOLEAN DEFAULT false,
         is_approved BOOLEAN DEFAULT false,
+        verification_status TEXT NOT NULL DEFAULT 'active',
+        community_support_text TEXT,
+        community_support_links JSONB,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+    `);
+
+    await pool.query(`
+      ALTER TABLE businesses
+        ADD COLUMN IF NOT EXISTS verification_status TEXT NOT NULL DEFAULT 'active',
+        ADD COLUMN IF NOT EXISTS community_support_text TEXT,
+        ADD COLUMN IF NOT EXISTS community_support_links JSONB;
     `);
 
     await pool.query(`
@@ -73,11 +85,36 @@ const ensureSchema = async () => {
       );
     `);
 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS badges (
+        id SERIAL PRIMARY KEY,
+        name TEXT UNIQUE NOT NULL,
+        description TEXT NOT NULL,
+        icon TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS business_badges (
+        id SERIAL PRIMARY KEY,
+        business_id INTEGER NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+        badge_id INTEGER NOT NULL REFERENCES badges(id) ON DELETE CASCADE,
+        awarded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        evidence_url TEXT,
+        notes TEXT,
+        awarded_by_admin_id INTEGER REFERENCES admins(id) ON DELETE SET NULL,
+        UNIQUE (business_id, badge_id)
+      );
+    `);
+
     await pool.query('CREATE INDEX IF NOT EXISTS idx_businesses_slug ON businesses(slug);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_businesses_email ON businesses(email);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_social_links_business_id ON social_links(business_id);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_social_links_platform ON social_links(platform);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_admins_email ON admins(email);');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_business_badges_business_id ON business_badges(business_id);');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_business_badges_badge_id ON business_badges(badge_id);');
   } catch (error) {
     if (error.code === '42501') {
       const dbUser = process.env.DATABASE_URL
