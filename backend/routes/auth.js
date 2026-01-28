@@ -191,9 +191,6 @@ router.post('/login', [
               policy_violation_text,
               community_support_text,
               community_support_links,
-              is_verified,
-              is_approved,
-              suspended_reason
        FROM businesses
        WHERE email = $1`,
       [email]
@@ -222,7 +219,7 @@ router.post('/login', [
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
 
     // Return business data without password
-    const { password_hash, is_verified, is_approved, suspended_reason, ...businessData } = business;
+    const { password_hash, ...businessData } = business;
     businessData.verification_status = resolveVerificationStatus(business);
     businessData.socials = socialsResult.rows;
 
@@ -368,9 +365,6 @@ router.get('/me', authenticateToken, async (req, res) => {
               policy_violation_text,
               community_support_text,
               community_support_links,
-              is_verified,
-              is_approved,
-              suspended_reason
        FROM businesses
        WHERE id = $1`,
       [req.businessId]
@@ -380,7 +374,7 @@ router.get('/me', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'Business not found' });
     }
 
-    const { is_verified, is_approved, suspended_reason, ...business } = result.rows[0];
+    const business = result.rows[0];
     business.verification_status = resolveVerificationStatus(result.rows[0]);
 
     // Get social links
