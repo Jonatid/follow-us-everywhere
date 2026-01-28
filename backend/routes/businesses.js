@@ -32,6 +32,7 @@ router.get('/:slug', async (req, res) => {
 
     const business = result.rows[0];
     business.verification_status = resolveVerificationStatus(business);
+    business.verificationStatus = business.verification_status;
     const isRestricted = ['suspended', 'disabled'].includes(business.verification_status);
 
     if (business.verification_status === 'disabled' && business.disabled_at) {
@@ -137,9 +138,6 @@ router.put(
 
       const statusResult = await pool.query(
         `SELECT verification_status,
-                is_approved,
-                is_verified,
-                suspended_reason,
                 suspended_at,
                 disabled_at,
                 policy_violation_code,
@@ -231,9 +229,6 @@ router.put(
 
       const statusResult = await pool.query(
         `SELECT verification_status,
-                is_approved,
-                is_verified,
-                suspended_reason,
                 suspended_at,
                 disabled_at,
                 policy_violation_code,
@@ -284,13 +279,37 @@ router.put(
       fields.push(`updated_at = CURRENT_TIMESTAMP`);
       values.push(req.businessId);
 
-      const query = `UPDATE businesses SET ${fields.join(', ')} WHERE id = $${paramCount} RETURNING *`;
+      const query = `
+        UPDATE businesses
+        SET ${fields.join(', ')}
+        WHERE id = $${paramCount}
+        RETURNING id,
+                  name,
+                  slug,
+                  tagline,
+                  logo,
+                  email,
+                  verification_status,
+                  suspended_at,
+                  disabled_at,
+                  last_nudge_at,
+                  nudge_message,
+                  policy_violation_code,
+                  policy_violation_text,
+                  community_support_text,
+                  community_support_links,
+                  created_at,
+                  updated_at
+      `;
 
       const result = await pool.query(query, values);
 
+      const updatedBusiness = result.rows[0];
+      updatedBusiness.verificationStatus = updatedBusiness.verification_status;
+
       res.json({
         message: 'Profile updated successfully',
-        business: result.rows[0],
+        business: updatedBusiness,
       });
     } catch (error) {
       console.error('Error updating profile:', error);

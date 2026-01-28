@@ -8,16 +8,8 @@ const resolveVerificationStatus = (business = {}) => {
     return 'disabled';
   }
 
-  if (business.suspended_at || business.suspendedAt || business.suspended_reason || business.suspendedReason) {
+  if (business.suspended_at || business.suspendedAt) {
     return 'suspended';
-  }
-
-  if (business.is_approved === false || business.isApproved === false) {
-    return 'flagged';
-  }
-
-  if (business.is_approved === true || business.isApproved === true || business.is_verified === true || business.isVerified === true) {
-    return 'active';
   }
 
   return 'active';
