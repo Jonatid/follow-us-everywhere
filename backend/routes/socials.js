@@ -87,9 +87,6 @@ router.post(
 
       const statusResult = await db.query(
         `SELECT verification_status,
-                is_approved,
-                is_verified,
-                suspended_reason,
                 suspended_at,
                 disabled_at,
                 policy_violation_code,
@@ -166,9 +163,6 @@ router.put(
 
       const statusResult = await db.query(
         `SELECT verification_status,
-                is_approved,
-                is_verified,
-                suspended_reason,
                 suspended_at,
                 disabled_at,
                 policy_violation_code,
@@ -267,9 +261,6 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 
     const statusResult = await db.query(
       `SELECT verification_status,
-              is_approved,
-              is_verified,
-              suspended_reason,
               suspended_at,
               disabled_at,
               policy_violation_code,

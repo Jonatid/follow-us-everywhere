@@ -19,9 +19,7 @@ router.get('/businesses', async (req, res) => {
               name,
               slug,
               email,
-              verification_status AS "verificationStatus",
-              is_approved AS "isApproved",
-              suspended_reason AS "suspendedReason",
+              verification_status,
               created_at AS "createdAt"
        FROM businesses
        ORDER BY created_at DESC`
@@ -32,6 +30,7 @@ router.get('/businesses', async (req, res) => {
       name: business.name,
       slug: business.slug,
       email: business.email,
+      verification_status: resolveVerificationStatus(business),
       verificationStatus: resolveVerificationStatus(business),
       createdAt: business.createdAt,
     }));
@@ -55,10 +54,7 @@ router.get('/businesses/:id', async (req, res) => {
               tagline,
               logo,
               email,
-              verification_status AS "verificationStatus",
-              is_verified AS "isVerified",
-              is_approved AS "isApproved",
-              suspended_reason AS "suspendedReason",
+              verification_status,
               community_support_text AS "communitySupportText",
               community_support_links AS "communitySupportLinks",
               created_at AS "createdAt",
@@ -80,6 +76,7 @@ router.get('/businesses/:id', async (req, res) => {
       tagline: business.tagline,
       logo: business.logo,
       email: business.email,
+      verification_status: resolveVerificationStatus(business),
       verificationStatus: resolveVerificationStatus(business),
       communitySupportText: business.communitySupportText,
       communitySupportLinks: business.communitySupportLinks,
@@ -112,7 +109,9 @@ router.put('/businesses/:id/approve', async (req, res) => {
       return res.status(404).json({ message: 'Business not found' });
     }
 
-    res.json(result.rows[0]);
+    const business = result.rows[0];
+    business.verification_status = business.verificationStatus;
+    res.json(business);
   } catch (err) {
     console.error('Admin approve business error:', err);
     res.status(500).json({ message: 'Server error' });
@@ -138,7 +137,9 @@ router.put('/businesses/:id/block', async (req, res) => {
       return res.status(404).json({ message: 'Business not found' });
     }
 
-    res.json(result.rows[0]);
+    const business = result.rows[0];
+    business.verification_status = business.verificationStatus;
+    res.json(business);
   } catch (err) {
     console.error('Admin block business error:', err);
     res.status(500).json({ message: 'Server error' });

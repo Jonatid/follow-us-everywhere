@@ -110,6 +110,8 @@ router.post('/signup', [
     );
 
     business.socials = socialsResult.rows;
+    business.verificationStatus = resolveVerificationStatus(business);
+    business.verification_status = business.verificationStatus;
 
     // Create JWT token
     const payload = { businessId: business.id };
@@ -190,10 +192,7 @@ router.post('/login', [
               policy_violation_code,
               policy_violation_text,
               community_support_text,
-              community_support_links,
-              is_verified,
-              is_approved,
-              suspended_reason
+              community_support_links
        FROM businesses
        WHERE email = $1`,
       [email]
@@ -222,8 +221,9 @@ router.post('/login', [
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
 
     // Return business data without password
-    const { password_hash, is_verified, is_approved, suspended_reason, ...businessData } = business;
+    const { password_hash, ...businessData } = business;
     businessData.verification_status = resolveVerificationStatus(business);
+    businessData.verificationStatus = businessData.verification_status;
     businessData.socials = socialsResult.rows;
 
     res.json({ token, business: businessData });
@@ -367,10 +367,7 @@ router.get('/me', authenticateToken, async (req, res) => {
               policy_violation_code,
               policy_violation_text,
               community_support_text,
-              community_support_links,
-              is_verified,
-              is_approved,
-              suspended_reason
+              community_support_links
        FROM businesses
        WHERE id = $1`,
       [req.businessId]
@@ -380,8 +377,9 @@ router.get('/me', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'Business not found' });
     }
 
-    const { is_verified, is_approved, suspended_reason, ...business } = result.rows[0];
-    business.verification_status = resolveVerificationStatus(result.rows[0]);
+    const business = result.rows[0];
+    business.verification_status = resolveVerificationStatus(business);
+    business.verificationStatus = business.verification_status;
 
     // Get social links
     const socialsResult = await pool.query(
