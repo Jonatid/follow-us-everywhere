@@ -8,6 +8,19 @@ const resolveVerificationStatus = (business = {}) => {
   }
 
   // Auto-approved default (your choice "A")
+  const status = business.verificationStatus ?? business.verification_status;
+  if (status) {
+    return status;
+  }
+
+  if (business.disabled_at || business.disabledAt) {
+    return 'disabled';
+  }
+
+  if (business.suspended_at || business.suspendedAt) {
+    return 'suspended';
+  }
+
   return 'active';
 };
 

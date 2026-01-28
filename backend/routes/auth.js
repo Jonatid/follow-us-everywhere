@@ -110,6 +110,8 @@ router.post('/signup', [
     );
 
     business.socials = socialsResult.rows;
+    business.verificationStatus = resolveVerificationStatus(business);
+    business.verification_status = business.verificationStatus;
 
     // Create JWT token
     const payload = { businessId: business.id };
@@ -220,7 +222,9 @@ router.post('/login', [
 
     // Return business data without password
     const { password_hash, ...businessData } = business;
+    const { password_hash, ...businessData } = business;
     businessData.verification_status = resolveVerificationStatus(business);
+    businessData.verificationStatus = businessData.verification_status;
     businessData.socials = socialsResult.rows;
 
     res.json({ token, business: businessData });
