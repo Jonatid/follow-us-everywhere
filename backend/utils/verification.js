@@ -1,16 +1,8 @@
 const resolveVerificationStatus = (business = {}) => {
-  // Single source of truth: verification_status (snake_case) / verificationStatus (camelCase)
   const status = business.verification_status ?? business.verificationStatus;
 
-  // If it exists, use it exactly (active | flagged | suspended | disabled)
   if (typeof status === 'string' && status.trim().length > 0) {
     return status.trim();
-  }
-
-  // Auto-approved default (your choice "A")
-  const status = business.verificationStatus ?? business.verification_status;
-  if (status) {
-    return status;
   }
 
   if (business.disabled_at || business.disabledAt) {
@@ -26,7 +18,6 @@ const resolveVerificationStatus = (business = {}) => {
 
 const buildAccountRestrictionError = (business = {}) => {
   const verificationStatus = resolveVerificationStatus(business);
-
   if (!['suspended', 'disabled'].includes(verificationStatus)) {
     return null;
   }
