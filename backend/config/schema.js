@@ -6,6 +6,8 @@ const REQUIRED_TABLES = [
   'email_verification_tokens',
   'password_reset_tokens',
   'admins',
+  'customers',
+  'customer_favorites',
   'badges',
   'business_badges'
 ];
@@ -100,6 +102,26 @@ const ensureSchema = async () => {
     `);
 
     await pool.query(`
+      CREATE TABLE IF NOT EXISTS customers (
+        id SERIAL PRIMARY KEY,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS customer_favorites (
+        id SERIAL PRIMARY KEY,
+        customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+        business_id INTEGER NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (customer_id, business_id)
+      );
+    `);
+
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS password_reset_tokens (
         id SERIAL PRIMARY KEY,
         business_id INTEGER NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
@@ -138,8 +160,11 @@ const ensureSchema = async () => {
     await pool.query('CREATE INDEX IF NOT EXISTS idx_social_links_business_id ON social_links(business_id);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_social_links_platform ON social_links(platform);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_admins_email ON admins(email);');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_customers_email ON customers(email);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_business_badges_business_id ON business_badges(business_id);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_business_badges_badge_id ON business_badges(badge_id);');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_customer_favorites_customer_id ON customer_favorites(customer_id);');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_customer_favorites_business_id ON customer_favorites(business_id);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token ON password_reset_tokens(token);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_business_id ON password_reset_tokens(business_id);');
   } catch (error) {

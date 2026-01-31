@@ -18,8 +18,19 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' }
 });
 
+const customerApi = axios.create({
+  baseURL: API_BASE_URL,
+  headers: { 'Content-Type': 'application/json' }
+});
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+customerApi.interceptors.request.use((config) => {
+  const token = localStorage.getItem('customer_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -288,6 +299,198 @@ const BusinessLogin = ({ onNavigate, onLoginSuccess }) => {
         <p className="helper-text text-center">
           Don't have an account?{' '}
           <button type="button" onClick={() => onNavigate('signup')} className="link-button link-button--inline">
+            Sign up
+          </button>
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// =============================================================================
+// CUSTOMER SIGNUP
+// =============================================================================
+
+const CustomerSignup = ({ onNavigate }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+
+  const handleSubmit = async () => {
+    setError('');
+    setMessage('');
+    if (!email || !password) {
+      setError('Please fill in all required fields');
+      return;
+    }
+    if (!PASSWORD_REGEX.test(password)) {
+      setError(PASSWORD_HELPER);
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await customerApi.post('/customers/auth/signup', { email, password });
+      localStorage.setItem('customer_token', response.data.token);
+      setMessage('Account created! You are now signed in.');
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Signup failed. Please try again.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="page page--gradient">
+      <div className="card card--medium">
+        <button type="button" onClick={() => onNavigate('landing')} className="link-button">← Back</button>
+        <div className="stack-sm text-center">
+          <h1 className="heading-xl">Customer Signup</h1>
+          <p className="subtitle">Save your favorite businesses</p>
+        </div>
+        {error && <div className="alert alert-error">{error}</div>}
+        {message && <div className="alert">{message}</div>}
+        <div className="stack-md">
+          <div className="field">
+            <label className="label" htmlFor="customer-signup-email">Email *</label>
+            <input
+              id="customer-signup-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="input"
+              placeholder="you@example.com"
+            />
+          </div>
+          <div className="field">
+            <label className="label" htmlFor="customer-signup-password">Password *</label>
+            <input
+              id="customer-signup-password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="input"
+              placeholder="Create a password"
+            />
+            {password && !PASSWORD_REGEX.test(password) && (
+              <span className="field-error">{PASSWORD_HELPER}</span>
+            )}
+          </div>
+          <div className="field">
+            <label className="label" htmlFor="customer-signup-confirm">Confirm Password *</label>
+            <input
+              id="customer-signup-confirm"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="input"
+              placeholder="Re-enter your password"
+            />
+            {confirmPassword && password !== confirmPassword && (
+              <span className="field-error">Passwords do not match.</span>
+            )}
+          </div>
+          <button type="button" onClick={handleSubmit} disabled={loading} className="button button-primary button-full">
+            {loading ? 'Creating Account...' : 'Create Customer Account'}
+          </button>
+        </div>
+        <p className="helper-text text-center">
+          Already have an account?{' '}
+          <button
+            type="button"
+            onClick={() => onNavigate('customer-login')}
+            className="link-button link-button--inline"
+          >
+            Login
+          </button>
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// =============================================================================
+// CUSTOMER LOGIN
+// =============================================================================
+
+const CustomerLogin = ({ onNavigate }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+
+  const handleSubmit = async () => {
+    setError('');
+    setMessage('');
+    if (!email || !password) {
+      setError('Please fill in all fields');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await customerApi.post('/customers/auth/login', { email, password });
+      localStorage.setItem('customer_token', response.data.token);
+      setMessage('Logged in! Your customer session is active.');
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Login failed. Please try again.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="page page--gradient">
+      <div className="card card--medium">
+        <button type="button" onClick={() => onNavigate('landing')} className="link-button">← Back</button>
+        <div className="stack-sm text-center">
+          <h1 className="heading-xl">Customer Login</h1>
+          <p className="subtitle">Welcome back</p>
+        </div>
+        {error && <div className="alert alert-error">{error}</div>}
+        {message && <div className="alert">{message}</div>}
+        <div className="stack-md">
+          <div className="field">
+            <label className="label" htmlFor="customer-login-email">Email</label>
+            <input
+              id="customer-login-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="input"
+              placeholder="you@example.com"
+            />
+          </div>
+          <div className="field">
+            <label className="label" htmlFor="customer-login-password">Password</label>
+            <input
+              id="customer-login-password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="input"
+              placeholder="Enter your password"
+            />
+          </div>
+          <button type="button" onClick={handleSubmit} disabled={loading} className="button button-primary button-full">
+            {loading ? 'Logging in...' : 'Login'}
+          </button>
+        </div>
+        <p className="helper-text text-center">
+          Need an account?{' '}
+          <button
+            type="button"
+            onClick={() => onNavigate('customer-signup')}
+            className="link-button link-button--inline"
+          >
             Sign up
           </button>
         </p>
@@ -948,6 +1151,14 @@ export default function App() {
       setCurrentScreen('reset');
       return;
     }
+    if (pathname === '/customer/login') {
+      setCurrentScreen('customer-login');
+      return;
+    }
+    if (pathname === '/customer/signup') {
+      setCurrentScreen('customer-signup');
+      return;
+    }
 
     const token = localStorage.getItem('token');
     if (token) {
@@ -965,11 +1176,24 @@ export default function App() {
     }
   };
 
-  const handleNavigate = (screen, data = null) => {
+  const handleNavigate = (screen, data = null, path = null) => {
     setCurrentScreen(screen);
     if (screen === 'public') {
       setPublicSlug(data);
     }
+    if (path) {
+      window.history.pushState({}, '', path);
+    }
+  };
+
+  const handleCustomerNavigate = (screen) => {
+    if (screen === 'customer-login') {
+      return handleNavigate(screen, null, '/customer/login');
+    }
+    if (screen === 'customer-signup') {
+      return handleNavigate(screen, null, '/customer/signup');
+    }
+    return handleNavigate(screen, null, '/');
   };
 
   const handleLoginSuccess = (business) => {
@@ -991,6 +1215,10 @@ export default function App() {
         return <BusinessSignup onNavigate={handleNavigate} onLoginSuccess={handleLoginSuccess} />;
       case 'login':
         return <BusinessLogin onNavigate={handleNavigate} onLoginSuccess={handleLoginSuccess} />;
+      case 'customer-login':
+        return <CustomerLogin onNavigate={handleCustomerNavigate} />;
+      case 'customer-signup':
+        return <CustomerSignup onNavigate={handleCustomerNavigate} />;
       case 'forgot':
         return <BusinessForgotPassword onNavigate={handleNavigate} />;
       case 'reset':
