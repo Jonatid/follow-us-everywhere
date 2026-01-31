@@ -275,7 +275,10 @@ router.post('/forgot-password', [
       [business.id, token, expiresAt]
     );
 
-    const baseUrl = process.env.FRONTEND_BASE_URL || 'https://follow-us-everywhere-web.onrender.com';
+    const baseUrl = process.env.FRONTEND_URL;
+    if (!baseUrl) {
+      throw new Error('FRONTEND_URL is not configured for password reset links.');
+    }
     const resetUrl = `${baseUrl}/reset-password?token=${token}`;
 
     await sendPasswordResetEmail({
