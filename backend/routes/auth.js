@@ -222,7 +222,6 @@ router.post('/login', [
 
     // Return business data without password
     const { password_hash, ...businessData } = business;
-    const { password_hash, ...businessData } = business;
     businessData.verification_status = resolveVerificationStatus(business);
     businessData.verificationStatus = businessData.verification_status;
     businessData.socials = socialsResult.rows;
