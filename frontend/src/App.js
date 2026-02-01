@@ -717,8 +717,11 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
     setActionError('');
     try {
       const social = business.socials[index];
-      await api.put(`/socials/${social.id}`, { url: tempUrl });
-      alert('Link updated successfully!');
+      const response = await api.put(`/socials/${social.id}`, { url: tempUrl });
+      if (response.data?.warning?.message) {
+        setWarning(response.data.warning);
+      }
+      alert(response.data?.warning?.message ? 'Link updated with a compliance warning.' : 'Link updated successfully!');
       setEditingIndex(null);
       onRefresh();
     } catch (err) {
@@ -775,6 +778,38 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
             <h1 className="heading-lg">Dashboard</h1>
             <button type="button" onClick={onLogout} className="link-button link-button--inline">Logout</button>
           </div>
+          {showComplianceBanner && (
+            <div className={`banner ${isSuspended ? 'banner-warning' : 'banner-info'}`}>
+              <div className="stack-sm">
+                <strong>{isSuspended ? 'Account suspended' : 'Admin nudge'}</strong>
+                {bannerMessage && <p className="banner-text">{bannerMessage}</p>}
+                <div className="banner-meta">
+                  {bannerPolicyCode && (
+                    <span>
+                      Policy {bannerPolicyCode}: {bannerPolicyText}
+                    </span>
+                  )}
+                  {bannerTimestamp && (
+                    <span>Last nudge: {new Date(bannerTimestamp).toLocaleString()}</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    onNavigate('contact', {
+                      name: business.name,
+                      email: business.email,
+                      business: business.slug,
+                      reason: 'Appeal / policy clarification',
+                    })
+                  }
+                  className="button button-secondary button-sm"
+                >
+                  Contact support
+                </button>
+              </div>
+            </div>
+          )}
           <div className="stack-sm">
             <h2 className="heading-md">{business.name}</h2>
             <p className="subtitle">{business.tagline}</p>
@@ -863,6 +898,7 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
                     value={tempUrl}
                     onChange={(e) => setTempUrl(e.target.value)}
                     className="input"
+                    disabled={isReadOnly}
                     placeholder={`https://${social.platform.toLowerCase()}.com/yourhandle`}
                     disabled={!canEditBusiness}
                   />
@@ -1134,6 +1170,110 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
 };
 
 // =============================================================================
+// CONTACT SUPPORT
+// =============================================================================
+
+const ContactSupport = ({ onNavigate, prefill }) => {
+  const [formData, setFormData] = useState({
+    name: prefill?.name || '',
+    email: prefill?.email || '',
+    business: prefill?.business || '',
+    reason: prefill?.reason || '',
+    message: '',
+  });
+  const [status, setStatus] = useState({ loading: false, error: '', success: '' });
+
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = async () => {
+    setStatus({ loading: true, error: '', success: '' });
+    try {
+      await api.post('/support/contact', formData);
+      setStatus({ loading: false, error: '', success: 'Message sent. Our team will follow up shortly.' });
+      setFormData((prev) => ({ ...prev, message: '' }));
+    } catch (err) {
+      setStatus({
+        loading: false,
+        error: err.response?.data?.message || 'Failed to send. Please try again.',
+        success: '',
+      });
+    }
+  };
+
+  return (
+    <div className="page page--gradient">
+      <div className="card card--medium">
+        <button type="button" onClick={() => onNavigate('dashboard')} className="link-button">← Back</button>
+        <div className="stack-sm text-center">
+          <h1 className="heading-xl">Contact Support</h1>
+          <p className="subtitle">Tell us what you need help with.</p>
+        </div>
+        {status.error && <div className="alert alert-error">{status.error}</div>}
+        {status.success && <div className="alert alert-success">{status.success}</div>}
+        <div className="stack-md">
+          <div className="field">
+            <label className="label" htmlFor="support-name">Name</label>
+            <input
+              id="support-name"
+              type="text"
+              value={formData.name}
+              onChange={(e) => handleChange('name', e.target.value)}
+              className="input"
+            />
+          </div>
+          <div className="field">
+            <label className="label" htmlFor="support-email">Email</label>
+            <input
+              id="support-email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => handleChange('email', e.target.value)}
+              className="input"
+            />
+          </div>
+          <div className="field">
+            <label className="label" htmlFor="support-business">Business name or slug</label>
+            <input
+              id="support-business"
+              type="text"
+              value={formData.business}
+              onChange={(e) => handleChange('business', e.target.value)}
+              className="input"
+            />
+          </div>
+          <div className="field">
+            <label className="label" htmlFor="support-reason">Reason</label>
+            <input
+              id="support-reason"
+              type="text"
+              value={formData.reason}
+              onChange={(e) => handleChange('reason', e.target.value)}
+              className="input"
+              placeholder="e.g., Suspension appeal"
+            />
+          </div>
+          <div className="field">
+            <label className="label" htmlFor="support-message">Message</label>
+            <textarea
+              id="support-message"
+              value={formData.message}
+              onChange={(e) => handleChange('message', e.target.value)}
+              className="input"
+              rows="4"
+            />
+          </div>
+          <button type="button" onClick={handleSubmit} disabled={status.loading} className="button button-primary button-full">
+            {status.loading ? 'Sending...' : 'Send message'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// =============================================================================
 // MAIN APP
 // =============================================================================
 
@@ -1236,6 +1376,8 @@ export default function App() {
         );
       case 'public':
         return <PublicFollowPage slug={publicSlug} onNavigate={handleNavigate} />;
+      case 'contact':
+        return <ContactSupport onNavigate={handleNavigate} prefill={contactPrefill} />;
       default:
         return <LandingPage onNavigate={handleNavigate} />;
     }
