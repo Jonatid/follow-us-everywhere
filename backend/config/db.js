@@ -37,7 +37,7 @@ if (process.env.DATABASE_URL) {
     password: process.env.DB_PASSWORD || 'postgres',
     host: process.env.DB_HOST || 'localhost',
     port: process.env.DB_PORT || 5432,
-    database: process.env.DB_NAME || 'linktree_db',
+    database: process.env.DB_NAME || 'followuseverywhere-db',
     ssl: useSsl ? { rejectUnauthorized: false } : false,
   });
 }
