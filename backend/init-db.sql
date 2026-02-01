@@ -3,10 +3,10 @@
 -- ALTER SYSTEM SET max_connections = 100;
 
 -- Create database
-CREATE DATABASE linktree_db;
+CREATE DATABASE followuseverywhere-db;
 
 -- Connect to the new database
-\c linktree_db;
+\c followuseverywhere-db;
 
 -- Create businesses table
 CREATE TABLE IF NOT EXISTS businesses (

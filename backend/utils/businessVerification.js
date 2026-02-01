@@ -1,81 +1,102 @@
-const PERSONAL_PROFILE_POLICY = {
-  code: 'BUSINESS_ONLY_LINKS',
-  text: 'Links must point to business or organization profiles. Personal-profile links (e.g., LinkedIn /in/) are not allowed.'
-};
+const db = require('../config/db');
 
-const NUDGE_SUBJECT = 'Action required: update your social links';
+const NUDGE_SUBJECT = 'Action required: update your business profile';
 
-const getNudgeMessage = (businessName) =>
-  `Action required for ${businessName || 'your account'}: Please update your social links to business or organization profiles only. ` +
-  'We detected a link that appears to be a personal profile (for example, LinkedIn /in/). ' +
-  'Update your links within 7 days to avoid suspension. If you believe this is a mistake, contact support.';
-
-const isLikelyPersonalProfile = (url = '') => {
-  const normalized = url.toLowerCase();
-  return (
-    normalized.includes('linkedin.com/in/') ||
-    normalized.includes('linkedin.com/pub/') ||
-    normalized.includes('facebook.com/profile.php') ||
-    normalized.includes('facebook.com/people/')
-  );
-};
-
-const autoDisableBusiness = async (client, business) => {
-  if (business.verification_status !== 'suspended' || !business.suspended_at) {
-    return business;
+const applyBusinessRestriction = async ({
+  businessId,
+  verificationStatus,
+  suspendedAt,
+  disabledAt,
+  policyViolationCode,
+  policyViolationText,
+  nudgeMessage,
+}) => {
+  if (!businessId) {
+    throw new Error('businessId is required');
   }
 
-  const suspendedAt = new Date(business.suspended_at);
-  const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
-  if (Number.isNaN(suspendedAt.getTime())) {
-    return business;
-  }
-
-  if (Date.now() - suspendedAt.getTime() < sevenDaysMs) {
-    return business;
-  }
-
-  const result = await client.query(
+  const result = await db.query(
     `UPDATE businesses
-     SET verification_status = 'disabled',
-         disabled_at = CURRENT_TIMESTAMP,
+     SET verification_status = $2,
+         suspended_at = $3,
+         disabled_at = $4,
+         policy_violation_code = $5,
+         policy_violation_text = $6,
+         nudge_message = $7,
          updated_at = CURRENT_TIMESTAMP
      WHERE id = $1
-     RETURNING *`,
-    [business.id]
+     RETURNING id,
+               verification_status,
+               suspended_at,
+               disabled_at,
+               policy_violation_code,
+               policy_violation_text,
+               nudge_message`,
+    [
+      businessId,
+      verificationStatus,
+      suspendedAt,
+      disabledAt,
+      policyViolationCode ?? null,
+      policyViolationText ?? null,
+      nudgeMessage ?? null,
+    ]
   );
 
-  return result.rows[0] || business;
+  return result.rows[0];
 };
 
-const ensureEditableBusiness = async (client, businessId) => {
-  const result = await client.query(
-    'SELECT id, verification_status, suspended_at FROM businesses WHERE id = $1',
-    [businessId]
-  );
+const autoDisableBusiness = async ({
+  businessId,
+  policyViolationCode,
+  policyViolationText,
+  nudgeMessage,
+}) =>
+  applyBusinessRestriction({
+    businessId,
+    verificationStatus: 'disabled',
+    suspendedAt: null,
+    disabledAt: new Date(),
+    policyViolationCode,
+    policyViolationText,
+    nudgeMessage,
+  });
 
-  if (result.rows.length === 0) {
-    return { error: { status: 404, message: 'Business not found' } };
-  }
+const autoSuspendBusiness = async ({
+  businessId,
+  policyViolationCode,
+  policyViolationText,
+  nudgeMessage,
+}) =>
+  applyBusinessRestriction({
+    businessId,
+    verificationStatus: 'suspended',
+    suspendedAt: new Date(),
+    disabledAt: null,
+    policyViolationCode,
+    policyViolationText,
+    nudgeMessage,
+  });
 
-  const business = await autoDisableBusiness(client, result.rows[0]);
-
-  if (business.verification_status === 'suspended') {
-    return { error: { status: 403, message: 'Account suspended' } };
-  }
-
-  if (business.verification_status === 'disabled') {
-    return { error: { status: 403, message: 'Account disabled' } };
-  }
-
-  return { business };
-};
+const autoFlagBusiness = async ({
+  businessId,
+  policyViolationCode,
+  policyViolationText,
+  nudgeMessage,
+}) =>
+  applyBusinessRestriction({
+    businessId,
+    verificationStatus: 'flagged',
+    suspendedAt: null,
+    disabledAt: null,
+    policyViolationCode,
+    policyViolationText,
+    nudgeMessage,
+  });
 
 module.exports = {
-  PERSONAL_PROFILE_POLICY,
   NUDGE_SUBJECT,
-  getNudgeMessage,
-  isLikelyPersonalProfile,
   autoDisableBusiness,
-  ensureEditableBusiness,
+  autoSuspendBusiness,
+  autoFlagBusiness,
 };

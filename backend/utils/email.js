@@ -1,3 +1,34 @@
+const sendEmail = async ({ toEmail, subject, html, text, fromEmail }) => {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.warn('RESEND_API_KEY is not set. Skipping email send.');
+    return;
+  }
+
+  const sender =
+    fromEmail || process.env.RESEND_FROM || process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      from: sender,
+      to: [toEmail],
+      subject,
+      html,
+      text
+    })
+  });
+
+  if (!response.ok) {
+    const message = await response.text();
+    console.error('Failed to send email:', message);
+  }
+};
+
 const sendPasswordResetEmail = async ({ toEmail, resetUrl, businessName }) => {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
@@ -18,24 +49,7 @@ const sendPasswordResetEmail = async ({ toEmail, resetUrl, businessName }) => {
     </div>
   `;
 
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      from: fromEmail,
-      to: [toEmail],
-      subject,
-      html
-    })
-  });
-
-  if (!response.ok) {
-    const message = await response.text();
-    console.error('Failed to send password reset email:', message);
-  }
+  await sendEmail({ toEmail, subject, html, fromEmail });
 };
 
-module.exports = { sendPasswordResetEmail };
+module.exports = { sendEmail, sendPasswordResetEmail };
