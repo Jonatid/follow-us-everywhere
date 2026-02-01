@@ -6,6 +6,7 @@ import AdminManagement from './AdminManagement';
 import BadgeManagement from './BadgeManagement';
 import BusinessDetail from './BusinessDetail';
 import BusinessList from './BusinessList';
+import ReviewList from './ReviewList';
 
 const normalizePath = (path) => (path.endsWith('/') && path !== '/' ? path.slice(0, -1) : path);
 
@@ -55,6 +56,8 @@ const AdminApp = () => {
     content = <AdminDashboard />;
   } else if (currentPath === '/admin/businesses') {
     content = <BusinessList onSelectBusiness={(id) => navigate(`/admin/businesses/${id}`)} />;
+  } else if (currentPath === '/admin/reviews') {
+    content = <ReviewList />;
   } else if (businessId) {
     content = <BusinessDetail businessId={businessId} onBack={() => navigate('/admin/businesses')} />;
   } else if (currentPath === '/admin/admins') {
