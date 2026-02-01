@@ -16,7 +16,7 @@ const getConnectionInfo = () => {
 
   return {
     host: process.env.DB_HOST || 'localhost',
-    database: process.env.DB_NAME || 'linktree_db',
+    database: process.env.DB_NAME || 'followuseverywhere-db',
     user: process.env.DB_USER || 'postgres'
   };
 };
