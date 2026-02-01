@@ -2,6 +2,8 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const db = require('../config/db');
 const { authenticateToken } = require('../middleware/auth');
+const { autoDisableBusiness, autoSuspendBusiness, autoFlagBusiness, NUDGE_SUBJECT } = require('../utils/businessVerification');
+const { sendEmail } = require('../utils/email');
 const { resolveVerificationStatus, buildAccountRestrictionError } = require('../utils/verification');
 
 const router = express.Router();
