@@ -2,11 +2,30 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const db = require('../config/db');
 const { authenticateToken } = require('../middleware/auth');
-const { autoDisableBusiness, autoSuspendBusiness, autoFlagBusiness, NUDGE_SUBJECT } = require('../utils/businessVerification');
+const { autoDisableBusiness, NUDGE_SUBJECT } = require('../utils/businessVerification');
 const { sendEmail } = require('../utils/email');
 const { resolveVerificationStatus, buildAccountRestrictionError } = require('../utils/verification');
 
 const router = express.Router();
+
+const PERSONAL_PROFILE_POLICY = {
+  code: 'PERSONAL_PROFILE_LINK',
+  text: 'Social links should point to official business pages, not personal profiles.',
+};
+
+const getNudgeMessage = () =>
+  'Please update your social link to an official business profile to stay compliant with platform policy.';
+
+const isLikelyPersonalProfile = (url) => {
+  try {
+    const parsedUrl = new URL(url);
+    const path = parsedUrl.pathname.toLowerCase();
+
+    return /(\/users\/|\/u\/|\/p\/|\/@)/.test(path);
+  } catch {
+    return false;
+  }
+};
 
 // Get all social links for a business (public)
 router.get('/business/:businessId', async (req, res) => {
@@ -305,9 +324,15 @@ router.put(
       fields.push(`updated_at = CURRENT_TIMESTAMP`);
       values.push(id);
 
-      const query = `UPDATE social_links SET ${fields.join(', ')} WHERE id = $${paramCount} RETURNING *`;
+      const query = `UPDATE social_links SET ${fields.join(', ')} WHERE id = $${paramCount} AND business_id = $${paramCount + 1} RETURNING *`;
+
+      values.push(req.businessId);
 
       const result = await db.query(query, values);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Social link not found for this business' });
+      }
 
       let warning = null;
       if (url && isLikelyPersonalProfile(url)) {
@@ -355,7 +380,10 @@ router.put(
       });
     } catch (error) {
       console.error('Error updating social link:', error);
-      res.status(500).json({ error: 'Failed to update social link' });
+      if (error.code === '23505') {
+        return res.status(409).json({ error: 'A social link for this platform already exists for your business' });
+      }
+      res.status(500).json({ error: error.message || 'Failed to update social link' });
     }
   }
 );
