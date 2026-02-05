@@ -8,6 +8,7 @@ const { resolveVerificationStatus, buildAccountRestrictionError } = require('../
 
 const router = express.Router();
 
+// Personal profile link policy helpers (used by both create/update handlers)
 const PERSONAL_PROFILE_POLICY = {
   code: 'PERSONAL_PROFILE_LINK',
   text: 'Social links should point to official business pages, not personal profiles.',
@@ -270,16 +271,12 @@ router.put(
 
       // Verify ownership
       const linkCheck = await db.query(
-        'SELECT business_id FROM social_links WHERE id = $1',
-        [id]
+        'SELECT id FROM social_links WHERE id = $1 AND business_id = $2',
+        [id, req.businessId]
       );
 
       if (linkCheck.rows.length === 0) {
-        return res.status(404).json({ error: 'Social link not found' });
-      }
-
-      if (linkCheck.rows[0].business_id !== req.businessId) {
-        return res.status(403).json({ error: 'Unauthorized to update this link' });
+        return res.status(404).json({ error: 'Social link not found for this business' });
       }
 
       // Build dynamic update query
