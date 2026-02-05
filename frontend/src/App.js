@@ -659,6 +659,7 @@ const BusinessResetPassword = ({ onNavigate, token }) => {
 // =============================================================================
 
 const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
+  const [socials, setSocials] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
   const [tempUrl, setTempUrl] = useState('');
   const [saving, setSaving] = useState(false);
@@ -714,6 +715,7 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
   }, [warning]);
 
   useEffect(() => {
+    setSocials(Array.isArray(business.socials) ? business.socials : []);
     setSupportText(business.community_support_text || '');
     setSupportLinks(Array.isArray(business.community_support_links) ? business.community_support_links : []);
   }, [business]);
@@ -735,7 +737,7 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
       return;
     }
     setEditingIndex(index);
-    setTempUrl(business.socials[index].url);
+    setTempUrl(socials[index]?.url || '');
   };
 
   const handleSave = async (index) => {
@@ -745,16 +747,56 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
     setSaving(true);
     setActionError('');
     try {
-      const social = business.socials[index];
-      const response = await api.put(`/socials/${social.id}`, { url: tempUrl });
+      const social = socials[index];
+      const nextUrl = tempUrl.trim();
+
+      if (!nextUrl) {
+        await api.delete(`/socials/${social.id}`);
+        setSocials((prev) => prev.filter((_, socialIndex) => socialIndex !== index));
+        alert('Link removed successfully!');
+        setEditingIndex(null);
+        return;
+      }
+
+      const response = await api.put(`/socials/${social.id}`, { url: nextUrl });
       if (response.data?.warning?.message) {
         setWarning(response.data.warning);
       }
+      setSocials((prev) =>
+        prev.map((item, socialIndex) =>
+          socialIndex === index
+            ? {
+                ...item,
+                url: response.data?.social?.url || nextUrl,
+              }
+            : item
+        )
+      );
       alert(response.data?.warning?.message ? 'Link updated with a compliance warning.' : 'Link updated successfully!');
       setEditingIndex(null);
-      onRefresh();
     } catch (err) {
       setActionError(getApiErrorMessage(err, 'Failed to update link. Please try again.'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (index) => {
+    if (!canEditBusiness) {
+      return;
+    }
+    setSaving(true);
+    setActionError('');
+    try {
+      const social = socials[index];
+      await api.delete(`/socials/${social.id}`);
+      setSocials((prev) => prev.filter((_, socialIndex) => socialIndex !== index));
+      if (editingIndex === index) {
+        setEditingIndex(null);
+      }
+      alert('Link removed successfully!');
+    } catch (err) {
+      setActionError(getApiErrorMessage(err, 'Failed to remove link. Please try again.'));
     } finally {
       setSaving(false);
     }
@@ -887,7 +929,7 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
             </div>
           )}
           <div className="stack-sm">
-            {business.socials.map((social, index) => (
+            {socials.map((social, index) => (
               <div key={social.id || index} className="social-card">
                 <div className="row space-between">
                   <div className="row">
@@ -910,14 +952,24 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
                         </button>
                       </>
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() => handleEdit(index)}
-                        className="link-button link-button--inline"
-                        disabled={!canEditBusiness}
-                      >
-                        Edit
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleEdit(index)}
+                          className="link-button link-button--inline"
+                          disabled={!canEditBusiness}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(index)}
+                          className="link-button"
+                          disabled={!canEditBusiness || saving}
+                        >
+                          {saving ? 'Removing...' : 'Delete'}
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
