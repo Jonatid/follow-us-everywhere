@@ -2,7 +2,7 @@
 // COMPLETE API-CONNECTED APP.JS
 // =============================================================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 
 // API base URL (override with VITE_API_BASE_URL at build time if needed).
@@ -665,6 +665,7 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
   const [supportText, setSupportText] = useState('');
   const [supportLinks, setSupportLinks] = useState([]);
   const [supportSaving, setSupportSaving] = useState(false);
+  const [warning, setWarning] = useState(null);
   const [actionError, setActionError] = useState('');
 
   const verificationStatus = business.verification_status;
@@ -683,6 +684,34 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
       : verificationStatus === 'suspended'
       ? 'Your account is suspended while we review a policy issue.'
       : 'Your account is disabled. Please contact support if you believe this is a mistake.');
+
+  const isSuspended = verificationStatus === 'suspended';
+  const isReadOnly = !canEditBusiness;
+
+  const {
+    showComplianceBanner,
+    bannerMessage,
+    bannerPolicyCode,
+    bannerPolicyText,
+    bannerTimestamp,
+  } = useMemo(() => {
+    if (!warning) {
+      return {
+        showComplianceBanner: false,
+        bannerMessage: '',
+        bannerPolicyCode: '',
+        bannerPolicyText: '',
+        bannerTimestamp: null,
+      };
+    }
+    return {
+      showComplianceBanner: Boolean(warning.message || warning.policy),
+      bannerMessage: warning.message || '',
+      bannerPolicyCode: warning.policy?.code || '',
+      bannerPolicyText: warning.policy?.text || '',
+      bannerTimestamp: warning.lastNudgeAt || null,
+    };
+  }, [warning]);
 
   useEffect(() => {
     setSupportText(business.community_support_text || '');
@@ -1281,6 +1310,7 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState('landing');
   const [currentBusiness, setCurrentBusiness] = useState(null);
   const [publicSlug, setPublicSlug] = useState(null);
+  const [contactPrefill, setContactPrefill] = useState(null);
   const [resetToken, setResetToken] = useState(null);
 
   useEffect(() => {
@@ -1320,6 +1350,11 @@ export default function App() {
     setCurrentScreen(screen);
     if (screen === 'public') {
       setPublicSlug(data);
+    }
+    if (screen === 'contact') {
+      setContactPrefill(data);
+    } else {
+      setContactPrefill(null);
     }
     if (path) {
       window.history.pushState({}, '', path);
