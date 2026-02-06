@@ -12,6 +12,7 @@ const adminAuthRoutes = require('./routes/admin-auth');
 const adminRoutes = require('./routes/admin');
 const customerAuthRoutes = require('./routes/customers-auth');
 const customerRoutes = require('./routes/customers');
+const publicRoutes = require('./routes/public');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -63,6 +64,7 @@ app.use('/api/admin/auth', adminAuthRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/customers/auth', customerAuthRoutes);
 app.use('/api/customers', customerRoutes);
+app.use('/api/public', publicRoutes);
 
 // 404 handler
 app.use((req, res) => {
