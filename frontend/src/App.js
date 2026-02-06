@@ -748,6 +748,10 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
     setActionError('');
     try {
       const social = socials[index];
+      if (!social?.id) {
+        setActionError('Cannot update/delete this social link because its ID is missing. Please refresh and try again.');
+        return;
+      }
       const nextUrl = tempUrl.trim();
 
       if (!nextUrl) {
@@ -789,6 +793,10 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
     setActionError('');
     try {
       const social = socials[index];
+      if (!social?.id) {
+        setActionError('Cannot delete this social link because its ID is missing. Please refresh and try again.');
+        return;
+      }
       await api.delete(`/socials/${social.id}`);
       setSocials((prev) => prev.filter((_, socialIndex) => socialIndex !== index));
       if (editingIndex === index) {

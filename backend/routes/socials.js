@@ -389,6 +389,11 @@ router.put(
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
+    const socialId = Number.parseInt(id, 10);
+
+    if (!Number.isInteger(socialId)) {
+      return res.status(400).json({ error: 'Invalid social link id. Expected an integer.' });
+    }
 
     const statusResult = await db.query(
       `SELECT verification_status,
@@ -414,19 +419,15 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 
     // Verify ownership
     const linkCheck = await db.query(
-      'SELECT business_id FROM social_links WHERE id = $1',
-      [id]
+      'SELECT id FROM social_links WHERE id = $1 AND business_id = $2',
+      [socialId, req.businessId]
     );
 
     if (linkCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Social link not found' });
     }
 
-    if (linkCheck.rows[0].business_id !== req.businessId) {
-      return res.status(403).json({ error: 'Unauthorized to delete this link' });
-    }
-
-    await db.query('DELETE FROM social_links WHERE id = $1', [id]);
+    await db.query('DELETE FROM social_links WHERE id = $1 AND business_id = $2', [socialId, req.businessId]);
 
     res.json({ message: 'Social link deleted successfully' });
   } catch (error) {
