@@ -221,8 +221,27 @@ router.put(
       .withMessage('Platform must be between 1 and 100 characters'),
     body('url')
       .optional()
-      .isURL()
-      .withMessage('URL must be valid'),
+      .custom((value, { req }) => {
+        if (typeof value !== 'string') {
+          throw new Error('URL must be valid');
+        }
+
+        const trimmed = value.trim();
+        if (trimmed.length === 0) {
+          if (req.body.is_active === false) {
+            return true;
+          }
+          throw new Error('URL must be valid');
+        }
+
+        try {
+          // eslint-disable-next-line no-new
+          new URL(trimmed);
+          return true;
+        } catch {
+          throw new Error('URL must be valid');
+        }
+      }),
     body('icon')
       .optional()
       .trim()
@@ -246,6 +265,7 @@ router.put(
 
       const { id } = req.params;
       const { platform, url, icon, display_order, is_active } = req.body;
+      const normalizedUrl = typeof url === 'string' ? url.trim() : undefined;
 
       const statusResult = await db.query(
         `SELECT verification_status,
@@ -269,16 +289,6 @@ router.put(
         return res.status(403).json(restrictionError);
       }
 
-      // Verify ownership
-      const linkCheck = await db.query(
-        'SELECT id FROM social_links WHERE id = $1 AND business_id = $2',
-        [id, req.businessId]
-      );
-
-      if (linkCheck.rows.length === 0) {
-        return res.status(404).json({ error: 'Social link not found for this business' });
-      }
-
       // Build dynamic update query
       const fields = [];
       const values = [];
@@ -290,9 +300,9 @@ router.put(
         paramCount++;
       }
 
-      if (url !== undefined) {
+      if (normalizedUrl !== undefined) {
         fields.push(`url = $${paramCount}`);
-        values.push(url);
+        values.push(normalizedUrl);
         paramCount++;
       }
 
@@ -332,7 +342,7 @@ router.put(
       }
 
       let warning = null;
-      if (url && isLikelyPersonalProfile(url)) {
+      if (normalizedUrl && isLikelyPersonalProfile(normalizedUrl)) {
         const nudgeMessage = getNudgeMessage();
         const updateResult = await db.query(
           `UPDATE businesses

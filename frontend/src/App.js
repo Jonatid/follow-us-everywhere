@@ -754,15 +754,10 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
       }
       const nextUrl = tempUrl.trim();
 
-      if (!nextUrl) {
-        await api.delete(`/socials/${social.id}`);
-        setSocials((prev) => prev.filter((_, socialIndex) => socialIndex !== index));
-        alert('Link removed successfully!');
-        setEditingIndex(null);
-        return;
-      }
-
-      const response = await api.put(`/socials/${social.id}`, { url: nextUrl });
+      const response = await api.put(`/socials/${social.id}`, {
+        url: nextUrl,
+        is_active: Boolean(nextUrl),
+      });
       if (response.data?.warning?.message) {
         setWarning(response.data.warning);
       }
@@ -771,12 +766,20 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
           socialIndex === index
             ? {
                 ...item,
-                url: response.data?.social?.url || nextUrl,
+                ...(response.data?.socialLink || {}),
+                url: response.data?.socialLink?.url ?? nextUrl,
+                is_active: response.data?.socialLink?.is_active ?? Boolean(nextUrl),
               }
             : item
         )
       );
-      alert(response.data?.warning?.message ? 'Link updated with a compliance warning.' : 'Link updated successfully!');
+      alert(
+        response.data?.warning?.message
+          ? 'Link updated with a compliance warning.'
+          : nextUrl
+          ? 'Link updated successfully!'
+          : 'Link removed successfully!'
+      );
       setEditingIndex(null);
     } catch (err) {
       setActionError(getApiErrorMessage(err, 'Failed to update link. Please try again.'));
@@ -794,11 +797,22 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
     try {
       const social = socials[index];
       if (!social?.id) {
-        setActionError('Cannot delete this social link because its ID is missing. Please refresh and try again.');
+        setActionError('Cannot remove this social link because its ID is missing. Please refresh and try again.');
         return;
       }
-      await api.delete(`/socials/${social.id}`);
-      setSocials((prev) => prev.filter((_, socialIndex) => socialIndex !== index));
+      const response = await api.put(`/socials/${social.id}`, { url: '', is_active: false });
+      setSocials((prev) =>
+        prev.map((item, socialIndex) =>
+          socialIndex === index
+            ? {
+                ...item,
+                ...(response.data?.socialLink || {}),
+                url: '',
+                is_active: false,
+              }
+            : item
+        )
+      );
       if (editingIndex === index) {
         setEditingIndex(null);
       }
@@ -975,7 +989,7 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
                           className="link-button"
                           disabled={!canEditBusiness || saving}
                         >
-                          {saving ? 'Removing...' : 'Delete'}
+                          {saving ? 'Removing...' : 'Remove link'}
                         </button>
                       </>
                     )}
@@ -993,7 +1007,7 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
                   />
                 ) : (
                   <p className="muted-text truncate">
-                    {social.url || `Add your ${social.platform} link`}
+                    {social.is_active ? social.url || `Add your ${social.platform} link` : 'Not set'}
                   </p>
                 )}
               </div>
