@@ -42,7 +42,7 @@ router.get('/favorites', authenticateCustomerToken, async (req, res) => {
 // @access  Private
 router.post('/favorites/:businessId', authenticateCustomerToken, async (req, res) => {
   const businessId = Number(req.params.businessId);
-  if (!Number.isInteger(businessId)) {
+  if (!Number.isInteger(businessId) || businessId <= 0) {
     return res.status(400).json({ message: 'Invalid business id' });
   }
 
@@ -83,7 +83,7 @@ router.post('/favorites/:businessId', authenticateCustomerToken, async (req, res
 // @access  Private
 router.delete('/favorites/:businessId', authenticateCustomerToken, async (req, res) => {
   const businessId = Number(req.params.businessId);
-  if (!Number.isInteger(businessId)) {
+  if (!Number.isInteger(businessId) || businessId <= 0) {
     return res.status(400).json({ message: 'Invalid business id' });
   }
 
