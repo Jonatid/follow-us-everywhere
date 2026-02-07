@@ -1850,7 +1850,12 @@ export default function App() {
   useEffect(() => {
     const { pathname, search } = window.location;
 
-    if (pathname === '/reset-password') {
+    if (pathname === '/') {
+      window.history.replaceState({}, '', '/customer/login');
+      setCurrentScreen('customer-login');
+    } else if (pathname === '/vendor') {
+      setCurrentScreen('landing');
+    } else if (pathname === '/reset-password') {
       const params = new URLSearchParams(search);
       setResetToken(params.get('token'));
       setCurrentScreen('reset');
