@@ -7,7 +7,8 @@ import axios from 'axios';
 
 // API base URL (override with VITE_API_BASE_URL at build time if needed).
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'https://followuseverywhere-api.onrender.com/api';
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.DEV ? 'http://localhost:5000/api' : 'https://followuseverywhere-api.onrender.com/api');
 
 // =============================================================================
 // API SERVICE
@@ -311,7 +312,7 @@ const BusinessLogin = ({ onNavigate, onLoginSuccess }) => {
 // CUSTOMER SIGNUP
 // =============================================================================
 
-const CustomerSignup = ({ onNavigate }) => {
+const CustomerSignup = ({ onNavigate, onAuthSuccess }) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -346,6 +347,7 @@ const CustomerSignup = ({ onNavigate }) => {
         last_name: lastName,
       });
       localStorage.setItem('customer_token', response.data.token);
+      onAuthSuccess(response.data.customer);
       onNavigate('discover');
     } catch (err) {
       setError(getApiErrorMessage(err, 'Signup failed. Please try again.'));
@@ -449,7 +451,7 @@ const CustomerSignup = ({ onNavigate }) => {
 // CUSTOMER LOGIN
 // =============================================================================
 
-const CustomerLogin = ({ onNavigate }) => {
+const CustomerLogin = ({ onNavigate, onAuthSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -468,6 +470,7 @@ const CustomerLogin = ({ onNavigate }) => {
     try {
       const response = await customerApi.post('/customers/auth/login', { email, password });
       localStorage.setItem('customer_token', response.data.token);
+      onAuthSuccess(response.data.customer);
       onNavigate('discover');
     } catch (err) {
       setError(getApiErrorMessage(err, 'Login failed. Please try again.'));
@@ -528,29 +531,55 @@ const CustomerLogin = ({ onNavigate }) => {
   );
 };
 
-const CustomerNav = ({ onNavigate, onLogout, activeScreen }) => (
-  <div className="row row-wrap" style={{ gap: '8px', marginBottom: '20px' }}>
-    <button
-      type="button"
-      className={`button button-sm ${activeScreen === 'discover' ? 'button-primary' : 'button-muted'}`}
-      onClick={() => onNavigate('discover')}
-    >
-      Discover
-    </button>
-    <button
-      type="button"
-      className={`button button-sm ${activeScreen === 'favorites' ? 'button-primary' : 'button-muted'}`}
-      onClick={() => onNavigate('favorites')}
-    >
-      Favorites
-    </button>
-    <button type="button" className="button button-sm button-muted" onClick={onLogout}>
-      Logout
-    </button>
-  </div>
-);
+const CustomerNav = ({ onNavigate, onLogout, activeScreen, customer }) => {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const displayName = customer?.first_name || customer?.email || 'Customer';
 
-const DiscoverPage = ({ onNavigate, onLogout }) => {
+  return (
+    <div className="row space-between row-wrap" style={{ gap: '8px', marginBottom: '20px', alignItems: 'flex-start' }}>
+      <div className="row row-wrap" style={{ gap: '8px' }}>
+        <button
+          type="button"
+          className={`button button-sm ${activeScreen === 'discover' ? 'button-primary' : 'button-muted'}`}
+          onClick={() => onNavigate('discover')}
+        >
+          Discover
+        </button>
+        <button
+          type="button"
+          className={`button button-sm ${activeScreen === 'favorites' ? 'button-primary' : 'button-muted'}`}
+          onClick={() => onNavigate('favorites')}
+        >
+          Favorites
+        </button>
+      </div>
+
+      {customer ? (
+        <div style={{ position: 'relative' }}>
+          <button
+            type="button"
+            className="button button-sm button-muted"
+            onClick={() => setMenuOpen((prev) => !prev)}
+          >
+            Hello, {displayName}
+          </button>
+          {menuOpen && (
+            <div className="card" style={{ position: 'absolute', right: 0, top: '40px', minWidth: '180px', zIndex: 20, padding: '10px' }}>
+              <button type="button" className="button button-sm button-muted button-full" onClick={() => onNavigate('customer-profile')}>
+                Profile
+              </button>
+              <button type="button" className="button button-sm button-muted button-full" onClick={onLogout} style={{ marginTop: '8px' }}>
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
+const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
   const [search, setSearch] = useState('');
   const [businesses, setBusinesses] = useState([]);
   const [favoriteIds, setFavoriteIds] = useState(new Set());
@@ -558,16 +587,34 @@ const DiscoverPage = ({ onNavigate, onLogout }) => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const loadData = async () => {
+    const loadFavorites = async () => {
+      try {
+        const favoritesResponse = await customerApi.get('/customers/favorites');
+        setFavoriteIds(new Set((favoritesResponse.data?.favorites || []).map((item) => item.id)));
+      } catch (err) {
+        setError(getApiErrorMessage(err, 'Unable to load favorites.'));
+      }
+    };
+
+    loadFavorites();
+  }, []);
+
+  useEffect(() => {
+    const query = search.trim();
+    if (!query) {
+      setBusinesses([]);
+      setLoading(false);
+      return;
+    }
+
+    const loadBusinesses = async () => {
       setLoading(true);
       setError('');
       try {
-        const [favoritesResponse, businessesResponse] = await Promise.all([
-          customerApi.get('/customers/favorites'),
-          fetchPublicBusinesses(),
-        ]);
-        setBusinesses(businessesResponse);
-        setFavoriteIds(new Set((favoritesResponse.data?.favorites || []).map((item) => item.id)));
+        const response = await customerApi.get('/public/businesses', {
+          params: { query }
+        });
+        setBusinesses(response.data?.businesses || []);
       } catch (err) {
         setError(getApiErrorMessage(err, 'Unable to load discover businesses.'));
       } finally {
@@ -575,24 +622,8 @@ const DiscoverPage = ({ onNavigate, onLogout }) => {
       }
     };
 
-    loadData();
-  }, []);
-
-  const filteredBusinesses = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return businesses;
-
-    return businesses.filter((business) => {
-      const badgeText = (business.badges || [])
-        .map((badge) => `${badge.name || ''} ${badge.description || ''}`)
-        .join(' ')
-        .toLowerCase();
-
-      return [business.name, business.community_support_text, badgeText]
-        .filter(Boolean)
-        .some((field) => field.toLowerCase().includes(query));
-    });
-  }, [businesses, search]);
+    loadBusinesses();
+  }, [search]);
 
   const toggleFavorite = async (businessId, isFavorited) => {
     try {
@@ -616,7 +647,7 @@ const DiscoverPage = ({ onNavigate, onLogout }) => {
     <div className="dashboard">
       <div className="dashboard-container">
         <div className="card dashboard-card">
-          <CustomerNav onNavigate={onNavigate} onLogout={onLogout} activeScreen="discover" />
+          <CustomerNav onNavigate={onNavigate} onLogout={onLogout} activeScreen="discover" customer={customer} />
           <h1 className="heading-lg">Discover Businesses</h1>
           <div className="field" style={{ marginTop: '16px' }}>
             <input
@@ -632,7 +663,7 @@ const DiscoverPage = ({ onNavigate, onLogout }) => {
             <p className="muted-text" style={{ marginTop: '16px' }}>Loading businesses...</p>
           ) : (
             <div className="stack-md">
-              {filteredBusinesses.map((business) => {
+              {businesses.map((business) => {
                 const isFavorited = favoriteIds.has(business.id);
                 return (
                   <div key={business.id} className="card" style={{ border: '1px solid var(--border)', boxShadow: 'none', padding: '20px' }}>
@@ -658,7 +689,8 @@ const DiscoverPage = ({ onNavigate, onLogout }) => {
                   </div>
                 );
               })}
-              {filteredBusinesses.length === 0 && <p className="muted-text">No businesses found.</p>}
+              {search.trim() === '' && <p className="muted-text">Start typing to discover businesses.</p>}
+              {search.trim() !== '' && businesses.length === 0 && <p className="muted-text">No businesses found.</p>}
             </div>
           )}
         </div>
@@ -667,7 +699,7 @@ const DiscoverPage = ({ onNavigate, onLogout }) => {
   );
 };
 
-const FavoritesPage = ({ onNavigate, onLogout }) => {
+const FavoritesPage = ({ onNavigate, onLogout, customer }) => {
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -702,7 +734,7 @@ const FavoritesPage = ({ onNavigate, onLogout }) => {
     <div className="dashboard">
       <div className="dashboard-container">
         <div className="card dashboard-card">
-          <CustomerNav onNavigate={onNavigate} onLogout={onLogout} activeScreen="favorites" />
+          <CustomerNav onNavigate={onNavigate} onLogout={onLogout} activeScreen="favorites" customer={customer} />
           <h1 className="heading-lg">My Favorites</h1>
           {error && <div className="alert alert-error">{error}</div>}
           {loading ? (
@@ -737,27 +769,89 @@ const FavoritesPage = ({ onNavigate, onLogout }) => {
   );
 };
 
-const fetchPublicBusinesses = async () => {
-  const candidates = ['/customers/discover', '/businesses/public', '/businesses'];
-  let lastError;
+const CustomerProfilePage = ({ onNavigate, onLogout, customer, onCustomerUpdated }) => {
+  const [formData, setFormData] = useState({
+    first_name: customer?.first_name || '',
+    last_name: customer?.last_name || '',
+    email: customer?.email || '',
+    phone: customer?.phone || '',
+    address: customer?.address || ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
 
-  for (const endpoint of candidates) {
+  useEffect(() => {
+    setFormData({
+      first_name: customer?.first_name || '',
+      last_name: customer?.last_name || '',
+      email: customer?.email || '',
+      phone: customer?.phone || '',
+      address: customer?.address || ''
+    });
+  }, [customer]);
+
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSave = async () => {
+    setLoading(true);
+    setMessage('');
+    setError('');
     try {
-      const response = await api.get(endpoint);
-      const payload = response.data;
-      const list = Array.isArray(payload)
-        ? payload
-        : payload?.businesses || payload?.data || payload?.results || [];
-
-      if (Array.isArray(list)) {
-        return list;
-      }
+      const response = await customerApi.put('/customers/profile', {
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        phone: formData.phone,
+        address: formData.address
+      });
+      onCustomerUpdated(response.data.customer);
+      setMessage('Profile updated successfully.');
     } catch (err) {
-      lastError = err;
+      setError(getApiErrorMessage(err, 'Unable to update profile.'));
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
-  throw lastError || new Error('No public businesses endpoint available.');
+  return (
+    <div className="dashboard">
+      <div className="dashboard-container">
+        <div className="card dashboard-card">
+          <CustomerNav onNavigate={onNavigate} onLogout={onLogout} activeScreen="customer-profile" customer={customer} />
+          <h1 className="heading-lg">My Profile</h1>
+          {message && <div className="alert alert-success">{message}</div>}
+          {error && <div className="alert alert-error">{error}</div>}
+          <div className="stack-md" style={{ marginTop: '16px' }}>
+            <div className="field">
+              <label className="label">First name</label>
+              <input className="input" type="text" value={formData.first_name} onChange={(e) => handleChange('first_name', e.target.value)} />
+            </div>
+            <div className="field">
+              <label className="label">Last name</label>
+              <input className="input" type="text" value={formData.last_name} onChange={(e) => handleChange('last_name', e.target.value)} />
+            </div>
+            <div className="field">
+              <label className="label">Email</label>
+              <input className="input" type="email" value={formData.email} readOnly />
+            </div>
+            <div className="field">
+              <label className="label">Phone</label>
+              <input className="input" type="text" value={formData.phone} onChange={(e) => handleChange('phone', e.target.value)} />
+            </div>
+            <div className="field">
+              <label className="label">Address</label>
+              <textarea className="input" rows="3" value={formData.address} onChange={(e) => handleChange('address', e.target.value)} />
+            </div>
+            <button type="button" className="button button-primary" onClick={handleSave} disabled={loading}>
+              {loading ? 'Saving...' : 'Save'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 // =============================================================================
@@ -1647,45 +1741,42 @@ export default function App() {
   const [publicSlug, setPublicSlug] = useState(null);
   const [contactPrefill, setContactPrefill] = useState(null);
   const [resetToken, setResetToken] = useState(null);
+  const [currentCustomer, setCurrentCustomer] = useState(null);
 
   const hasCustomerToken = () => Boolean(localStorage.getItem('customer_token'));
 
   useEffect(() => {
     const { pathname, search } = window.location;
+
     if (pathname === '/reset-password') {
       const params = new URLSearchParams(search);
       setResetToken(params.get('token'));
       setCurrentScreen('reset');
-      return;
-    }
-    if (pathname === '/customer/login') {
+    } else if (pathname === '/customer/login') {
       setCurrentScreen('customer-login');
-      return;
-    }
-    if (pathname === '/customer/signup') {
+    } else if (pathname === '/customer/signup') {
       setCurrentScreen('customer-signup');
-      return;
-    }
-    if (pathname === '/discover') {
+    } else if (pathname === '/discover') {
       setCurrentScreen('discover');
-      return;
-    }
-    if (pathname === '/favorites') {
+    } else if (pathname === '/favorites') {
       setCurrentScreen('favorites');
-      return;
-    }
-    if (pathname.startsWith('/business/')) {
+    } else if (pathname === '/customer/profile') {
+      setCurrentScreen('customer-profile');
+    } else if (pathname.startsWith('/business/')) {
       const slug = pathname.replace('/business/', '').trim();
       if (slug) {
         setPublicSlug(slug);
         setCurrentScreen('public');
-        return;
       }
     }
 
     const token = localStorage.getItem('token');
     if (token) {
       fetchCurrentBusiness();
+    }
+
+    if (hasCustomerToken()) {
+      fetchCurrentCustomer();
     }
   }, []);
 
@@ -1696,6 +1787,16 @@ export default function App() {
       setCurrentScreen('dashboard');
     } catch (err) {
       localStorage.removeItem('token');
+    }
+  };
+
+  const fetchCurrentCustomer = async () => {
+    try {
+      const response = await customerApi.get('/customers/auth/me');
+      setCurrentCustomer(response.data);
+    } catch (err) {
+      localStorage.removeItem('customer_token');
+      setCurrentCustomer(null);
     }
   };
 
@@ -1727,6 +1828,9 @@ export default function App() {
     if (screen === 'favorites') {
       return handleNavigate(screen, null, '/favorites');
     }
+    if (screen === 'customer-profile') {
+      return handleNavigate(screen, null, '/customer/profile');
+    }
     if (screen === 'public-route') {
       return handleNavigate('public', data, `/business/${data}`);
     }
@@ -1746,6 +1850,7 @@ export default function App() {
 
   const handleCustomerLogout = () => {
     localStorage.removeItem('customer_token');
+    setCurrentCustomer(null);
     setCurrentScreen('customer-login');
     window.history.pushState({}, '', '/customer/login');
   };
@@ -1759,20 +1864,31 @@ export default function App() {
       case 'login':
         return <BusinessLogin onNavigate={handleNavigate} onLoginSuccess={handleLoginSuccess} />;
       case 'customer-login':
-        return <CustomerLogin onNavigate={handleCustomerNavigate} />;
+        return <CustomerLogin onNavigate={handleCustomerNavigate} onAuthSuccess={setCurrentCustomer} />;
       case 'customer-signup':
-        return <CustomerSignup onNavigate={handleCustomerNavigate} />;
+        return <CustomerSignup onNavigate={handleCustomerNavigate} onAuthSuccess={setCurrentCustomer} />;
       case 'discover':
         return hasCustomerToken() ? (
-          <DiscoverPage onNavigate={handleCustomerNavigate} onLogout={handleCustomerLogout} />
+          <DiscoverPage onNavigate={handleCustomerNavigate} onLogout={handleCustomerLogout} customer={currentCustomer} />
         ) : (
-          <CustomerLogin onNavigate={handleCustomerNavigate} />
+          <CustomerLogin onNavigate={handleCustomerNavigate} onAuthSuccess={setCurrentCustomer} />
         );
       case 'favorites':
         return hasCustomerToken() ? (
-          <FavoritesPage onNavigate={handleCustomerNavigate} onLogout={handleCustomerLogout} />
+          <FavoritesPage onNavigate={handleCustomerNavigate} onLogout={handleCustomerLogout} customer={currentCustomer} />
         ) : (
-          <CustomerLogin onNavigate={handleCustomerNavigate} />
+          <CustomerLogin onNavigate={handleCustomerNavigate} onAuthSuccess={setCurrentCustomer} />
+        );
+      case 'customer-profile':
+        return hasCustomerToken() ? (
+          <CustomerProfilePage
+            onNavigate={handleCustomerNavigate}
+            onLogout={handleCustomerLogout}
+            customer={currentCustomer}
+            onCustomerUpdated={setCurrentCustomer}
+          />
+        ) : (
+          <CustomerLogin onNavigate={handleCustomerNavigate} onAuthSuccess={setCurrentCustomer} />
         );
       case 'forgot':
         return <BusinessForgotPassword onNavigate={handleNavigate} />;

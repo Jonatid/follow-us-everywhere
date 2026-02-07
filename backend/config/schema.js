@@ -116,7 +116,9 @@ const ensureSchema = async () => {
     await pool.query(`
       ALTER TABLE customers
         ADD COLUMN IF NOT EXISTS first_name VARCHAR(255) NOT NULL DEFAULT '',
-        ADD COLUMN IF NOT EXISTS last_name VARCHAR(255) NOT NULL DEFAULT '';
+        ADD COLUMN IF NOT EXISTS last_name VARCHAR(255) NOT NULL DEFAULT '',
+        ADD COLUMN IF NOT EXISTS phone TEXT,
+        ADD COLUMN IF NOT EXISTS address TEXT;
     `);
 
     await pool.query(`
