@@ -55,7 +55,7 @@ router.post(
       const result = await pool.query(
         `INSERT INTO customers (email, password_hash, first_name, last_name)
          VALUES ($1, $2, $3, $4)
-         RETURNING id, email, first_name, last_name, created_at`,
+         RETURNING id, email, first_name, last_name, phone, address, created_at`,
         [email, passwordHash, first_name, last_name]
       );
 
@@ -87,7 +87,7 @@ router.post('/login', [body('email').isEmail(), body('password').exists()], asyn
 
   try {
     const result = await pool.query(
-      'SELECT id, email, first_name, last_name, password_hash, created_at FROM customers WHERE email = $1',
+      'SELECT id, email, first_name, last_name, phone, address, password_hash, created_at FROM customers WHERE email = $1',
       [email]
     );
 
@@ -118,7 +118,7 @@ router.post('/login', [body('email').isEmail(), body('password').exists()], asyn
 router.get('/me', authenticateCustomerToken, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, email, first_name, last_name, created_at FROM customers WHERE id = $1',
+      'SELECT id, email, first_name, last_name, phone, address, created_at FROM customers WHERE id = $1',
       [req.customerId]
     );
 
