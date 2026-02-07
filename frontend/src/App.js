@@ -580,7 +580,11 @@ const CustomerNav = ({ onNavigate, onLogout, activeScreen, customer }) => {
 };
 
 const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
-  const [search, setSearch] = useState('');
+  const [businessName, setBusinessName] = useState('');
+  const [communitySupport, setCommunitySupport] = useState('');
+  const [badge, setBadge] = useState('');
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
   const [businesses, setBusinesses] = useState([]);
   const [favoriteIds, setFavoriteIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
@@ -600,12 +604,9 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
   }, []);
 
   useEffect(() => {
-    const query = search.trim();
-    if (!query) {
-      setBusinesses([]);
-      setLoading(false);
-      return;
-    }
+    const trimmedBusinessName = businessName.trim();
+    const hasDropdownFilters = Boolean(communitySupport || badge);
+    const query = trimmedBusinessName === '' && !hasDropdownFilters ? 'a' : trimmedBusinessName;
 
     const loadBusinesses = async () => {
       setLoading(true);
@@ -623,7 +624,56 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
     };
 
     loadBusinesses();
-  }, [search]);
+  }, [businessName, communitySupport, badge]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [businessName, communitySupport, badge, itemsPerPage]);
+
+  const filteredBusinesses = useMemo(() => {
+    const normalizedBusinessName = businessName.trim().toLowerCase();
+    const normalizedCommunitySupport = communitySupport.trim().toLowerCase();
+    const normalizedBadge = badge.trim().toLowerCase();
+
+    return businesses.filter((business) => {
+      const searchableName = `${business.name || ''} ${business.tagline || ''}`.toLowerCase();
+
+      const communitySupportValue = [
+        business.community_support,
+        business.communitySupport,
+        business.community,
+        business.community_name,
+        business.communityName
+      ]
+        .flat()
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      const badgesValue = [
+        business.badges,
+        business.badge,
+        business.badge_names,
+        business.badgeNames
+      ]
+        .flat()
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      const matchesBusinessName = normalizedBusinessName === '' || searchableName.includes(normalizedBusinessName);
+      const matchesCommunitySupport = normalizedCommunitySupport === '' || communitySupportValue.includes(normalizedCommunitySupport);
+      const matchesBadge = normalizedBadge === '' || badgesValue.includes(normalizedBadge);
+
+      return matchesBusinessName && matchesCommunitySupport && matchesBadge;
+    });
+  }, [businesses, businessName, communitySupport, badge]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredBusinesses.length / itemsPerPage));
+  const paginatedBusinesses = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredBusinesses.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredBusinesses, currentPage, itemsPerPage]);
 
   const toggleFavorite = async (businessId, isFavorited) => {
     try {
@@ -649,21 +699,49 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
         <div className="card dashboard-card">
           <CustomerNav onNavigate={onNavigate} onLogout={onLogout} activeScreen="discover" customer={customer} />
           <h1 className="heading-lg">Discover Businesses</h1>
-          <div className="field" style={{ marginTop: '16px' }}>
-            <input
-              className="input"
-              type="text"
-              placeholder="Search by business name, community support, or badge"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+          <p className="subtitle" style={{ marginTop: '16px', marginBottom: '8px' }}>Search by</p>
+          <div className="row row-wrap" style={{ gap: '12px', alignItems: 'flex-end' }}>
+            <div className="field" style={{ marginTop: 0, flex: '1 1 220px' }}>
+              <input
+                className="input"
+                type="text"
+                placeholder="Business name"
+                value={businessName}
+                onChange={(e) => setBusinessName(e.target.value)}
+              />
+            </div>
+            <div className="field" style={{ marginTop: 0, flex: '1 1 220px' }}>
+              <select className="input" value={communitySupport} onChange={(e) => setCommunitySupport(e.target.value)}>
+                <option value="">Community support</option>
+                <option value="Community One">Community One</option>
+                <option value="Community Two">Community Two</option>
+                <option value="Community Three">Community Three</option>
+              </select>
+            </div>
+            <div className="field" style={{ marginTop: 0, flex: '1 1 220px' }}>
+              <select className="input" value={badge} onChange={(e) => setBadge(e.target.value)}>
+                <option value="">Badges</option>
+                <option value="Badge One">Badge One</option>
+                <option value="Badge Two">Badge Two</option>
+                <option value="Badge Three">Badge Three</option>
+              </select>
+            </div>
           </div>
           {error && <div className="alert alert-error">{error}</div>}
           {loading ? (
             <p className="muted-text" style={{ marginTop: '16px' }}>Loading businesses...</p>
           ) : (
             <div className="stack-md">
-              {businesses.map((business) => {
+              <div className="row" style={{ justifyContent: 'flex-end', marginTop: '8px' }}>
+                <label className="muted-text" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  Per page
+                  <select className="input" value={itemsPerPage} onChange={(e) => setItemsPerPage(Number(e.target.value))} style={{ width: '90px' }}>
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                  </select>
+                </label>
+              </div>
+              {paginatedBusinesses.map((business) => {
                 const isFavorited = favoriteIds.has(business.id);
                 return (
                   <div key={business.id} className="card" style={{ border: '1px solid var(--border)', boxShadow: 'none', padding: '20px' }}>
@@ -689,8 +767,32 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
                   </div>
                 );
               })}
-              {search.trim() === '' && <p className="muted-text">Start typing to discover businesses.</p>}
-              {search.trim() !== '' && businesses.length === 0 && <p className="muted-text">No businesses found.</p>}
+              {filteredBusinesses.length === 0 && <p className="muted-text">No businesses found.</p>}
+              {filteredBusinesses.length > 0 && (
+                <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+                  <p className="muted-text">
+                    Page {currentPage} of {totalPages}
+                  </p>
+                  <div className="row" style={{ gap: '8px' }}>
+                    <button
+                      type="button"
+                      className="button button-sm button-muted"
+                      onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </button>
+                    <button
+                      type="button"
+                      className="button button-sm button-primary"
+                      onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
