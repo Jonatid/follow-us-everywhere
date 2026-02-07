@@ -131,7 +131,7 @@ const MarketingLandingPage = ({ onNavigate }) => {
 
   return (
     <div className="page page--gradient" style={{ minHeight: '100vh', justifyContent: 'flex-start' }}>
-      <div className="card card--wide" style={{ width: '100%', maxWidth: '980px', marginTop: '20px' }}>
+      <div className="card card--wide" style={{ width: '100%', maxWidth: '1120px', margin: '20px auto 0' }}>
         <div className="row space-between row-wrap" style={{ alignItems: 'center', gap: '12px' }}>
           <button type="button" className="link-button" style={{ fontWeight: 700, fontSize: '1.1rem' }} onClick={() => onNavigate('marketing-landing', null, '/')}>
             Follow Us Everywhere
