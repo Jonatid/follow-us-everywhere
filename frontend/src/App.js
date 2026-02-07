@@ -70,6 +70,167 @@ const LandingPage = ({ onNavigate }) => (
   </div>
 );
 
+const RoleChooserModal = ({ mode, onClose, onChoose }) => {
+  const isLogin = mode === 'login';
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'rgba(15, 23, 42, 0.55)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+        padding: '20px'
+      }}
+    >
+      <div className="card card--medium" style={{ width: '100%', maxWidth: '440px' }}>
+        <div className="row space-between" style={{ alignItems: 'center' }}>
+          <h2 className="heading-lg" style={{ margin: 0 }}>{isLogin ? 'Log in as' : 'Sign up as'}</h2>
+          <button type="button" className="link-button" onClick={onClose}>✕</button>
+        </div>
+        <p className="subtitle" style={{ marginTop: '10px' }}>
+          Choose your account type to continue.
+        </p>
+        <div className="stack-sm" style={{ marginTop: '18px' }}>
+          <button type="button" className="button button-primary button-full" onClick={() => onChoose(isLogin ? 'customer-login' : 'customer-signup')}>
+            {isLogin ? 'Customer login' : 'Customer signup'}
+          </button>
+          <button type="button" className="button button-secondary button-full" onClick={() => onChoose(isLogin ? 'login' : 'signup')}>
+            {isLogin ? 'Vendor login' : 'Vendor signup'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const MarketingLandingPage = ({ onNavigate }) => {
+  const [roleModalMode, setRoleModalMode] = useState(null);
+
+  const handleChoose = (screen) => {
+    setRoleModalMode(null);
+    if (screen === 'customer-login') {
+      onNavigate(screen, null, '/customer/login');
+      return;
+    }
+    if (screen === 'customer-signup') {
+      onNavigate(screen, null, '/customer/signup');
+      return;
+    }
+    if (screen === 'login') {
+      onNavigate(screen, null, '/vendor');
+      return;
+    }
+    if (screen === 'signup') {
+      onNavigate(screen, null, '/vendor');
+    }
+  };
+
+  return (
+    <div className="page page--gradient" style={{ minHeight: '100vh', justifyContent: 'flex-start' }}>
+      <div className="card card--wide" style={{ width: '100%', maxWidth: '980px', marginTop: '20px' }}>
+        <div className="row space-between row-wrap" style={{ alignItems: 'center', gap: '12px' }}>
+          <button type="button" className="link-button" style={{ fontWeight: 700, fontSize: '1.1rem' }} onClick={() => onNavigate('marketing-landing', null, '/')}>
+            Fuse101
+          </button>
+          <div className="row row-wrap" style={{ gap: '12px' }}>
+            <button type="button" className="link-button" onClick={() => onNavigate('about', null, '/about')}>About</button>
+            <button type="button" className="link-button" onClick={() => onNavigate('faq', null, '/faq')}>FAQ</button>
+            <button type="button" className="link-button" onClick={() => setRoleModalMode('login')}>Log in</button>
+            <button type="button" className="button button-primary button-sm" onClick={() => setRoleModalMode('signup')}>Sign up free</button>
+          </div>
+        </div>
+
+        <div className="stack-lg text-center" style={{ marginTop: '40px' }}>
+          <h1 className="heading-xxl" style={{ marginBottom: '8px' }}>One Smart Link for Your Brand</h1>
+          <p className="subtitle-lg" style={{ maxWidth: '640px', margin: '0 auto' }}>
+            Fuse101 helps creators and local businesses share everything that matters from one clean page.
+          </p>
+          <div>
+            <button type="button" className="button button-primary button-lg" onClick={() => setRoleModalMode('signup')}>
+              Sign up free
+            </button>
+          </div>
+        </div>
+
+        <div className="row row-wrap" style={{ marginTop: '36px', gap: '12px' }}>
+          {[{
+            title: 'Custom branded page',
+            description: 'Show your links, socials, and contact channels with your own style.'
+          }, {
+            title: 'Built for growth',
+            description: 'Keep your audience focused with one destination for every campaign.'
+          }, {
+            title: 'Easy to update',
+            description: 'Change links anytime and keep your profile fresh in seconds.'
+          }].map((feature) => (
+            <div key={feature.title} className="card" style={{ flex: '1 1 240px' }}>
+              <h3 className="heading-md">{feature.title}</h3>
+              <p className="subtitle">{feature.description}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="row row-wrap" style={{ marginTop: '30px', gap: '12px', justifyContent: 'center' }}>
+          <button type="button" className="link-button" onClick={() => onNavigate('about', null, '/about')}>About</button>
+          <button type="button" className="link-button" onClick={() => onNavigate('faq', null, '/faq')}>FAQ</button>
+          <span className="muted-text">Privacy (coming soon)</span>
+          <span className="muted-text">Terms (coming soon)</span>
+        </div>
+      </div>
+
+      {roleModalMode ? (
+        <RoleChooserModal
+          mode={roleModalMode}
+          onClose={() => setRoleModalMode(null)}
+          onChoose={handleChoose}
+        />
+      ) : null}
+    </div>
+  );
+};
+
+const AboutPage = ({ onNavigate }) => (
+  <div className="page page--gradient">
+    <div className="card card--wide" style={{ maxWidth: '900px' }}>
+      <button type="button" className="link-button" onClick={() => onNavigate('marketing-landing', null, '/')}>← Back to home</button>
+      <h1 className="heading-xl" style={{ marginTop: '14px' }}>About Fuse101</h1>
+      <p className="subtitle">
+        Fuse101 is a simple profile-link platform designed to help people and businesses share important links in one place.
+      </p>
+      <p className="subtitle">
+        This page is intentionally minimal so your team can quickly edit copy as your product messaging evolves.
+      </p>
+    </div>
+  </div>
+);
+
+const FAQPage = ({ onNavigate }) => (
+  <div className="page page--gradient">
+    <div className="card card--wide" style={{ maxWidth: '900px' }}>
+      <button type="button" className="link-button" onClick={() => onNavigate('marketing-landing', null, '/')}>← Back to home</button>
+      <h1 className="heading-xl" style={{ marginTop: '14px' }}>FAQ</h1>
+      <div className="stack-sm" style={{ marginTop: '14px' }}>
+        <div>
+          <h3 className="heading-md">What is Fuse101?</h3>
+          <p className="subtitle">Fuse101 gives you one public page to organize links for your audience.</p>
+        </div>
+        <div>
+          <h3 className="heading-md">How do I get started?</h3>
+          <p className="subtitle">Choose Customer or Vendor from Sign up free and follow the existing onboarding flow.</p>
+        </div>
+        <div>
+          <h3 className="heading-md">Can I still access vendor tools?</h3>
+          <p className="subtitle">Yes. Vendor access remains available at /vendor with no backend changes.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 // =============================================================================
 // BUSINESS SIGNUP
 // =============================================================================
@@ -1838,7 +1999,7 @@ const ContactSupport = ({ onNavigate, prefill }) => {
 // =============================================================================
 
 export default function App() {
-  const [currentScreen, setCurrentScreen] = useState('landing');
+  const [currentScreen, setCurrentScreen] = useState('marketing-landing');
   const [currentBusiness, setCurrentBusiness] = useState(null);
   const [publicSlug, setPublicSlug] = useState(null);
   const [contactPrefill, setContactPrefill] = useState(null);
@@ -1851,8 +2012,11 @@ export default function App() {
     const { pathname, search } = window.location;
 
     if (pathname === '/') {
-      window.history.replaceState({}, '', '/customer/login');
-      setCurrentScreen('customer-login');
+      setCurrentScreen('marketing-landing');
+    } else if (pathname === '/about') {
+      setCurrentScreen('about');
+    } else if (pathname === '/faq') {
+      setCurrentScreen('faq');
     } else if (pathname === '/vendor') {
       setCurrentScreen('landing');
     } else if (pathname === '/reset-password') {
@@ -1941,7 +2105,7 @@ export default function App() {
     if (screen === 'public-route') {
       return handleNavigate('public', data, `/business/${data}`);
     }
-    return handleNavigate(screen, null, '/');
+    return handleNavigate('marketing-landing', null, '/');
   };
 
   const handleLoginSuccess = (business) => {
@@ -1964,6 +2128,12 @@ export default function App() {
 
   const renderScreen = () => {
     switch (currentScreen) {
+      case 'marketing-landing':
+        return <MarketingLandingPage onNavigate={handleNavigate} />;
+      case 'about':
+        return <AboutPage onNavigate={handleNavigate} />;
+      case 'faq':
+        return <FAQPage onNavigate={handleNavigate} />;
       case 'landing':
         return <LandingPage onNavigate={handleNavigate} />;
       case 'signup':
@@ -2017,7 +2187,7 @@ export default function App() {
       case 'contact':
         return <ContactSupport onNavigate={handleNavigate} prefill={contactPrefill} />;
       default:
-        return <LandingPage onNavigate={handleNavigate} />;
+        return <MarketingLandingPage onNavigate={handleNavigate} />;
     }
   };
 
