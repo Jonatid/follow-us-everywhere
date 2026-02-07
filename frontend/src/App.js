@@ -134,7 +134,7 @@ const MarketingLandingPage = ({ onNavigate }) => {
       <div className="card card--wide" style={{ width: '100%', maxWidth: '980px', marginTop: '20px' }}>
         <div className="row space-between row-wrap" style={{ alignItems: 'center', gap: '12px' }}>
           <button type="button" className="link-button" style={{ fontWeight: 700, fontSize: '1.1rem' }} onClick={() => onNavigate('marketing-landing', null, '/')}>
-            Fuse101
+            Follow Us Everywhere
           </button>
           <div className="row row-wrap" style={{ gap: '12px' }}>
             <button type="button" className="link-button" onClick={() => onNavigate('about', null, '/about')}>About</button>
@@ -145,9 +145,9 @@ const MarketingLandingPage = ({ onNavigate }) => {
         </div>
 
         <div className="stack-lg text-center" style={{ marginTop: '40px' }}>
-          <h1 className="heading-xxl" style={{ marginBottom: '8px' }}>One Smart Link for Your Brand</h1>
+          <h1 className="heading-xxl" style={{ marginBottom: '8px' }}>One Smart Link for Businesses That Support the Community</h1>
           <p className="subtitle-lg" style={{ maxWidth: '640px', margin: '0 auto' }}>
-            Fuse101 helps creators and local businesses share everything that matters from one clean page.
+            Follow Us Everywhere helps community-minded businesses share their links, socials, and contact info from one clean page.
           </p>
           <div>
             <button type="button" className="button button-primary button-lg" onClick={() => setRoleModalMode('signup')}>
