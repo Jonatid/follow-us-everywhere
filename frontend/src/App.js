@@ -782,7 +782,7 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
 
         const response = await customerApi.get('/public/businesses', { params });
         setBusinesses(response.data?.businesses || []);
-        setTotalBusinesses(Number(response.data?.total || 0));
+        setTotalBusinesses(Number(response.data?.totalCount ?? response.data?.total || 0));
       } catch (err) {
         setError(getApiErrorMessage(err, 'Unable to load discover businesses.'));
       } finally {

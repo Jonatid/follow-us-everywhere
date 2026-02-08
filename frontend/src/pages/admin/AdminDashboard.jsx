@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchAdmins, fetchBusinesses } from '../../utils/adminApi';
+import { fetchAdmins, fetchDiscoverBusinesses } from '../../utils/adminApi';
 
 const AdminDashboard = () => {
   const [summary, setSummary] = useState({ businesses: 0, admins: 0 });
@@ -8,9 +8,12 @@ const AdminDashboard = () => {
   useEffect(() => {
     const loadSummary = async () => {
       try {
-        const [businesses, admins] = await Promise.all([fetchBusinesses(), fetchAdmins()]);
+        const [discoverBusinesses, admins] = await Promise.all([
+          fetchDiscoverBusinesses({ page: 1, limit: 10 }),
+          fetchAdmins()
+        ]);
         setSummary({
-          businesses: Array.isArray(businesses) ? businesses.length : businesses?.length || 0,
+          businesses: Number(discoverBusinesses?.totalCount ?? discoverBusinesses?.total || 0),
           admins: Array.isArray(admins) ? admins.length : admins?.length || 0
         });
       } catch (err) {

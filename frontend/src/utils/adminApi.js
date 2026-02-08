@@ -26,6 +26,11 @@ export const fetchBusinesses = async () => {
   return response.data;
 };
 
+export const fetchDiscoverBusinesses = async (params) => {
+  const response = await adminApi.get('/public/businesses', { params });
+  return response.data;
+};
+
 export const fetchBusiness = async (businessId) => {
   const response = await adminApi.get(`/admin/businesses/${businessId}`);
   return response.data;
