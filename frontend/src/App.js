@@ -2,7 +2,7 @@
 // COMPLETE API-CONNECTED APP.JS
 // =============================================================================
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
 
 // API base URL (override with VITE_API_BASE_URL at build time if needed).
@@ -751,6 +751,7 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
   const [favoriteIds, setFavoriteIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const discoverRequestIdRef = useRef(0);
 
   useEffect(() => {
     const loadFavorites = async () => {
@@ -766,6 +767,10 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
   }, []);
 
   useEffect(() => {
+    const controller = new AbortController();
+    const requestId = discoverRequestIdRef.current + 1;
+    discoverRequestIdRef.current = requestId;
+
     const loadBusinesses = async () => {
       setLoading(true);
       setError('');
@@ -780,17 +785,34 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
           params.query = trimmedBusinessName;
         }
 
-        const response = await customerApi.get('/public/businesses', { params });
+        const response = await customerApi.get('/public/businesses', {
+          params,
+          signal: controller.signal
+        });
+
+        if (discoverRequestIdRef.current !== requestId) {
+          return;
+        }
+
         setBusinesses(response.data?.businesses || []);
-        setTotalBusinesses(Number((response.data?.totalCount ?? response.data?.total) || 0));
+        setTotalBusinesses(Number(((response.data?.totalCount ?? response.data?.total) || 0)));
       } catch (err) {
+        if (controller.signal.aborted || discoverRequestIdRef.current !== requestId) {
+          return;
+        }
         setError(getApiErrorMessage(err, 'Unable to load discover businesses.'));
       } finally {
-        setLoading(false);
+        if (discoverRequestIdRef.current === requestId) {
+          setLoading(false);
+        }
       }
     };
 
     loadBusinesses();
+
+    return () => {
+      controller.abort();
+    };
   }, [businessName, currentPage, itemsPerPage]);
 
   useEffect(() => {

@@ -68,9 +68,6 @@ router.get('/businesses', async (req, res) => {
     if (availableColumns.has('is_approved')) {
       visibilityChecks.push('b.is_approved = TRUE');
     }
-    if (availableColumns.has('is_verified')) {
-      visibilityChecks.push('b.is_verified = TRUE');
-    }
     if (availableColumns.has('is_public')) {
       visibilityChecks.push('b.is_public = TRUE');
     }
@@ -86,7 +83,7 @@ router.get('/businesses', async (req, res) => {
 
     if (query) {
       params.push(`%${query}%`);
-      whereConditions.push('(b.name ILIKE $1 OR b.slug ILIKE $1 OR COALESCE(b.tagline, \'\') ILIKE $1)');
+      whereConditions.push('(b.name ILIKE $1 OR COALESCE(b.tagline, \'\') ILIKE $1)');
     }
 
     if (visibilityChecks.length) {
