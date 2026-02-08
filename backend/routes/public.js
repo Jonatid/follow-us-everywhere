@@ -24,11 +24,36 @@ router.get('/businesses', async (req, res) => {
            'is_verified',
            'is_public',
            'is_published',
-           'is_active'
+           'is_active',
+           'community_support_text'
          )`
     );
 
+    const tablesResult = await pool.query(
+      `SELECT table_name
+       FROM information_schema.tables
+       WHERE table_schema = 'public'
+         AND table_name IN ('business_badges', 'badges')`
+    );
+
     const availableColumns = new Set(columnsResult.rows.map((row) => row.column_name));
+    const availableTables = new Set(tablesResult.rows.map((row) => row.table_name));
+    const includeBadges = availableTables.has('business_badges') && availableTables.has('badges');
+    const selectCommunitySupport = availableColumns.has('community_support_text')
+      ? 'b.community_support_text'
+      : 'NULL::text AS community_support_text';
+    const selectBadges = includeBadges
+      ? `COALESCE(
+           json_agg(
+             DISTINCT jsonb_build_object('id', bd.id, 'name', bd.name)
+           ) FILTER (WHERE bd.id IS NOT NULL),
+           '[]'::json
+         ) AS badges`
+      : "'[]'::json AS badges";
+    const badgesJoins = includeBadges
+      ? `LEFT JOIN business_badges bb ON bb.business_id = b.id
+         LEFT JOIN badges bd ON bd.id = bb.badge_id`
+      : '';
     const visibilityChecks = [];
 
     if (availableColumns.has('verification_status')) {
@@ -88,16 +113,10 @@ router.get('/businesses', async (req, res) => {
               b.slug,
               b.tagline,
               COALESCE(b.verification_status, 'active') AS verification_status,
-              b.community_support_text,
-              COALESCE(
-                json_agg(
-                  DISTINCT jsonb_build_object('id', bd.id, 'name', bd.name)
-                ) FILTER (WHERE bd.id IS NOT NULL),
-                '[]'::json
-              ) AS badges
+              ${selectCommunitySupport},
+              ${selectBadges}
        FROM businesses b
-       LEFT JOIN business_badges bb ON bb.business_id = b.id
-       LEFT JOIN badges bd ON bd.id = bb.badge_id
+       ${badgesJoins}
        ${whereClause}
        GROUP BY b.id
        ORDER BY b.name ASC
