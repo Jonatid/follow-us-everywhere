@@ -3,19 +3,20 @@ const assert = require('node:assert/strict');
 const express = require('express');
 
 function createDbMock() {
+  const state = {
+    countSqls: [],
+    listSqls: [],
+    countParams: [],
+    listParams: [],
+  };
+
   return {
+    state,
     async query(sql, params = []) {
       if (sql.includes('FROM information_schema.columns')) {
         return {
           rows: [
             { column_name: 'verification_status' },
-            { column_name: 'disabled_at' },
-            { column_name: 'suspended_at' },
-            { column_name: 'is_approved' },
-            { column_name: 'is_verified' },
-            { column_name: 'is_public' },
-            { column_name: 'is_published' },
-            { column_name: 'is_active' },
             { column_name: 'community_support_text' }
           ]
         };
@@ -31,10 +32,14 @@ function createDbMock() {
       }
 
       if (sql.includes('COUNT(DISTINCT b.id)')) {
-        return { rows: [{ total: '1' }] };
+        state.countSqls.push(sql);
+        state.countParams.push(params);
+        return { rows: [{ total: '3' }] };
       }
 
       if (sql.includes('FROM businesses b')) {
+        state.listSqls.push(sql);
+        state.listParams.push(params);
         return {
           rows: [
             {
@@ -42,7 +47,25 @@ function createDbMock() {
               name: 'Acme Co',
               slug: 'acme-co',
               tagline: 'Hello',
-              verification_status: 'approved',
+              verification_status: 'active',
+              community_support_text: null,
+              badges: []
+            },
+            {
+              id: 2,
+              name: 'Beta Co',
+              slug: 'beta-co',
+              tagline: 'World',
+              verification_status: 'active',
+              community_support_text: null,
+              badges: []
+            },
+            {
+              id: 3,
+              name: 'Gamma Co',
+              slug: 'gamma-co',
+              tagline: '',
+              verification_status: 'active',
               community_support_text: null,
               badges: []
             }
@@ -59,12 +82,14 @@ async function createServer() {
   const dbPath = require.resolve('../config/db');
   const publicPath = require.resolve('../routes/public');
 
+  const dbMock = createDbMock();
+
   delete require.cache[publicPath];
   require.cache[dbPath] = {
     id: dbPath,
     filename: dbPath,
     loaded: true,
-    exports: createDbMock()
+    exports: dbMock
   };
 
   const publicRoutes = require('../routes/public');
@@ -76,6 +101,7 @@ async function createServer() {
   const { port } = server.address();
 
   return {
+    dbState: dbMock.state,
     async get(path) {
       const response = await fetch(`http://127.0.0.1:${port}${path}`);
       const body = await response.json();
@@ -87,35 +113,44 @@ async function createServer() {
   };
 }
 
-test('GET /api/public/businesses returns 200 and businesses array when query is omitted', async () => {
-  const server = await createServer();
-  try {
-    const { response, body } = await server.get('/api/public/businesses');
-    assert.equal(response.status, 200);
-    assert.ok(Array.isArray(body.businesses));
-    assert.equal(body.businesses.length, 1);
-  } finally {
-    await server.close();
-  }
-});
-
-test('GET /api/public/businesses?page=1&limit=10 returns 200', async () => {
+test('GET /api/public/businesses default query returns active discoverable businesses', async () => {
   const server = await createServer();
   try {
     const { response, body } = await server.get('/api/public/businesses?page=1&limit=10');
     assert.equal(response.status, 200);
+    assert.equal(body.totalCount, 3);
     assert.ok(Array.isArray(body.businesses));
+    assert.equal(body.businesses.length, 3);
+
+    const whereSql = server.dbState.countSqls[0];
+    assert.match(whereSql, /COALESCE\(b\.verification_status, 'active'\) = 'active'/);
   } finally {
     await server.close();
   }
 });
 
-test('GET /api/public/businesses?query=a&page=1&limit=10 returns 200', async () => {
+test('GET /api/public/businesses with text query applies safe search', async () => {
   const server = await createServer();
   try {
-    const { response, body } = await server.get('/api/public/businesses?query=a&page=1&limit=10');
+    const { response, body } = await server.get('/api/public/businesses?query=test&page=1&limit=10');
     assert.equal(response.status, 200);
     assert.ok(Array.isArray(body.businesses));
+
+    const whereSql = server.dbState.countSqls[0];
+    assert.match(whereSql, /b\.name ILIKE \$1 OR COALESCE\(b\.tagline, ''\) ILIKE \$1/);
+    assert.equal(server.dbState.countParams[0][0], '%test%');
+  } finally {
+    await server.close();
+  }
+});
+
+test('GET /api/public/businesses keeps records when no badge/communitySupport data exists', async () => {
+  const server = await createServer();
+  try {
+    const { response, body } = await server.get('/api/public/businesses?page=1&limit=10');
+    assert.equal(response.status, 200);
+    assert.equal(body.businesses.length, 3);
+    assert.equal(body.businesses.every((business) => business.community_support_text === null), true);
   } finally {
     await server.close();
   }

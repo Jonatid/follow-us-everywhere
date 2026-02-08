@@ -6,6 +6,8 @@ const router = express.Router();
 router.get('/businesses', async (req, res) => {
   try {
     const query = typeof req.query.query === 'string' ? req.query.query.trim() : '';
+    const badge = typeof req.query.badge === 'string' ? req.query.badge.trim() : '';
+    const communitySupport = typeof req.query.communitySupport === 'string' ? req.query.communitySupport.trim() : '';
     const parsedPage = Number.parseInt(req.query.page, 10);
     const parsedLimit = Number.parseInt(req.query.limit, 10);
     const page = Number.isNaN(parsedPage) || parsedPage < 1 ? 1 : parsedPage;
@@ -54,41 +56,35 @@ router.get('/businesses', async (req, res) => {
       ? `LEFT JOIN business_badges bb ON bb.business_id = b.id
          LEFT JOIN badges bd ON bd.id = bb.badge_id`
       : '';
-    const visibilityChecks = [];
-
-    if (availableColumns.has('verification_status')) {
-      visibilityChecks.push("COALESCE(b.verification_status, 'active') NOT IN ('disabled', 'suspended')");
-    }
-    if (availableColumns.has('disabled_at')) {
-      visibilityChecks.push('b.disabled_at IS NULL');
-    }
-    if (availableColumns.has('suspended_at')) {
-      visibilityChecks.push('b.suspended_at IS NULL');
-    }
-    if (availableColumns.has('is_public')) {
-      visibilityChecks.push('b.is_public = true');
-    }
-    if (availableColumns.has('is_approved')) {
-      visibilityChecks.push('b.is_approved = true');
-    }
-    if (availableColumns.has('is_published')) {
-      visibilityChecks.push('b.is_published = true');
-    }
-    if (availableColumns.has('is_active')) {
-      visibilityChecks.push('b.is_active = true');
-    }
-    // Public discovery should only require active verification and existing public/approval flags when present.
-
     const whereConditions = [];
     const params = [];
 
+    // Discoverable businesses are those with active verification status.
+    whereConditions.push("COALESCE(b.verification_status, 'active') = 'active'");
+
     if (query) {
       params.push(`%${query}%`);
-      whereConditions.push('(b.name ILIKE $1 OR COALESCE(b.tagline, \'\') ILIKE $1)');
+      whereConditions.push(`(b.name ILIKE $${params.length} OR COALESCE(b.tagline, '') ILIKE $${params.length})`);
     }
 
-    if (visibilityChecks.length) {
-      whereConditions.push(visibilityChecks.join(' AND '));
+    if (communitySupport && availableColumns.has('community_support_text')) {
+      params.push(`%${communitySupport}%`);
+      whereConditions.push(`COALESCE(b.community_support_text, '') ILIKE $${params.length}`);
+    }
+
+    if (badge) {
+      if (includeBadges) {
+        params.push(`%${badge}%`);
+        whereConditions.push(`EXISTS (
+          SELECT 1
+          FROM business_badges bb_filter
+          JOIN badges bd_filter ON bd_filter.id = bb_filter.badge_id
+          WHERE bb_filter.business_id = b.id
+            AND bd_filter.name ILIKE $${params.length}
+        )`);
+      } else {
+        whereConditions.push('FALSE');
+      }
     }
 
     const whereClause = whereConditions.length ? `WHERE ${whereConditions.join(' AND ')}` : '';
@@ -125,7 +121,8 @@ router.get('/businesses', async (req, res) => {
         page,
         limit,
         offset,
-        visibilityChecks,
+        badge,
+        communitySupport,
         whereClause,
         countSql,
         listSql,
