@@ -65,7 +65,19 @@ router.get('/businesses', async (req, res) => {
     if (availableColumns.has('suspended_at')) {
       visibilityChecks.push('b.suspended_at IS NULL');
     }
-    // Public discovery should only require active verification and no suspension/disable timestamps.
+    if (availableColumns.has('is_public')) {
+      visibilityChecks.push('b.is_public = true');
+    }
+    if (availableColumns.has('is_approved')) {
+      visibilityChecks.push('b.is_approved = true');
+    }
+    if (availableColumns.has('is_published')) {
+      visibilityChecks.push('b.is_published = true');
+    }
+    if (availableColumns.has('is_active')) {
+      visibilityChecks.push('b.is_active = true');
+    }
+    // Public discovery should only require active verification and existing public/approval flags when present.
 
     const whereConditions = [];
     const params = [];

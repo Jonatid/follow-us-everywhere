@@ -678,6 +678,15 @@ const CustomerLogin = ({ onNavigate, onAuthSuccess }) => {
           </button>
         </div>
         <p className="helper-text text-center">
+          <button
+            type="button"
+            onClick={() => onNavigate('customer-forgot')}
+            className="link-button link-button--inline"
+          >
+            Forgot password?
+          </button>
+        </p>
+        <p className="helper-text text-center">
           Need an account?{' '}
           <button
             type="button"
@@ -691,6 +700,19 @@ const CustomerLogin = ({ onNavigate, onAuthSuccess }) => {
     </div>
   );
 };
+
+const CustomerForgotPassword = ({ onNavigate }) => (
+  <div className="page page--gradient">
+    <div className="card card--medium">
+      <button type="button" onClick={() => onNavigate('customer-login')} className="link-button">← Back</button>
+      <div className="stack-sm text-center">
+        <h1 className="heading-xl">Customer Password Reset</h1>
+        <p className="subtitle">Coming soon</p>
+      </div>
+      <p className="helper-text text-center">We&apos;re working on customer password reset support.</p>
+    </div>
+  </div>
+);
 
 const CustomerNav = ({ onNavigate, onLogout, activeScreen, customer }) => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -2026,6 +2048,14 @@ export default function App() {
   const [currentCustomer, setCurrentCustomer] = useState(null);
 
   const hasCustomerToken = () => Boolean(localStorage.getItem('customer_token'));
+  const isCustomerOrPublicPath = (pathname) =>
+    pathname === '/customer' ||
+    pathname.startsWith('/customer/') ||
+    pathname === '/discover' ||
+    pathname === '/favorites' ||
+    pathname.startsWith('/business/');
+
+  const isVendorPath = (pathname) => pathname === '/vendor' || pathname.startsWith('/vendor/');
 
   useEffect(() => {
     const { pathname, search } = window.location;
@@ -2042,10 +2072,15 @@ export default function App() {
       const params = new URLSearchParams(search);
       setResetToken(params.get('token'));
       setCurrentScreen('reset');
+    } else if (pathname === '/customer') {
+      window.history.replaceState({}, '', '/customer/login');
+      setCurrentScreen('customer-login');
     } else if (pathname === '/customer/login') {
       setCurrentScreen('customer-login');
     } else if (pathname === '/customer/signup') {
       setCurrentScreen('customer-signup');
+    } else if (pathname === '/customer/forgot-password') {
+      setCurrentScreen('customer-forgot');
     } else if (pathname === '/discover') {
       setCurrentScreen('discover');
     } else if (pathname === '/favorites') {
@@ -2061,7 +2096,7 @@ export default function App() {
     }
 
     const token = localStorage.getItem('token');
-    if (token) {
+    if (token && isVendorPath(pathname) && !isCustomerOrPublicPath(pathname)) {
       fetchCurrentBusiness();
     }
 
@@ -2111,6 +2146,9 @@ export default function App() {
     }
     if (screen === 'customer-signup') {
       return handleNavigate(screen, null, '/customer/signup');
+    }
+    if (screen === 'customer-forgot') {
+      return handleNavigate(screen, null, '/customer/forgot-password');
     }
     if (screen === 'discover') {
       return handleNavigate(screen, null, '/discover');
@@ -2163,6 +2201,8 @@ export default function App() {
         return <CustomerLogin onNavigate={handleCustomerNavigate} onAuthSuccess={setCurrentCustomer} />;
       case 'customer-signup':
         return <CustomerSignup onNavigate={handleCustomerNavigate} onAuthSuccess={setCurrentCustomer} />;
+      case 'customer-forgot':
+        return <CustomerForgotPassword onNavigate={handleCustomerNavigate} />;
       case 'discover':
         return hasCustomerToken() ? (
           <DiscoverPage onNavigate={handleCustomerNavigate} onLogout={handleCustomerLogout} customer={currentCustomer} />
