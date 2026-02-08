@@ -65,18 +65,7 @@ router.get('/businesses', async (req, res) => {
     if (availableColumns.has('suspended_at')) {
       visibilityChecks.push('b.suspended_at IS NULL');
     }
-    if (availableColumns.has('is_approved')) {
-      visibilityChecks.push('b.is_approved = TRUE');
-    }
-    if (availableColumns.has('is_public')) {
-      visibilityChecks.push('b.is_public = TRUE');
-    }
-    if (availableColumns.has('is_published')) {
-      visibilityChecks.push('b.is_published = TRUE');
-    }
-    if (availableColumns.has('is_active')) {
-      visibilityChecks.push('b.is_active = TRUE');
-    }
+    // Public discovery should only require active verification and no suspension/disable timestamps.
 
     const whereConditions = [];
     const params = [];
@@ -92,20 +81,18 @@ router.get('/businesses', async (req, res) => {
 
     const whereClause = whereConditions.length ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
-    const countResult = await pool.query(
-      `SELECT COUNT(DISTINCT b.id) AS total
+    const countSql = `SELECT COUNT(DISTINCT b.id) AS total
        FROM businesses b
-       ${whereClause}`,
-      params
-    );
+       ${whereClause}`;
+
+    const countResult = await pool.query(countSql, params);
 
     params.push(limit);
     params.push(offset);
     const limitParamIndex = params.length - 1;
     const offsetParamIndex = params.length;
 
-    const result = await pool.query(
-      `SELECT b.id,
+    const listSql = `SELECT b.id,
               b.name,
               b.slug,
               b.tagline,
@@ -118,9 +105,23 @@ router.get('/businesses', async (req, res) => {
        GROUP BY b.id
        ORDER BY b.name ASC
        LIMIT $${limitParamIndex}
-       OFFSET $${offsetParamIndex}`,
-      params
-    );
+       OFFSET $${offsetParamIndex}`;
+
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('Public businesses query debug:', {
+        query,
+        page,
+        limit,
+        offset,
+        visibilityChecks,
+        whereClause,
+        countSql,
+        listSql,
+        params
+      });
+    }
+
+    const result = await pool.query(listSql, params);
 
     const totalCount = Number(countResult.rows[0]?.total || 0);
     const totalPages = Math.max(1, Math.ceil(totalCount / limit));
