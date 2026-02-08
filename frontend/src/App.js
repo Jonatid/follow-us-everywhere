@@ -473,7 +473,7 @@ const BusinessLogin = ({ onNavigate, onLoginSuccess }) => {
 // CUSTOMER SIGNUP
 // =============================================================================
 
-const CustomerSignup = ({ onNavigate, onAuthSuccess }) => {
+const CustomerSignup = ({ onNavigate, onAuthSuccess, initialMessage = '' }) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -1209,7 +1209,7 @@ const FavoritesPage = ({ onNavigate, onLogout, customer }) => {
   );
 };
 
-const CustomerProfilePage = ({ onNavigate, onLogout, customer, onCustomerUpdated }) => {
+const CustomerProfilePage = ({ onNavigate, onLogout, customer, onCustomerUpdated, initialMessage = '' }) => {
   const [formData, setFormData] = useState({
     first_name: customer?.first_name || '',
     last_name: customer?.last_name || '',
@@ -1298,7 +1298,7 @@ const CustomerProfilePage = ({ onNavigate, onLogout, customer, onCustomerUpdated
 // BUSINESS FORGOT PASSWORD
 // =============================================================================
 
-const BusinessForgotPassword = ({ onNavigate }) => {
+const BusinessForgotPassword = ({ onNavigate, initialMessage = '' }) => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(initialMessage);
@@ -1358,7 +1358,7 @@ const BusinessForgotPassword = ({ onNavigate }) => {
 // BUSINESS RESET PASSWORD
 // =============================================================================
 
-const BusinessResetPassword = ({ onNavigate, token }) => {
+const BusinessResetPassword = ({ onNavigate, token, initialMessage = '' }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
