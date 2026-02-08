@@ -9,6 +9,16 @@ const adminApi = axios.create({
 });
 
 adminApi.interceptors.request.use((config) => {
+  const requestUrl = `${config.baseURL || ''}${config.url || ''}`;
+  const isPublicRequest = requestUrl.includes('/api/public/') || (config.url || '').startsWith('/public/');
+
+  if (isPublicRequest) {
+    if (config.headers?.Authorization) {
+      delete config.headers.Authorization;
+    }
+    return config;
+  }
+
   const adminToken = localStorage.getItem('adminToken');
   if (adminToken) {
     config.headers.Authorization = `Bearer ${adminToken}`;
@@ -100,6 +110,11 @@ export const assignBusinessBadge = async (businessId, payload) => {
 
 export const removeBusinessBadge = async (businessId, badgeId) => {
   const response = await adminApi.delete(`/admin/businesses/${businessId}/badges/${badgeId}`);
+  return response.data;
+};
+
+export const fetchDashboardSummary = async () => {
+  const response = await adminApi.get('/admin/dashboard/summary');
   return response.data;
 };
 

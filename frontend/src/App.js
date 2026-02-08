@@ -31,6 +31,15 @@ api.interceptors.request.use((config) => {
 });
 
 customerApi.interceptors.request.use((config) => {
+  const requestUrl = `${config.baseURL || ''}${config.url || ''}`;
+  const isPublicRequest = requestUrl.includes('/api/public/') || (config.url || '').startsWith('/public/');
+  if (isPublicRequest) {
+    if (config.headers?.Authorization) {
+      delete config.headers.Authorization;
+    }
+    return config;
+  }
+
   const token = localStorage.getItem('customer_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;

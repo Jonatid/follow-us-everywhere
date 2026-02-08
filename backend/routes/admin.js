@@ -9,6 +9,39 @@ const router = express.Router();
 
 router.use(authenticateAdminToken);
 
+
+// @route   GET /api/admin/dashboard/summary
+// @desc    Get admin dashboard business/admin counts
+// @access  Private (admin)
+router.get('/dashboard/summary', async (req, res) => {
+  try {
+    const [businessCountResult, adminCountResult] = await Promise.all([
+      pool.query(
+        `SELECT COUNT(*)::int AS total,
+                COUNT(*) FILTER (WHERE COALESCE(verification_status, 'active') = 'active')::int AS active,
+                COUNT(*) FILTER (WHERE COALESCE(verification_status, 'active') <> 'active')::int AS inactive
+         FROM businesses`
+      ),
+      pool.query('SELECT COUNT(*)::int AS total FROM admins')
+    ]);
+
+    const counts = businessCountResult.rows[0] || { total: 0, active: 0, inactive: 0 };
+    const admins = adminCountResult.rows[0] || { total: 0 };
+
+    res.json({
+      businesses: {
+        total: Number(counts.total || 0),
+        active: Number(counts.active || 0),
+        inactive: Number(counts.inactive || 0),
+      },
+      admins: Number(admins.total || 0),
+    });
+  } catch (err) {
+    console.error('Admin dashboard summary error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   GET /api/admin/reviews/businesses
 // @desc    List businesses by verification status for admin reviews
 // @access  Private (admin)
