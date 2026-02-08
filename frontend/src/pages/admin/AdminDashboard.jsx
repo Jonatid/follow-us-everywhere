@@ -13,7 +13,7 @@ const AdminDashboard = () => {
           fetchAdmins()
         ]);
         setSummary({
-          businesses: Number((discoverBusinesses?.totalCount ?? discoverBusinesses?.total) || 0),
+          businesses: Number(((discoverBusinesses?.totalCount ?? discoverBusinesses?.total) || 0)),
           admins: Array.isArray(admins) ? admins.length : admins?.length || 0
         });
       } catch (err) {
