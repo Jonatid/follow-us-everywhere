@@ -28,11 +28,17 @@ const corsOptions = {
     'http://localhost:3000',
     'http://localhost:5173',
     'https://follow-us-everywhere-web.onrender.com',
+    // Added for the new production custom frontend domain.
+    'https://fuse101.com',
+    'https://www.fuse101.com',
     process.env.FRONTEND_URL
-  ].filter(Boolean)
+  ].filter(Boolean),
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Authorization', 'Content-Type']
 };
 
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
