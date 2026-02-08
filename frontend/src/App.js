@@ -1617,7 +1617,6 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
                     value={tempUrl}
                     onChange={(e) => setTempUrl(e.target.value)}
                     className="input"
-                    disabled={isReadOnly}
                     placeholder={`https://${social.platform.toLowerCase()}.com/yourhandle`}
                     disabled={!canEditBusiness}
                   />
