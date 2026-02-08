@@ -747,6 +747,7 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [businesses, setBusinesses] = useState([]);
+  const [totalBusinesses, setTotalBusinesses] = useState(0);
   const [favoriteIds, setFavoriteIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -765,18 +766,23 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
   }, []);
 
   useEffect(() => {
-    const trimmedBusinessName = businessName.trim();
-    const hasDropdownFilters = Boolean(communitySupport || badge);
-    const query = trimmedBusinessName === '' && !hasDropdownFilters ? 'a' : trimmedBusinessName;
-
     const loadBusinesses = async () => {
       setLoading(true);
       setError('');
       try {
-        const response = await customerApi.get('/public/businesses', {
-          params: { query }
-        });
+        const trimmedBusinessName = businessName.trim();
+        const params = {
+          page: currentPage,
+          limit: itemsPerPage
+        };
+
+        if (trimmedBusinessName) {
+          params.query = trimmedBusinessName;
+        }
+
+        const response = await customerApi.get('/public/businesses', { params });
         setBusinesses(response.data?.businesses || []);
+        setTotalBusinesses(Number(response.data?.total || 0));
       } catch (err) {
         setError(getApiErrorMessage(err, 'Unable to load discover businesses.'));
       } finally {
@@ -785,20 +791,17 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
     };
 
     loadBusinesses();
-  }, [businessName, communitySupport, badge]);
+  }, [businessName, currentPage, itemsPerPage]);
 
   useEffect(() => {
     setCurrentPage(1);
   }, [businessName, communitySupport, badge, itemsPerPage]);
 
   const filteredBusinesses = useMemo(() => {
-    const normalizedBusinessName = businessName.trim().toLowerCase();
     const normalizedCommunitySupport = communitySupport.trim().toLowerCase();
     const normalizedBadge = badge.trim().toLowerCase();
 
     return businesses.filter((business) => {
-      const searchableName = `${business.name || ''} ${business.tagline || ''}`.toLowerCase();
-
       const communitySupportValue = [
         business.community_support,
         business.communitySupport,
@@ -822,19 +825,14 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
         .join(' ')
         .toLowerCase();
 
-      const matchesBusinessName = normalizedBusinessName === '' || searchableName.includes(normalizedBusinessName);
       const matchesCommunitySupport = normalizedCommunitySupport === '' || communitySupportValue.includes(normalizedCommunitySupport);
       const matchesBadge = normalizedBadge === '' || badgesValue.includes(normalizedBadge);
 
-      return matchesBusinessName && matchesCommunitySupport && matchesBadge;
+      return matchesCommunitySupport && matchesBadge;
     });
-  }, [businesses, businessName, communitySupport, badge]);
+  }, [businesses, communitySupport, badge]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredBusinesses.length / itemsPerPage));
-  const paginatedBusinesses = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredBusinesses.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredBusinesses, currentPage, itemsPerPage]);
+  const totalPages = Math.max(1, Math.ceil(totalBusinesses / itemsPerPage));
 
   const toggleFavorite = async (businessId, isFavorited) => {
     try {
@@ -902,7 +900,7 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
                   </select>
                 </label>
               </div>
-              {paginatedBusinesses.map((business) => {
+              {filteredBusinesses.map((business) => {
                 const isFavorited = favoriteIds.has(business.id);
                 return (
                   <div key={business.id} className="card" style={{ border: '1px solid var(--border)', boxShadow: 'none', padding: '20px' }}>
@@ -929,7 +927,7 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
                 );
               })}
               {filteredBusinesses.length === 0 && <p className="muted-text">No businesses found.</p>}
-              {filteredBusinesses.length > 0 && (
+              {totalBusinesses > 0 && (
                 <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
                   <p className="muted-text">
                     Page {currentPage} of {totalPages}
@@ -947,7 +945,7 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
                       type="button"
                       className="button button-sm button-primary"
                       onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                      disabled={currentPage === totalPages}
+                      disabled={currentPage >= totalPages}
                     >
                       Next
                     </button>
