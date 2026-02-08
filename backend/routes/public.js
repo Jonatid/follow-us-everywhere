@@ -9,14 +9,23 @@ router.get('/businesses', async (req, res) => {
     const parsedPage = Number.parseInt(req.query.page, 10);
     const parsedLimit = Number.parseInt(req.query.limit, 10);
     const page = Number.isNaN(parsedPage) || parsedPage < 1 ? 1 : parsedPage;
-    const limit = Number.isNaN(parsedLimit) || parsedLimit < 1 ? 25 : Math.min(parsedLimit, 50);
+    const limit = Number.isNaN(parsedLimit) || parsedLimit < 1 ? 10 : Math.min(parsedLimit, 25);
     const offset = (page - 1) * limit;
 
     const columnsResult = await pool.query(
       `SELECT column_name
        FROM information_schema.columns
        WHERE table_name = 'businesses'
-         AND column_name IN ('verification_status', 'disabled_at', 'suspended_at')`
+         AND column_name IN (
+           'verification_status',
+           'disabled_at',
+           'suspended_at',
+           'is_approved',
+           'is_verified',
+           'is_public',
+           'is_published',
+           'is_active'
+         )`
     );
 
     const availableColumns = new Set(columnsResult.rows.map((row) => row.column_name));
@@ -30,6 +39,21 @@ router.get('/businesses', async (req, res) => {
     }
     if (availableColumns.has('suspended_at')) {
       visibilityChecks.push('b.suspended_at IS NULL');
+    }
+    if (availableColumns.has('is_approved')) {
+      visibilityChecks.push('b.is_approved = TRUE');
+    }
+    if (availableColumns.has('is_verified')) {
+      visibilityChecks.push('b.is_verified = TRUE');
+    }
+    if (availableColumns.has('is_public')) {
+      visibilityChecks.push('b.is_public = TRUE');
+    }
+    if (availableColumns.has('is_published')) {
+      visibilityChecks.push('b.is_published = TRUE');
+    }
+    if (availableColumns.has('is_active')) {
+      visibilityChecks.push('b.is_active = TRUE');
     }
 
     const whereConditions = [];
@@ -82,11 +106,16 @@ router.get('/businesses', async (req, res) => {
       params
     );
 
+    const totalCount = Number(countResult.rows[0]?.total || 0);
+    const totalPages = Math.max(1, Math.ceil(totalCount / limit));
+
     return res.json({
       businesses: result.rows,
       page,
       limit,
-      total: Number(countResult.rows[0]?.total || 0)
+      total: totalCount,
+      totalCount,
+      totalPages
     });
   } catch (error) {
     console.error('Error searching public businesses:', error);
