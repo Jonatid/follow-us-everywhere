@@ -9,7 +9,8 @@ const REQUIRED_TABLES = [
   'customers',
   'customer_favorites',
   'badges',
-  'business_badges'
+  'business_badges',
+  'customer_password_resets'
 ];
 
 const getMissingTables = async (client = pool) => {
@@ -142,6 +143,18 @@ const ensureSchema = async () => {
       );
     `);
 
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS customer_password_resets (
+        id SERIAL PRIMARY KEY,
+        customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+        token_hash VARCHAR(255) UNIQUE NOT NULL,
+        expires_at TIMESTAMP NOT NULL,
+        used_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     await pool.query(`
       CREATE TABLE IF NOT EXISTS badges (
         id SERIAL PRIMARY KEY,
@@ -177,6 +190,8 @@ const ensureSchema = async () => {
     await pool.query('CREATE INDEX IF NOT EXISTS idx_customer_favorites_business_id ON customer_favorites(business_id);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token ON password_reset_tokens(token);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_business_id ON password_reset_tokens(business_id);');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_customer_password_resets_token_hash ON customer_password_resets(token_hash);');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_customer_password_resets_customer_id ON customer_password_resets(customer_id);');
   } catch (error) {
     if (error.code === '42501') {
       const dbUser = process.env.DATABASE_URL

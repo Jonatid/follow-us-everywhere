@@ -85,6 +85,17 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+
+-- Create customer password reset tokens table
+CREATE TABLE IF NOT EXISTS customer_password_resets (
+    id SERIAL PRIMARY KEY,
+    customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    token_hash VARCHAR(255) UNIQUE NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    used_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Create badges table
 CREATE TABLE IF NOT EXISTS badges (
     id SERIAL PRIMARY KEY,
@@ -119,6 +130,8 @@ CREATE INDEX idx_customer_favorites_customer_id ON customer_favorites(customer_i
 CREATE INDEX idx_customer_favorites_business_id ON customer_favorites(business_id);
 CREATE INDEX idx_password_reset_tokens_token ON password_reset_tokens(token);
 CREATE INDEX idx_password_reset_tokens_business_id ON password_reset_tokens(business_id);
+CREATE INDEX idx_customer_password_resets_token_hash ON customer_password_resets(token_hash);
+CREATE INDEX idx_customer_password_resets_customer_id ON customer_password_resets(customer_id);
 
 -- Insert sample data (optional)
 -- INSERT INTO businesses (username, email, password_hash, business_name, business_description, bio)
