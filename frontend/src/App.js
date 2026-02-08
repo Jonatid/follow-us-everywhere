@@ -481,7 +481,11 @@ const CustomerSignup = ({ onNavigate, onAuthSuccess }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState(initialMessage);
+
+  useEffect(() => {
+    setMessage(initialMessage || '');
+  }, [initialMessage]);
 
   const handleSubmit = async () => {
     setError('');
@@ -612,12 +616,16 @@ const CustomerSignup = ({ onNavigate, onAuthSuccess }) => {
 // CUSTOMER LOGIN
 // =============================================================================
 
-const CustomerLogin = ({ onNavigate, onAuthSuccess }) => {
+const CustomerLogin = ({ onNavigate, onAuthSuccess, initialMessage = '' }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState(initialMessage);
+
+  useEffect(() => {
+    setMessage(initialMessage || '');
+  }, [initialMessage]);
 
   const handleSubmit = async () => {
     setError('');
@@ -701,18 +709,145 @@ const CustomerLogin = ({ onNavigate, onAuthSuccess }) => {
   );
 };
 
-const CustomerForgotPassword = ({ onNavigate }) => (
-  <div className="page page--gradient">
-    <div className="card card--medium">
-      <button type="button" onClick={() => onNavigate('customer-login')} className="link-button">← Back</button>
-      <div className="stack-sm text-center">
-        <h1 className="heading-xl">Customer Password Reset</h1>
-        <p className="subtitle">Coming soon</p>
+const CustomerForgotPassword = ({ onNavigate }) => {
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = async () => {
+    setError('');
+    setMessage('');
+
+    if (!email) {
+      setError('Please enter your email address.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await customerApi.post('/customers/auth/forgot-password', { email });
+      setMessage(response.data?.message || 'If an account exists for that email, we sent a reset link.');
+    } catch (err) {
+      setMessage('If an account exists for that email, we sent a reset link.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="page page--gradient"> 
+      <div className="card card--medium"> 
+        <button type="button" onClick={() => onNavigate('customer-login')} className="link-button">← Back</button>
+        <div className="stack-sm text-center"> 
+          <h1 className="heading-xl">Reset your customer password</h1>
+          <p className="subtitle">We&apos;ll email you a secure reset link.</p>
+        </div>
+        {error && <div className="alert alert-error">{error}</div>}
+        {message && <div className="alert">{message}</div>}
+        <div className="stack-md"> 
+          <div className="field"> 
+            <label className="label" htmlFor="customer-forgot-email">Email</label>
+            <input
+              id="customer-forgot-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="input"
+              placeholder="you@example.com"
+            />
+          </div>
+          <button type="button" onClick={handleSubmit} disabled={loading} className="button button-primary button-full">
+            {loading ? 'Sending...' : 'Send reset link'}
+          </button>
+        </div>
       </div>
-      <p className="helper-text text-center">We&apos;re working on customer password reset support.</p>
     </div>
-  </div>
-);
+  );
+};
+
+const CustomerResetPassword = ({ onNavigate, token, onResetSuccess }) => {
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const passwordInvalid = password && !PASSWORD_REGEX.test(password);
+  const confirmMismatch = confirmPassword && password !== confirmPassword;
+
+  const handleSubmit = async () => {
+    setError('');
+
+    if (!token) {
+      setError('Reset token is missing.');
+      return;
+    }
+    if (!password) {
+      setError('Please enter your new password.');
+      return;
+    }
+    if (!PASSWORD_REGEX.test(password)) {
+      setError(PASSWORD_HELPER);
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await customerApi.post('/customers/auth/reset-password', { token, password });
+      onResetSuccess('Password updated successfully. You can now log in.');
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Unable to reset password. Please try again.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="page page--gradient"> 
+      <div className="card card--medium"> 
+        <button type="button" onClick={() => onNavigate('customer-login')} className="link-button">← Back</button>
+        <div className="stack-sm text-center"> 
+          <h1 className="heading-xl">Choose a new password</h1>
+          <p className="subtitle">Your new password must meet our security requirements.</p>
+        </div>
+        {error && <div className="alert alert-error">{error}</div>}
+        <div className="stack-md"> 
+          <div className="field"> 
+            <label className="label" htmlFor="customer-reset-password">New Password</label>
+            <input
+              id="customer-reset-password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="input"
+              placeholder="Create a new password"
+            />
+            {passwordInvalid && <span className="field-error">{PASSWORD_HELPER}</span>}
+          </div>
+          <div className="field"> 
+            <label className="label" htmlFor="customer-reset-confirm-password">Confirm Password</label>
+            <input
+              id="customer-reset-confirm-password"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="input"
+              placeholder="Re-enter your new password"
+            />
+            {confirmMismatch && <span className="field-error">Passwords do not match.</span>}
+          </div>
+          <button type="button" onClick={handleSubmit} disabled={loading} className="button button-primary button-full">
+            {loading ? 'Updating...' : 'Update password'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const CustomerNav = ({ onNavigate, onLogout, activeScreen, customer }) => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -1083,7 +1218,7 @@ const CustomerProfilePage = ({ onNavigate, onLogout, customer, onCustomerUpdated
     address: customer?.address || ''
   });
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState(initialMessage);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -1166,7 +1301,7 @@ const CustomerProfilePage = ({ onNavigate, onLogout, customer, onCustomerUpdated
 const BusinessForgotPassword = ({ onNavigate }) => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState(initialMessage);
   const [error, setError] = useState('');
 
   const handleSubmit = async () => {
@@ -1227,7 +1362,7 @@ const BusinessResetPassword = ({ onNavigate, token }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState(initialMessage);
   const [error, setError] = useState('');
 
   const passwordInvalid = password && !PASSWORD_REGEX.test(password);
@@ -2045,6 +2180,8 @@ export default function App() {
   const [publicSlug, setPublicSlug] = useState(null);
   const [contactPrefill, setContactPrefill] = useState(null);
   const [resetToken, setResetToken] = useState(null);
+  const [customerResetToken, setCustomerResetToken] = useState(null);
+  const [customerLoginMessage, setCustomerLoginMessage] = useState('');
   const [currentCustomer, setCurrentCustomer] = useState(null);
 
   const hasCustomerToken = () => Boolean(localStorage.getItem('customer_token'));
@@ -2081,6 +2218,10 @@ export default function App() {
       setCurrentScreen('customer-signup');
     } else if (pathname === '/customer/forgot-password') {
       setCurrentScreen('customer-forgot');
+    } else if (pathname === '/customer/reset-password') {
+      const params = new URLSearchParams(search);
+      setCustomerResetToken(params.get('token'));
+      setCurrentScreen('customer-reset');
     } else if (pathname === '/discover') {
       setCurrentScreen('discover');
     } else if (pathname === '/favorites') {
@@ -2150,6 +2291,9 @@ export default function App() {
     if (screen === 'customer-forgot') {
       return handleNavigate(screen, null, '/customer/forgot-password');
     }
+    if (screen === 'customer-reset') {
+      return handleNavigate(screen, null, `/customer/reset-password${data ? `?token=${data}` : ''}`);
+    }
     if (screen === 'discover') {
       return handleNavigate(screen, null, '/discover');
     }
@@ -2183,6 +2327,11 @@ export default function App() {
     window.history.pushState({}, '', '/customer/login');
   };
 
+  const handleCustomerAuthSuccess = (customer) => {
+    setCustomerLoginMessage('');
+    setCurrentCustomer(customer);
+  };
+
   const renderScreen = () => {
     switch (currentScreen) {
       case 'marketing-landing':
@@ -2198,22 +2347,33 @@ export default function App() {
       case 'login':
         return <BusinessLogin onNavigate={handleNavigate} onLoginSuccess={handleLoginSuccess} />;
       case 'customer-login':
-        return <CustomerLogin onNavigate={handleCustomerNavigate} onAuthSuccess={setCurrentCustomer} />;
+        return <CustomerLogin onNavigate={handleCustomerNavigate} onAuthSuccess={handleCustomerAuthSuccess} initialMessage={customerLoginMessage} />;
       case 'customer-signup':
-        return <CustomerSignup onNavigate={handleCustomerNavigate} onAuthSuccess={setCurrentCustomer} />;
+        return <CustomerSignup onNavigate={handleCustomerNavigate} onAuthSuccess={handleCustomerAuthSuccess} />;
       case 'customer-forgot':
         return <CustomerForgotPassword onNavigate={handleCustomerNavigate} />;
+      case 'customer-reset':
+        return (
+          <CustomerResetPassword
+            onNavigate={handleCustomerNavigate}
+            token={customerResetToken}
+            onResetSuccess={(message) => {
+              setCustomerLoginMessage(message);
+              handleCustomerNavigate('customer-login');
+            }}
+          />
+        );
       case 'discover':
         return hasCustomerToken() ? (
           <DiscoverPage onNavigate={handleCustomerNavigate} onLogout={handleCustomerLogout} customer={currentCustomer} />
         ) : (
-          <CustomerLogin onNavigate={handleCustomerNavigate} onAuthSuccess={setCurrentCustomer} />
+          <CustomerLogin onNavigate={handleCustomerNavigate} onAuthSuccess={handleCustomerAuthSuccess} />
         );
       case 'favorites':
         return hasCustomerToken() ? (
           <FavoritesPage onNavigate={handleCustomerNavigate} onLogout={handleCustomerLogout} customer={currentCustomer} />
         ) : (
-          <CustomerLogin onNavigate={handleCustomerNavigate} onAuthSuccess={setCurrentCustomer} />
+          <CustomerLogin onNavigate={handleCustomerNavigate} onAuthSuccess={handleCustomerAuthSuccess} />
         );
       case 'customer-profile':
         return hasCustomerToken() ? (
@@ -2224,7 +2384,7 @@ export default function App() {
             onCustomerUpdated={setCurrentCustomer}
           />
         ) : (
-          <CustomerLogin onNavigate={handleCustomerNavigate} onAuthSuccess={setCurrentCustomer} />
+          <CustomerLogin onNavigate={handleCustomerNavigate} onAuthSuccess={handleCustomerAuthSuccess} />
         );
       case 'forgot':
         return <BusinessForgotPassword onNavigate={handleNavigate} />;
