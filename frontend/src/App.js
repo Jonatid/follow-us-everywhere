@@ -118,6 +118,7 @@ const RoleChooserModal = ({ mode, onClose, onChoose }) => {
 
 const MarketingLandingPage = ({ onNavigate }) => {
   const [roleModalMode, setRoleModalMode] = useState(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleChoose = (screen) => {
     setRoleModalMode(null);
@@ -138,6 +139,8 @@ const MarketingLandingPage = ({ onNavigate }) => {
     }
   };
 
+  const closeMenu = () => setIsMenuOpen(false);
+
   return (
     <div className="page page--gradient" style={{ minHeight: '100vh', justifyContent: 'flex-start' }}>
       <div className="card card--wide" style={{ width: '100%', maxWidth: '1120px', margin: '20px auto 0' }}>
@@ -145,11 +148,29 @@ const MarketingLandingPage = ({ onNavigate }) => {
           <button type="button" className="link-button" style={{ fontWeight: 700, fontSize: '1.1rem' }} onClick={() => onNavigate('marketing-landing', null, '/')}>
             Follow Us Everywhere
           </button>
-          <div className="row row-wrap" style={{ gap: '12px' }}>
-            <button type="button" className="link-button" onClick={() => onNavigate('about', null, '/about')}>About</button>
-            <button type="button" className="link-button" onClick={() => onNavigate('faq', null, '/faq')}>FAQ</button>
-            <button type="button" className="link-button" onClick={() => setRoleModalMode('login')}>Log in</button>
-            <button type="button" className="button button-primary button-sm" onClick={() => setRoleModalMode('signup')}>Sign up free</button>
+          <button
+            type="button"
+            className="button button-secondary button-sm"
+            aria-label="Toggle navigation menu"
+            aria-expanded={isMenuOpen}
+            onClick={() => setIsMenuOpen((prev) => !prev)}
+          >
+            ☰
+          </button>
+          <div
+            className="row row-wrap"
+            style={{
+              gap: '12px',
+              width: '100%',
+              justifyContent: 'flex-end',
+              display: isMenuOpen ? 'flex' : 'none'
+            }}
+          >
+            <button type="button" className="link-button" onClick={() => { onNavigate('about', null, '/about'); closeMenu(); }}>About</button>
+            <button type="button" className="link-button" onClick={() => { onNavigate('faq', null, '/faq'); closeMenu(); }}>FAQ</button>
+            <button type="button" className="link-button" onClick={() => { onNavigate('discover', null, '/discover'); closeMenu(); }}>Explore businesses</button>
+            <button type="button" className="link-button" onClick={() => { setRoleModalMode('login'); closeMenu(); }}>Log in</button>
+            <button type="button" className="button button-primary button-sm" onClick={() => { setRoleModalMode('signup'); closeMenu(); }}>Sign up free</button>
           </div>
         </div>
 
@@ -161,6 +182,9 @@ const MarketingLandingPage = ({ onNavigate }) => {
           <div>
             <button type="button" className="button button-primary button-lg" onClick={() => setRoleModalMode('signup')}>
               Sign up free
+            </button>
+            <button type="button" className="button button-secondary button-lg" style={{ marginLeft: '12px' }} onClick={() => onNavigate('discover', null, '/discover')}>
+              Explore businesses
             </button>
           </div>
         </div>
@@ -186,6 +210,7 @@ const MarketingLandingPage = ({ onNavigate }) => {
         <div className="row row-wrap" style={{ marginTop: '30px', gap: '12px', justifyContent: 'center' }}>
           <button type="button" className="link-button" onClick={() => onNavigate('about', null, '/about')}>About</button>
           <button type="button" className="link-button" onClick={() => onNavigate('faq', null, '/faq')}>FAQ</button>
+          <button type="button" className="link-button" onClick={() => onNavigate('discover', null, '/discover')}>Explore businesses</button>
           <span className="muted-text">Privacy (coming soon)</span>
           <span className="muted-text">Terms (coming soon)</span>
         </div>
