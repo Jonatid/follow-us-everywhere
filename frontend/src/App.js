@@ -4,7 +4,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
-import './App.css';
 
 // API base URL (override with VITE_API_BASE_URL at build time if needed).
 const API_BASE_URL =
@@ -144,158 +143,79 @@ const MarketingLandingPage = ({ onNavigate }) => {
   const closeMenu = () => setIsMenuOpen(false);
 
   return (
-    <div className="marketing-home">
-      <header className="marketing-nav">
-        <div className="container">
-          <div className="marketing-nav-row">
-            <button
-              type="button"
-              className="link-button"
-              style={{ fontWeight: 700, color: 'var(--color-navy)' }}
-              onClick={() => onNavigate('marketing-landing', null, '/')}
-            >
-              Follow Us Everywhere
+    <div className="page page--gradient" style={{ minHeight: '100vh', justifyContent: 'flex-start' }}>
+      <div className="card card--wide" style={{ width: '100%', maxWidth: '1120px', margin: '20px auto 0' }}>
+        <div className="row space-between row-wrap" style={{ alignItems: 'center', gap: '12px' }}>
+          <button type="button" className="link-button" style={{ fontWeight: 700, fontSize: '1.1rem' }} onClick={() => onNavigate('marketing-landing', null, '/')}>
+            Follow Us Everywhere
+          </button>
+          <button
+            type="button"
+            className="button button-secondary button-sm"
+            aria-label="Toggle navigation menu"
+            aria-expanded={isMenuOpen}
+            onClick={() => setIsMenuOpen((prev) => !prev)}
+          >
+            ☰
+          </button>
+          <div
+            className="row row-wrap"
+            style={{
+              gap: '12px',
+              width: '100%',
+              justifyContent: 'flex-end',
+              display: isMenuOpen ? 'flex' : 'none'
+            }}
+          >
+            <button type="button" className="link-button" onClick={() => { onNavigate('about', null, '/about'); closeMenu(); }}>About</button>
+            <button type="button" className="link-button" onClick={() => { onNavigate('faq', null, '/faq'); closeMenu(); }}>FAQ</button>
+            <button type="button" className="link-button" onClick={() => { onNavigate('discover', null, '/discover'); closeMenu(); }}>Explore businesses</button>
+            <button type="button" className="link-button" onClick={() => { setRoleModalMode('login'); closeMenu(); }}>Log in</button>
+            <button type="button" className="button button-primary button-sm" onClick={() => { setRoleModalMode('signup'); closeMenu(); }}>Sign up free</button>
+          </div>
+        </div>
+
+        <div className="stack-lg text-center" style={{ marginTop: '40px' }}>
+          <h1 className="heading-xxl" style={{ marginBottom: '8px' }}>One Smart Link for Businesses That Support the Community</h1>
+          <p className="subtitle-lg" style={{ maxWidth: '640px', margin: '0 auto' }}>
+            Follow Us Everywhere helps community-minded businesses share their links, socials, and contact info from one clean page.
+          </p>
+          <div>
+            <button type="button" className="button button-primary button-lg" onClick={() => setRoleModalMode('signup')}>
+              Sign up free
             </button>
-            <nav className="nav-links" aria-label="Primary">
-              <button type="button" className="link-button" onClick={() => onNavigate('about', null, '/about')}>About</button>
-              <button type="button" className="link-button" onClick={() => onNavigate('faq', null, '/faq')}>FAQ</button>
-              <button type="button" className="link-button" onClick={() => onNavigate('discover', null, '/discover')}>Explore businesses</button>
-              <button type="button" className="link-button" onClick={() => setRoleModalMode('login')}>Log in</button>
-            </nav>
-            <button type="button" className="btn-primary" onClick={() => setRoleModalMode('signup')}>Sign up free</button>
-            <button
-              type="button"
-              className="nav-toggle"
-              aria-label="Toggle navigation menu"
-              aria-expanded={isMenuOpen}
-              onClick={() => setIsMenuOpen((prev) => !prev)}
-            >
-              ☰
+            <button type="button" className="button button-secondary button-lg" style={{ marginLeft: '12px' }} onClick={() => onNavigate('discover', null, '/discover')}>
+              Explore businesses
             </button>
           </div>
-          {isMenuOpen ? (
-            <div className="mobile-menu" role="menu">
-              <button type="button" className="link-button" onClick={() => { onNavigate('about', null, '/about'); closeMenu(); }}>About</button>
-              <button type="button" className="link-button" onClick={() => { onNavigate('faq', null, '/faq'); closeMenu(); }}>FAQ</button>
-              <button type="button" className="link-button" onClick={() => { onNavigate('discover', null, '/discover'); closeMenu(); }}>Explore businesses</button>
-              <button type="button" className="link-button" onClick={() => { setRoleModalMode('login'); closeMenu(); }}>Log in</button>
+        </div>
+
+        <div className="row row-wrap" style={{ marginTop: '36px', gap: '12px' }}>
+          {[{
+            title: 'Custom branded page',
+            description: 'Show your links, socials, and contact channels with your own style.'
+          }, {
+            title: 'Built for growth',
+            description: 'Keep your audience focused with one destination for every campaign.'
+          }, {
+            title: 'Easy to update',
+            description: 'Change links anytime and keep your profile fresh in seconds.'
+          }].map((feature) => (
+            <div key={feature.title} className="card" style={{ flex: '1 1 240px' }}>
+              <h3 className="heading-md">{feature.title}</h3>
+              <p className="subtitle">{feature.description}</p>
             </div>
-          ) : null}
+          ))}
         </div>
-      </header>
 
-      <section className="hero">
-        <div className="container">
-          <h1>One smart link for businesses that care — and communities that notice.</h1>
-          <p>
-            Follow Us Everywhere 101 helps people discover and support businesses that give back — whether that means creating jobs,
-            supporting local causes, or simply serving their community with integrity.
-          </p>
-          <div className="hero-actions">
-            <button type="button" className="btn-primary" onClick={() => setRoleModalMode('signup')}>Sign up free</button>
-            <button type="button" className="link-secondary" onClick={() => onNavigate('discover', null, '/discover')}>Explore businesses</button>
-          </div>
+        <div className="row row-wrap" style={{ marginTop: '30px', gap: '12px', justifyContent: 'center' }}>
+          <button type="button" className="link-button" onClick={() => onNavigate('about', null, '/about')}>About</button>
+          <button type="button" className="link-button" onClick={() => onNavigate('faq', null, '/faq')}>FAQ</button>
+          <button type="button" className="link-button" onClick={() => onNavigate('discover', null, '/discover')}>Explore businesses</button>
+          <span className="muted-text">Privacy (coming soon)</span>
+          <span className="muted-text">Terms (coming soon)</span>
         </div>
-      </section>
-
-      <section className="home-section">
-        <div className="container">
-          <h2>What It Is</h2>
-          <p>A focused business profile link that helps people quickly understand what you offer and what you stand for.</p>
-          <ul className="home-list" style={{ marginTop: 'var(--space-4)' }}>
-            <li>One place for your key links, contact channels, and updates.</li>
-            <li>Clear information for customers making day-to-day purchase decisions.</li>
-            <li>A practical way to show steady community commitment.</li>
-          </ul>
-        </div>
-      </section>
-
-      <section className="home-section" style={{ paddingTop: 0 }}>
-        <div className="container">
-          <h2>Built Differently</h2>
-          <div className="panel-trust">
-            <h3 className="heading-md" style={{ marginBottom: 'var(--space-3)' }}>Trust Layer</h3>
-            <ul className="home-list">
-              <li>Businesses control their own profile and updates.</li>
-              <li>Cause badges are optional and tied to verification requests.</li>
-              <li>Information is presented in plain language for transparency.</li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      <section className="home-section" style={{ paddingTop: 0 }}>
-        <div className="container">
-          <h2>How It Works</h2>
-          <div className="steps">
-            <article className="step">
-              <p>1. Businesses join for free — Share who you are, what you offer, and what you care about.</p>
-            </article>
-            <article className="step">
-              <p>2. Optional cause badges — Businesses can request badges that reflect verified community support.</p>
-            </article>
-            <article className="step">
-              <p>3. Communities choose where to spend — Customers decide which businesses to support — with clarity and trust.</p>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section className="home-section" style={{ paddingTop: 0 }}>
-        <div className="container">
-          <h2>Why Businesses Use It</h2>
-          <ul className="home-list">
-            <li>Simple setup and updates without technical overhead.</li>
-            <li>Stronger visibility across channels from one trusted link.</li>
-            <li>Clearer customer understanding of business values and actions.</li>
-            <li>Consistent messaging for teams, campaigns, and communities.</li>
-          </ul>
-        </div>
-      </section>
-
-      <section className="home-section" style={{ paddingTop: 0 }}>
-        <div className="container">
-          <h2>Supporters</h2>
-          <p>
-            This platform is built for business owners, customers, and local groups who care about practical progress.
-            It supports steady participation, clear information, and respectful community connection.
-          </p>
-        </div>
-      </section>
-
-      <section className="home-section" style={{ paddingTop: 0, textAlign: 'center' }}>
-        <div className="container">
-          <h2>Ready to get started?</h2>
-          <button type="button" className="btn-primary" onClick={() => setRoleModalMode('signup')}>Sign up free</button>
-        </div>
-      </section>
-
-      <footer className="marketing-footer">
-        <div className="container footer-grid">
-          <div>
-            <p className="footer-title">Follow Us Everywhere</p>
-            <p>One smart link to help businesses connect with the communities they serve.</p>
-          </div>
-          <div>
-            <p className="footer-title">Platform</p>
-            <button type="button" className="footer-link link-button" onClick={() => onNavigate('marketing-landing', null, '/')}>Home</button><br />
-            <button type="button" className="footer-link link-button" onClick={() => onNavigate('discover', null, '/discover')}>Explore businesses</button><br />
-            <button type="button" className="footer-link link-button" onClick={() => setRoleModalMode('login')}>Log in</button>
-          </div>
-          <div>
-            <p className="footer-title">Governance</p>
-            <button type="button" className="footer-link link-button" onClick={() => onNavigate('faq', null, '/faq')}>Terms</button><br />
-            <button type="button" className="footer-link link-button" onClick={() => onNavigate('faq', null, '/faq')}>Privacy</button><br />
-            <button type="button" className="footer-link link-button" onClick={() => onNavigate('faq', null, '/faq')}>Guidelines</button>
-          </div>
-          <div>
-            <p className="footer-title">Contact</p>
-            <button type="button" className="footer-link link-button" onClick={() => onNavigate('contact')}>Support</button><br />
-            <button type="button" className="footer-link link-button" onClick={() => onNavigate('contact')}>Contact</button><br />
-            <button type="button" className="footer-link link-button" onClick={() => onNavigate('contact')}>Report</button>
-          </div>
-        </div>
-      </footer>
+      </div>
 
       {roleModalMode ? (
         <RoleChooserModal
