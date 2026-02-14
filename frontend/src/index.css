@@ -69,6 +69,39 @@ body {
   max-width: 1168px;
   margin: 0 auto;
   padding: 0 24px 24px;
+  margin-top: -18px;
+  position: relative;
+  z-index: 2;
+}
+
+.home-hero {
+  width: 100%;
+  min-height: 440px;
+  background-image: url('/logo512.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.home-hero__overlay {
+  min-height: inherit;
+  background: linear-gradient(180deg, rgba(4, 66, 179, 0.68) 0%, rgba(4, 66, 179, 0.82) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 24px;
+}
+
+.home-hero__content {
+  width: 100%;
+  max-width: 900px;
+  color: #fff;
+  margin: 0 auto;
+}
+
+.home-hero__content .heading-xxl,
+.home-hero__content .subtitle-lg {
+  color: #fff;
 }
 
 .site-header {
@@ -551,7 +584,7 @@ body {
 .site-footer {
   width: 100%;
   margin-top: 24px;
-  background: #0b1f3b;
+  background: #0442b3;
   color: #fff;
 }
 
@@ -621,6 +654,14 @@ body {
 
   .marketing-feature-grid {
     grid-template-columns: 1fr;
+  }
+
+  .home-hero {
+    min-height: 380px;
+  }
+
+  .home-hero__overlay {
+    padding: 48px 16px;
   }
 
   .site-footer__inner {

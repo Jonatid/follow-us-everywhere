@@ -224,10 +224,9 @@ const MarketingLandingPage = ({ onNavigate }) => {
         </div>
       </header>
 
-      <main className="marketing-main">
-        <div className="card card--wide" style={{ width: '100%', maxWidth: '1120px', margin: '20px auto 0' }}>
-
-          <div className="stack-lg text-center" style={{ marginTop: '40px' }}>
+      <section className="home-hero" aria-label="Home hero">
+        <div className="home-hero__overlay">
+          <div className="home-hero__content stack-lg text-center">
             <h1 className="heading-xxl" style={{ marginBottom: '8px' }}>One Smart Link for Businesses That Support the Community</h1>
             <p className="subtitle-lg" style={{ maxWidth: '640px', margin: '0 auto' }}>
               Follow Us Everywhere helps community-minded businesses share their links, socials, and contact info from one clean page.
@@ -241,8 +240,12 @@ const MarketingLandingPage = ({ onNavigate }) => {
               </button>
             </div>
           </div>
+        </div>
+      </section>
 
-          <div className="marketing-feature-grid" style={{ marginTop: '36px' }}>
+      <main className="marketing-main">
+        <div className="card card--wide" style={{ width: '100%', maxWidth: '1120px', margin: '20px auto 0' }}>
+          <div className="marketing-feature-grid" style={{ marginTop: '8px' }}>
             {marketingFeatureCards.map((feature) => {
               const isOpen = openFeatureCard === feature.id;
 
