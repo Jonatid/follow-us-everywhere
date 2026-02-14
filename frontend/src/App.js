@@ -124,7 +124,6 @@ const MarketingLandingPage = ({ onNavigate }) => {
 
   const marketingFeatureCards = [{
     id: 'one-smart-profile',
-    icon: '◉',
     title: 'One Smart Profile',
     preview: 'All your links, values, and updates in one structured page.',
     bullets: [
@@ -134,7 +133,6 @@ const MarketingLandingPage = ({ onNavigate }) => {
     ]
   }, {
     id: 'what-it-is',
-    icon: '▣',
     title: 'What It Is',
     preview: 'A focused business profile link that helps people quickly understand what you offer.',
     bullets: [
@@ -144,7 +142,6 @@ const MarketingLandingPage = ({ onNavigate }) => {
     ]
   }, {
     id: 'how-it-works',
-    icon: '◌',
     title: 'How It Works',
     preview: 'A simple flow for businesses and communities.',
     bullets: [
@@ -154,7 +151,6 @@ const MarketingLandingPage = ({ onNavigate }) => {
     ]
   }, {
     id: 'cause-visibility',
-    icon: '◍',
     title: 'Cause Visibility (Optional)',
     preview: 'Show verified community support with clarity.',
     bullets: [
@@ -164,7 +160,6 @@ const MarketingLandingPage = ({ onNavigate }) => {
     ]
   }, {
     id: 'built-differently',
-    icon: '◇',
     title: 'Built Differently',
     preview: 'A calmer, business-first approach.',
     bullets: [
@@ -174,7 +169,6 @@ const MarketingLandingPage = ({ onNavigate }) => {
     ]
   }, {
     id: 'why-businesses-use-it',
-    icon: '△',
     title: 'Why Businesses Use It',
     preview: 'Practical benefits that stay consistent.',
     bullets: [
@@ -206,90 +200,102 @@ const MarketingLandingPage = ({ onNavigate }) => {
   const closeMenu = () => setIsMenuOpen(false);
 
   return (
-    <div className="page page--gradient" style={{ minHeight: '100vh', justifyContent: 'flex-start' }}>
-      <div className="card card--wide" style={{ width: '100%', maxWidth: '1120px', margin: '20px auto 0' }}>
-        <div className="row space-between row-wrap" style={{ alignItems: 'center', gap: '12px' }}>
-          <button type="button" className="link-button" style={{ fontWeight: 700, fontSize: '1.1rem' }} onClick={() => onNavigate('marketing-landing', null, '/')}>
+    <div className="page page--gradient marketing-page" style={{ minHeight: '100vh', justifyContent: 'flex-start' }}>
+      <header className="site-header">
+        <div className="site-header__inner">
+          <button type="button" className="link-button site-header__logo" onClick={() => onNavigate('marketing-landing', null, '/')}>
             Follow Us Everywhere
           </button>
           <button
             type="button"
-            className="button button-secondary button-sm"
+            className="button button-secondary button-sm site-header__menu-toggle"
             aria-label="Toggle navigation menu"
             aria-expanded={isMenuOpen}
             onClick={() => setIsMenuOpen((prev) => !prev)}
           >
             ☰
           </button>
-          <div
-            className="row row-wrap"
-            style={{
-              gap: '12px',
-              width: '100%',
-              justifyContent: 'flex-end',
-              display: isMenuOpen ? 'flex' : 'none'
-            }}
-          >
+          <nav className={`site-header__nav${isMenuOpen ? ' site-header__nav--open' : ''}`}>
             <button type="button" className="link-button" onClick={() => { onNavigate('about', null, '/about'); closeMenu(); }}>About</button>
             <button type="button" className="link-button" onClick={() => { onNavigate('faq', null, '/faq'); closeMenu(); }}>FAQ</button>
             <button type="button" className="link-button" onClick={() => { onNavigate('discover', null, '/discover'); closeMenu(); }}>Explore businesses</button>
-            <button type="button" className="link-button" onClick={() => { setRoleModalMode('login'); closeMenu(); }}>Log in</button>
             <button type="button" className="button button-primary button-sm" onClick={() => { setRoleModalMode('signup'); closeMenu(); }}>Sign up free</button>
-          </div>
+          </nav>
         </div>
+      </header>
 
-        <div className="stack-lg text-center" style={{ marginTop: '40px' }}>
-          <h1 className="heading-xxl" style={{ marginBottom: '8px' }}>One Smart Link for Businesses That Support the Community</h1>
-          <p className="subtitle-lg" style={{ maxWidth: '640px', margin: '0 auto' }}>
-            Follow Us Everywhere helps community-minded businesses share their links, socials, and contact info from one clean page.
-          </p>
-          <div>
-            <button type="button" className="button button-primary button-lg" onClick={() => setRoleModalMode('signup')}>
-              Sign up free
-            </button>
-            <button type="button" className="button button-secondary button-lg" style={{ marginLeft: '12px' }} onClick={() => onNavigate('discover', null, '/discover')}>
-              Explore businesses
-            </button>
+      <main className="marketing-main">
+        <div className="card card--wide" style={{ width: '100%', maxWidth: '1120px', margin: '20px auto 0' }}>
+
+          <div className="stack-lg text-center" style={{ marginTop: '40px' }}>
+            <h1 className="heading-xxl" style={{ marginBottom: '8px' }}>One Smart Link for Businesses That Support the Community</h1>
+            <p className="subtitle-lg" style={{ maxWidth: '640px', margin: '0 auto' }}>
+              Follow Us Everywhere helps community-minded businesses share their links, socials, and contact info from one clean page.
+            </p>
+            <div>
+              <button type="button" className="button button-primary button-lg" onClick={() => setRoleModalMode('signup')}>
+                Sign up free
+              </button>
+              <button type="button" className="button button-secondary button-lg" style={{ marginLeft: '12px' }} onClick={() => onNavigate('discover', null, '/discover')}>
+                Explore businesses
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div className="marketing-feature-grid" style={{ marginTop: '36px' }}>
-          {marketingFeatureCards.map((feature) => {
-            const isOpen = openFeatureCard === feature.id;
+          <div className="marketing-feature-grid" style={{ marginTop: '36px' }}>
+            {marketingFeatureCards.map((feature) => {
+              const isOpen = openFeatureCard === feature.id;
 
-            return (
-              <div key={feature.id} className={`marketing-feature-card${isOpen ? ' marketing-feature-card--open' : ''}`}>
-                <div className="marketing-feature-card__icon" aria-hidden="true">{feature.icon}</div>
-                <h3 className="heading-md marketing-feature-card__title">{feature.title}</h3>
-                <p className="subtitle marketing-feature-card__preview">{feature.preview}</p>
-                <button
-                  type="button"
-                  className="button button-muted button-sm marketing-feature-card__button"
-                  onClick={() => setOpenFeatureCard(isOpen ? null : feature.id)}
-                  aria-expanded={isOpen}
-                >
-                  {isOpen ? 'Less info' : 'More info'}
-                </button>
-                <div className={`marketing-feature-card__details${isOpen ? ' marketing-feature-card__details--open' : ''}`}>
-                  <ul className="marketing-feature-card__list">
-                    {feature.bullets.map((point) => (
-                      <li key={point}>{point}</li>
-                    ))}
-                  </ul>
+              return (
+                <div key={feature.id} className={`marketing-feature-card${isOpen ? ' marketing-feature-card--open' : ''}`}>
+                  <h3 className="heading-md marketing-feature-card__title">{feature.title}</h3>
+                  <p className="subtitle marketing-feature-card__preview">{feature.preview}</p>
+                  <button
+                    type="button"
+                    className="button button-muted button-sm marketing-feature-card__button"
+                    onClick={() => setOpenFeatureCard(isOpen ? null : feature.id)}
+                    aria-expanded={isOpen}
+                  >
+                    {isOpen ? 'Less info' : 'More info'}
+                  </button>
+                  <div className={`marketing-feature-card__details${isOpen ? ' marketing-feature-card__details--open' : ''}`}>
+                    <ul className="marketing-feature-card__list">
+                      {feature.bullets.map((point) => (
+                        <li key={point}>{point}</li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
+      </main>
 
-        <div className="row row-wrap" style={{ marginTop: '30px', gap: '12px', justifyContent: 'center' }}>
-          <button type="button" className="link-button" onClick={() => onNavigate('about', null, '/about')}>About</button>
-          <button type="button" className="link-button" onClick={() => onNavigate('faq', null, '/faq')}>FAQ</button>
-          <button type="button" className="link-button" onClick={() => onNavigate('discover', null, '/discover')}>Explore businesses</button>
-          <span className="muted-text">Privacy (coming soon)</span>
-          <span className="muted-text">Terms (coming soon)</span>
+      <footer className="site-footer" aria-label="Site footer">
+        <div className="site-footer__inner">
+          <div className="site-footer__column">
+            <h3 className="site-footer__heading">Follow Us Everywhere</h3>
+            <p className="site-footer__text">One smart business link for links, socials, and customer connection.</p>
+          </div>
+          <div className="site-footer__column">
+            <h4 className="site-footer__heading">Platform</h4>
+            <button type="button" className="site-footer__link" onClick={() => onNavigate('about', null, '/about')}>About</button>
+            <button type="button" className="site-footer__link" onClick={() => onNavigate('faq', null, '/faq')}>FAQ</button>
+            <button type="button" className="site-footer__link" onClick={() => onNavigate('discover', null, '/discover')}>Explore businesses</button>
+          </div>
+          <div className="site-footer__column">
+            <h4 className="site-footer__heading">Account</h4>
+            <button type="button" className="site-footer__link" onClick={() => setRoleModalMode('signup')}>Sign up free</button>
+            <button type="button" className="site-footer__link" onClick={() => setRoleModalMode('login')}>Log in</button>
+          </div>
+          <div className="site-footer__column">
+            <h4 className="site-footer__heading">Legal</h4>
+            <span className="site-footer__text">Privacy (coming soon)</span>
+            <span className="site-footer__text">Terms (coming soon)</span>
+          </div>
         </div>
-      </div>
+      </footer>
 
       {roleModalMode ? (
         <RoleChooserModal
