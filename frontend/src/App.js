@@ -62,6 +62,7 @@ const PASSWORD_HELPER =
 const LandingPage = ({ onNavigate }) => (
   <div className="page page--gradient">
     <div className="card card--wide text-center">
+      <button type="button" className="link-button" onClick={() => onNavigate('marketing-landing', null, '/')}>← Back to Home</button>
       <div className="stack-lg">
         <h1 className="heading-xxl">Follow Us Everywhere</h1>
         <p className="subtitle-lg">One link to connect customers to all your social pages.</p>
@@ -933,6 +934,7 @@ const CustomerNav = ({ onNavigate, onLogout, activeScreen, customer }) => {
 
 const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
   const [businessName, setBusinessName] = useState('');
+  const [showSoftGate, setShowSoftGate] = useState(false);
   const [communitySupport, setCommunitySupport] = useState('');
   const [badge, setBadge] = useState('');
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -946,6 +948,11 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
 
   useEffect(() => {
     const loadFavorites = async () => {
+      if (!localStorage.getItem('customer_token')) {
+        setFavoriteIds(new Set());
+        return;
+      }
+
       try {
         const favoritesResponse = await customerApi.get('/customers/favorites');
         setFavoriteIds(new Set((favoritesResponse.data?.favorites || []).map((item) => item.id)));
@@ -1048,6 +1055,11 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
   const totalPages = Math.max(1, Math.ceil(totalBusinesses / itemsPerPage));
 
   const toggleFavorite = async (businessId, isFavorited) => {
+    if (!localStorage.getItem('customer_token')) {
+      setShowSoftGate(true);
+      return;
+    }
+
     try {
       if (isFavorited) {
         await customerApi.delete(`/customers/favorites/${businessId}`);
@@ -1124,7 +1136,17 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
                         <p className="muted-text">Status: {business.verification_status || 'unknown'}</p>
                       </div>
                       <div className="row" style={{ gap: '8px' }}>
-                        <button type="button" className="button button-muted button-sm" onClick={() => onNavigate('public-route', business.slug)}>
+                        <button
+                          type="button"
+                          className="button button-muted button-sm"
+                          onClick={() => {
+                            if (!localStorage.getItem('customer_token')) {
+                              setShowSoftGate(true);
+                              return;
+                            }
+                            onNavigate('public-route', business.slug);
+                          }}
+                        >
                           View Profile
                         </button>
                         <button
@@ -1169,6 +1191,37 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
           )}
         </div>
       </div>
+
+      {showSoftGate ? (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.55)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}
+        >
+          <div className="card card--medium" style={{ width: '100%', maxWidth: '460px' }}>
+            <h2 className="heading-lg" style={{ marginBottom: '8px' }}>Create a free supporter account</h2>
+            <p className="subtitle">View full business profiles and follow businesses you want to support.</p>
+            <div className="stack-sm" style={{ marginTop: '18px' }}>
+              <button type="button" className="button button-primary button-full" onClick={() => onNavigate('customer-signup')}>
+                Create free account
+              </button>
+              <button type="button" className="button button-secondary button-full" onClick={() => onNavigate('customer-login')}>
+                Log in
+              </button>
+              <button type="button" className="button button-muted button-full" onClick={() => setShowSoftGate(false)}>
+                Not now
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };
@@ -1239,6 +1292,7 @@ const FavoritesPage = ({ onNavigate, onLogout, customer }) => {
           )}
         </div>
       </div>
+
     </div>
   );
 };
@@ -2398,11 +2452,7 @@ export default function App() {
           />
         );
       case 'discover':
-        return hasCustomerToken() ? (
-          <DiscoverPage onNavigate={handleCustomerNavigate} onLogout={handleCustomerLogout} customer={currentCustomer} />
-        ) : (
-          <CustomerLogin onNavigate={handleCustomerNavigate} onAuthSuccess={handleCustomerAuthSuccess} />
-        );
+        return <DiscoverPage onNavigate={handleCustomerNavigate} onLogout={handleCustomerLogout} customer={currentCustomer} />;
       case 'favorites':
         return hasCustomerToken() ? (
           <FavoritesPage onNavigate={handleCustomerNavigate} onLogout={handleCustomerLogout} customer={currentCustomer} />

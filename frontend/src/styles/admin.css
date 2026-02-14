@@ -1,19 +1,19 @@
 .admin-shell {
   display: flex;
   min-height: 100vh;
-  background: #f6f7fb;
-  color: #1f2933;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
 }
 
 .admin-sidebar {
   width: 240px;
-  padding: 24px;
-  background: #111827;
-  color: #f9fafb;
+  padding: var(--space-6);
+  background: var(--color-navy-strong);
+  color: #f8fafc;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .admin-sidebar h2 {
@@ -24,7 +24,7 @@
 .admin-nav {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .admin-nav button {
@@ -34,7 +34,7 @@
   text-align: left;
   font-size: 14px;
   cursor: pointer;
-  padding: 8px 0;
+  padding: var(--space-2) 0;
 }
 
 .admin-nav button.active {
@@ -44,19 +44,19 @@
 
 .admin-content {
   flex: 1;
-  padding: 32px;
+  padding: var(--space-8);
 }
 
 .admin-card {
   background: #ffffff;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-soft);
 }
 
 .admin-grid {
   display: grid;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .admin-grid.two {
@@ -66,14 +66,14 @@
 .admin-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 16px;
+  margin-top: var(--space-4);
 }
 
 .admin-table th,
 .admin-table td {
   text-align: left;
-  padding: 12px 8px;
-  border-bottom: 1px solid #e2e8f0;
+  padding: var(--space-3) var(--space-2);
+  border-bottom: 1px solid var(--border);
   font-size: 14px;
 }
 
@@ -84,10 +84,11 @@
 }
 
 .admin-button {
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   border: none;
-  padding: 8px 16px;
+  padding: var(--space-2) var(--space-4);
   font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -98,7 +99,7 @@
 
 .admin-button.secondary {
   background: #e2e8f0;
-  color: #1f2933;
+  color: var(--text);
 }
 
 .admin-button.danger {
@@ -109,19 +110,19 @@
 .admin-input {
   width: 100%;
   padding: 10px 12px;
-  border-radius: 8px;
-  border: 1px solid #cbd5f5;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
   font-size: 14px;
 }
 
 .admin-form {
   display: grid;
-  gap: 12px;
-  margin-top: 16px;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
 }
 
 .admin-alert {
-  padding: 12px;
+  padding: var(--space-3);
   border-radius: 10px;
   background: #fee2e2;
   color: #991b1b;
@@ -137,12 +138,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: var(--space-5);
 }
 
 .admin-divider {
   border-top: 1px solid #e2e8f0;
-  margin: 24px 0;
+  margin: var(--space-6) 0;
 }
 
 .admin-section h2 {
@@ -151,19 +152,19 @@
 
 .admin-badge-list {
   display: grid;
-  gap: 16px;
-  margin-top: 16px;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
 }
 
 .admin-badge-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 16px;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  background: #f8fafc;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg);
 }
 
 .admin-badge-fields {
