@@ -1546,6 +1546,8 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
   const [editingIndex, setEditingIndex] = useState(null);
   const [tempUrl, setTempUrl] = useState('');
   const [saving, setSaving] = useState(false);
+  const [socialFieldErrorIndex, setSocialFieldErrorIndex] = useState(null);
+  const [socialFieldError, setSocialFieldError] = useState('');
   const [supportText, setSupportText] = useState('');
   const [supportLinks, setSupportLinks] = useState([]);
   const [supportSaving, setSupportSaving] = useState(false);
@@ -1619,6 +1621,8 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
     if (!canEditBusiness) {
       return;
     }
+    setSocialFieldError('');
+    setSocialFieldErrorIndex(null);
     setEditingIndex(index);
     setTempUrl(socials[index]?.url || '');
   };
@@ -1629,13 +1633,17 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
     }
     setSaving(true);
     setActionError('');
+    setSocialFieldError('');
+    setSocialFieldErrorIndex(null);
     try {
       const social = socials[index];
       if (!social?.id) {
         setActionError('Cannot update/delete this social link because its ID is missing. Please refresh and try again.');
         return;
       }
-      const nextUrl = tempUrl.trim();
+      const trimmedUrl = tempUrl.trim();
+      const nextUrl =
+        trimmedUrl && !/^https?:\/\//i.test(trimmedUrl) ? `https://${trimmedUrl}` : trimmedUrl;
 
       const response = await api.put(`/socials/${social.id}`, {
         url: nextUrl,
@@ -1665,6 +1673,10 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
       );
       setEditingIndex(null);
     } catch (err) {
+      if (err?.response?.status === 400) {
+        setSocialFieldError('Please enter a full link like https://example.com');
+        setSocialFieldErrorIndex(index);
+      }
       setActionError(getApiErrorMessage(err, 'Failed to update link. Please try again.'));
     } finally {
       setSaving(false);
@@ -1879,14 +1891,25 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
                   </div>
                 </div>
                 {editingIndex === index ? (
-                  <input
-                    type="text"
-                    value={tempUrl}
-                    onChange={(e) => setTempUrl(e.target.value)}
-                    className="input"
-                    placeholder={`https://${social.platform.toLowerCase()}.com/yourhandle`}
-                    disabled={!canEditBusiness}
-                  />
+                  <>
+                    <input
+                      type="text"
+                      value={tempUrl}
+                      onChange={(e) => {
+                        setTempUrl(e.target.value);
+                        if (socialFieldErrorIndex === index) {
+                          setSocialFieldError('');
+                          setSocialFieldErrorIndex(null);
+                        }
+                      }}
+                      className="input"
+                      placeholder={`https://${social.platform.toLowerCase()}.com/yourhandle`}
+                      disabled={!canEditBusiness}
+                    />
+                    {socialFieldErrorIndex === index && socialFieldError && (
+                      <p className="muted-text" role="alert">{socialFieldError}</p>
+                    )}
+                  </>
                 ) : (
                   <p className="muted-text truncate">
                     {social.is_active ? social.url || `Add your ${social.platform} link` : 'Not set'}
