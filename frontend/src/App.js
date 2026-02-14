@@ -120,6 +120,69 @@ const RoleChooserModal = ({ mode, onClose, onChoose }) => {
 const MarketingLandingPage = ({ onNavigate }) => {
   const [roleModalMode, setRoleModalMode] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [openFeatureCard, setOpenFeatureCard] = useState('one-smart-profile');
+
+  const marketingFeatureCards = [{
+    id: 'one-smart-profile',
+    icon: '◉',
+    title: 'One Smart Profile',
+    preview: 'All your links, values, and updates in one structured page.',
+    bullets: [
+      'Links, socials, and contact in one place',
+      'Clear positioning customers can trust',
+      'Update anytime without breaking your link'
+    ]
+  }, {
+    id: 'what-it-is',
+    icon: '▣',
+    title: 'What It Is',
+    preview: 'A focused business profile link that helps people quickly understand what you offer.',
+    bullets: [
+      'One place for key links and contact channels',
+      'Clear info for day-to-day purchase decisions',
+      'A practical way to show steady community commitment'
+    ]
+  }, {
+    id: 'how-it-works',
+    icon: '◌',
+    title: 'How It Works',
+    preview: 'A simple flow for businesses and communities.',
+    bullets: [
+      'Businesses join for free and share who they are',
+      'Optional cause badges tied to verification requests',
+      'Communities choose where to spend with clarity'
+    ]
+  }, {
+    id: 'cause-visibility',
+    icon: '◍',
+    title: 'Cause Visibility (Optional)',
+    preview: 'Show verified community support with clarity.',
+    bullets: [
+      'Optional badge requests',
+      'Clear verification process',
+      'Transparent plain-language presentation'
+    ]
+  }, {
+    id: 'built-differently',
+    icon: '◇',
+    title: 'Built Differently',
+    preview: 'A calmer, business-first approach.',
+    bullets: [
+      'Businesses control their own profile and updates',
+      'No hype language or moral ranking',
+      'Structured information for transparency'
+    ]
+  }, {
+    id: 'why-businesses-use-it',
+    icon: '△',
+    title: 'Why Businesses Use It',
+    preview: 'Practical benefits that stay consistent.',
+    bullets: [
+      'Simple setup and updates without technical overhead',
+      'Stronger visibility from one trusted link',
+      'Consistent messaging across campaigns'
+    ]
+  }];
 
   const handleChoose = (screen) => {
     setRoleModalMode(null);
@@ -190,22 +253,33 @@ const MarketingLandingPage = ({ onNavigate }) => {
           </div>
         </div>
 
-        <div className="row row-wrap" style={{ marginTop: '36px', gap: '12px' }}>
-          {[{
-            title: 'Custom branded page',
-            description: 'Show your links, socials, and contact channels with your own style.'
-          }, {
-            title: 'Built for growth',
-            description: 'Keep your audience focused with one destination for every campaign.'
-          }, {
-            title: 'Easy to update',
-            description: 'Change links anytime and keep your profile fresh in seconds.'
-          }].map((feature) => (
-            <div key={feature.title} className="card" style={{ flex: '1 1 240px' }}>
-              <h3 className="heading-md">{feature.title}</h3>
-              <p className="subtitle">{feature.description}</p>
-            </div>
-          ))}
+        <div className="marketing-feature-grid" style={{ marginTop: '36px' }}>
+          {marketingFeatureCards.map((feature) => {
+            const isOpen = openFeatureCard === feature.id;
+
+            return (
+              <div key={feature.id} className={`marketing-feature-card${isOpen ? ' marketing-feature-card--open' : ''}`}>
+                <div className="marketing-feature-card__icon" aria-hidden="true">{feature.icon}</div>
+                <h3 className="heading-md marketing-feature-card__title">{feature.title}</h3>
+                <p className="subtitle marketing-feature-card__preview">{feature.preview}</p>
+                <button
+                  type="button"
+                  className="button button-muted button-sm marketing-feature-card__button"
+                  onClick={() => setOpenFeatureCard(isOpen ? null : feature.id)}
+                  aria-expanded={isOpen}
+                >
+                  {isOpen ? 'Less info' : 'More info'}
+                </button>
+                <div className={`marketing-feature-card__details${isOpen ? ' marketing-feature-card__details--open' : ''}`}>
+                  <ul className="marketing-feature-card__list">
+                    {feature.bullets.map((point) => (
+                      <li key={point}>{point}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         <div className="row row-wrap" style={{ marginTop: '30px', gap: '12px', justifyContent: 'center' }}>
