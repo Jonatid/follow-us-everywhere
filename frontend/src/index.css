@@ -59,6 +59,52 @@ body {
   background: var(--bg-gradient);
 }
 
+.marketing-page {
+  padding: 0;
+  display: block;
+}
+
+.marketing-main {
+  width: 100%;
+  max-width: 1168px;
+  margin: 0 auto;
+  padding: 0 24px 24px;
+}
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: #fff;
+  border-bottom: 1px solid var(--color-border, #E2DED6);
+}
+
+.site-header__inner {
+  max-width: 1168px;
+  margin: 0 auto;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.site-header__logo {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text);
+}
+
+.site-header__menu-toggle {
+  display: none;
+}
+
+.site-header__nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .card {
   background: var(--surface);
   border-radius: var(--radius-xl);
@@ -467,13 +513,6 @@ body {
   border-color: rgba(242, 172, 5, 0.45);
 }
 
-.marketing-feature-card__icon {
-  font-size: 1.4rem;
-  line-height: 1;
-  color: #f2ac05;
-  margin-bottom: 10px;
-}
-
 .marketing-feature-card__title {
   margin-bottom: 8px;
 }
@@ -509,8 +548,89 @@ body {
   color: var(--muted);
 }
 
+.site-footer {
+  width: 100%;
+  margin-top: 24px;
+  background: #0b1f3b;
+  color: #fff;
+}
+
+.site-footer__inner {
+  max-width: 1168px;
+  margin: 0 auto;
+  padding: 28px 24px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.site-footer__column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.site-footer__heading {
+  margin: 0;
+  color: #fff;
+}
+
+.site-footer__text {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.95rem;
+}
+
+.site-footer__link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: rgba(255, 255, 255, 0.92);
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.site-footer__link:hover {
+  color: #f2ac05;
+}
+
 @media (max-width: 768px) {
+  .marketing-main {
+    padding: 0 16px 16px;
+  }
+
+  .site-header__inner {
+    flex-wrap: wrap;
+    padding: 12px 16px;
+  }
+
+  .site-header__menu-toggle {
+    display: inline-flex;
+  }
+
+  .site-header__nav {
+    width: 100%;
+    display: none;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .site-header__nav--open {
+    display: flex;
+  }
+
   .marketing-feature-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .site-footer__inner {
+    padding: 24px 16px;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .site-footer__inner {
     grid-template-columns: 1fr;
   }
 }
