@@ -224,7 +224,11 @@ const MarketingLandingPage = ({ onNavigate }) => {
         </div>
       </header>
 
-      <section className="home-hero" aria-label="Home hero">
+      <section
+        className="home-hero"
+        aria-label="Home hero"
+        style={{ backgroundImage: `url(${process.env.PUBLIC_URL}/logo512.png)` }}
+      >
         <div className="home-hero__overlay">
           <div className="home-hero__content stack-lg text-center">
             <h1 className="heading-xxl" style={{ marginBottom: '8px' }}>One Smart Link for Businesses That Support the Community</h1>
