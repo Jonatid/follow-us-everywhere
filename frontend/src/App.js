@@ -231,9 +231,9 @@ const MarketingLandingPage = ({ onNavigate }) => {
       >
         <div className="home-hero__overlay">
           <div className="home-hero__content stack-lg text-center">
-            <h1 className="heading-xxl" style={{ marginBottom: '8px' }}>One Smart Link for Businesses That Support the Community</h1>
+            <h1 className="heading-xxl" style={{ marginBottom: '8px' }}>Built for Businesses That Show Up.</h1>
             <p className="subtitle-lg" style={{ maxWidth: '640px', margin: '0 auto' }}>
-              Follow Us Everywhere helps community-minded businesses share their links, socials, and contact info from one clean page.
+              Share your links, your services, and what matters to your business — all in one trusted place.
             </p>
             <div>
               <button type="button" className="button button-primary button-lg" onClick={() => setRoleModalMode('signup')}>
