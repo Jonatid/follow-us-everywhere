@@ -55,6 +55,32 @@ const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,64
 const PASSWORD_HELPER =
   'Password must be at least 12 characters and include at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character.';
 
+const handleBackNavigation = ({ fallbackPath, onFallbackNavigate }) => {
+  if (window.history.length > 1) {
+    window.history.back();
+    return;
+  }
+
+  if (onFallbackNavigate) {
+    onFallbackNavigate();
+    return;
+  }
+
+  if (fallbackPath) {
+    window.location.assign(fallbackPath);
+  }
+};
+
+const BackLink = ({ fallbackPath, onFallbackNavigate, label = '← Back' }) => (
+  <button
+    type="button"
+    className="link-button"
+    onClick={() => handleBackNavigation({ fallbackPath, onFallbackNavigate })}
+  >
+    {label}
+  </button>
+);
+
 // =============================================================================
 // LANDING PAGE
 // =============================================================================
@@ -62,7 +88,7 @@ const PASSWORD_HELPER =
 const LandingPage = ({ onNavigate }) => (
   <div className="page page--gradient">
     <div className="card card--wide text-center">
-      <button type="button" className="link-button" onClick={() => onNavigate('marketing-landing', null, '/')}>← Back to Home</button>
+      <BackLink fallbackPath="/" onFallbackNavigate={() => onNavigate('marketing-landing', null, '/')} label="← Back to Home" />
       <div className="stack-lg">
         <h1 className="heading-xxl">Follow Us Everywhere</h1>
         <p className="subtitle-lg">One link to connect customers to all your social pages.</p>
@@ -318,7 +344,7 @@ const MarketingLandingPage = ({ onNavigate }) => {
 const AboutPage = ({ onNavigate }) => (
   <div className="page page--gradient">
     <div className="card card--wide" style={{ maxWidth: '900px' }}>
-      <button type="button" className="link-button" onClick={() => onNavigate('marketing-landing', null, '/')}>← Back to home</button>
+      <BackLink fallbackPath="/" onFallbackNavigate={() => onNavigate('marketing-landing', null, '/')} label="← Back to home" />
       <h1 className="heading-xl" style={{ marginTop: '14px' }}>About Fuse101</h1>
       <p className="subtitle">
         Fuse101 is a simple profile-link platform designed to help people and businesses share important links in one place.
@@ -333,7 +359,7 @@ const AboutPage = ({ onNavigate }) => (
 const FAQPage = ({ onNavigate }) => (
   <div className="page page--gradient">
     <div className="card card--wide" style={{ maxWidth: '900px' }}>
-      <button type="button" className="link-button" onClick={() => onNavigate('marketing-landing', null, '/')}>← Back to home</button>
+      <BackLink fallbackPath="/" onFallbackNavigate={() => onNavigate('marketing-landing', null, '/')} label="← Back to home" />
       <h1 className="heading-xl" style={{ marginTop: '14px' }}>FAQ</h1>
       <div className="stack-sm" style={{ marginTop: '14px' }}>
         <div>
@@ -413,7 +439,7 @@ const BusinessSignup = ({ onNavigate, onLoginSuccess }) => {
   return (
     <div className="page page--gradient">
       <div className="card card--medium">
-        <button type="button" onClick={() => onNavigate('landing')} className="link-button">← Back</button>
+        <BackLink fallbackPath="/vendor" onFallbackNavigate={() => onNavigate('landing')} />
         <div className="stack-sm text-center">
           <h1 className="heading-xl">Create Your Follow Hub</h1>
           <p className="subtitle">Get started in under 2 minutes</p>
@@ -542,7 +568,7 @@ const BusinessLogin = ({ onNavigate, onLoginSuccess }) => {
   return (
     <div className="page page--gradient">
       <div className="card card--medium">
-        <button type="button" onClick={() => onNavigate('landing')} className="link-button">← Back</button>
+        <BackLink fallbackPath="/vendor" onFallbackNavigate={() => onNavigate('landing')} />
         <div className="stack-sm text-center">
           <h1 className="heading-xl">Business Login</h1>
           <p className="subtitle">Access your dashboard</p>
@@ -646,7 +672,7 @@ const CustomerSignup = ({ onNavigate, onAuthSuccess, initialMessage = '' }) => {
   return (
     <div className="page page--gradient">
       <div className="card card--medium">
-        <button type="button" onClick={() => onNavigate('landing')} className="link-button">← Back</button>
+        <BackLink fallbackPath="/vendor" onFallbackNavigate={() => onNavigate('landing')} />
         <div className="stack-sm text-center">
           <h1 className="heading-xl">Customer Signup</h1>
           <p className="subtitle">Save your favorite businesses</p>
@@ -773,7 +799,7 @@ const CustomerLogin = ({ onNavigate, onAuthSuccess, initialMessage = '' }) => {
   return (
     <div className="page page--gradient">
       <div className="card card--medium">
-        <button type="button" onClick={() => onNavigate('landing')} className="link-button">← Back</button>
+        <BackLink fallbackPath="/vendor" onFallbackNavigate={() => onNavigate('landing')} />
         <div className="stack-sm text-center">
           <h1 className="heading-xl">Customer Login</h1>
           <p className="subtitle">Welcome back</p>
@@ -860,7 +886,7 @@ const CustomerForgotPassword = ({ onNavigate }) => {
   return (
     <div className="page page--gradient"> 
       <div className="card card--medium"> 
-        <button type="button" onClick={() => onNavigate('customer-login')} className="link-button">← Back</button>
+        <BackLink fallbackPath="/discover" onFallbackNavigate={() => onNavigate('discover')} />
         <div className="stack-sm text-center"> 
           <h1 className="heading-xl">Reset your customer password</h1>
           <p className="subtitle">We&apos;ll email you a secure reset link.</p>
@@ -931,7 +957,7 @@ const CustomerResetPassword = ({ onNavigate, token, onResetSuccess }) => {
   return (
     <div className="page page--gradient"> 
       <div className="card card--medium"> 
-        <button type="button" onClick={() => onNavigate('customer-login')} className="link-button">← Back</button>
+        <BackLink fallbackPath="/discover" onFallbackNavigate={() => onNavigate('discover')} />
         <div className="stack-sm text-center"> 
           <h1 className="heading-xl">Choose a new password</h1>
           <p className="subtitle">Your new password must meet our security requirements.</p>
@@ -1169,6 +1195,7 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
       <div className="dashboard-container">
         <div className="card dashboard-card">
           <CustomerNav onNavigate={onNavigate} onLogout={onLogout} activeScreen="discover" customer={customer} />
+          <BackLink fallbackPath="/discover" onFallbackNavigate={() => onNavigate('discover')} />
           <h1 className="heading-lg">Discover Businesses</h1>
           <p className="subtitle" style={{ marginTop: '16px', marginBottom: '8px' }}>Search by</p>
           <div className="row row-wrap" style={{ gap: '12px', alignItems: 'flex-end' }}>
@@ -1349,6 +1376,7 @@ const FavoritesPage = ({ onNavigate, onLogout, customer }) => {
       <div className="dashboard-container">
         <div className="card dashboard-card">
           <CustomerNav onNavigate={onNavigate} onLogout={onLogout} activeScreen="favorites" customer={customer} />
+          <BackLink fallbackPath="/discover" onFallbackNavigate={() => onNavigate('discover')} />
           <h1 className="heading-lg">My Favorites</h1>
           {error && <div className="alert alert-error">{error}</div>}
           {loading ? (
@@ -1435,6 +1463,7 @@ const CustomerProfilePage = ({ onNavigate, onLogout, customer, onCustomerUpdated
       <div className="dashboard-container">
         <div className="card dashboard-card">
           <CustomerNav onNavigate={onNavigate} onLogout={onLogout} activeScreen="customer-profile" customer={customer} />
+          <BackLink fallbackPath="/discover" onFallbackNavigate={() => onNavigate('discover')} />
           <h1 className="heading-lg">My Profile</h1>
           {message && <div className="alert alert-success">{message}</div>}
           {error && <div className="alert alert-error">{error}</div>}
@@ -1501,7 +1530,7 @@ const BusinessForgotPassword = ({ onNavigate, initialMessage = '' }) => {
   return (
     <div className="page page--gradient">
       <div className="card card--medium">
-        <button type="button" onClick={() => onNavigate('login')} className="link-button">← Back</button>
+        <BackLink fallbackPath="/vendor" onFallbackNavigate={() => onNavigate('login')} />
         <div className="stack-sm text-center">
           <h1 className="heading-xl">Reset your password</h1>
           <p className="subtitle">We&apos;ll email you a secure reset link.</p>
@@ -1577,7 +1606,7 @@ const BusinessResetPassword = ({ onNavigate, token, initialMessage = '' }) => {
   return (
     <div className="page page--gradient">
       <div className="card card--medium">
-        <button type="button" onClick={() => onNavigate('login')} className="link-button">← Back</button>
+        <BackLink fallbackPath="/vendor" onFallbackNavigate={() => onNavigate('login')} />
         <div className="stack-sm text-center">
           <h1 className="heading-xl">Choose a new password</h1>
           <p className="subtitle">Your new password must meet our security requirements.</p>
@@ -1853,6 +1882,7 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
             <h1 className="heading-lg">Dashboard</h1>
             <button type="button" onClick={onLogout} className="link-button link-button--inline">Logout</button>
           </div>
+          <BackLink fallbackPath="/vendor" onFallbackNavigate={() => onNavigate('dashboard')} />
           {showComplianceBanner && (
             <div className={`banner ${isSuspended ? 'banner-warning' : 'banner-info'}`}>
               <div className="stack-sm">
@@ -2095,6 +2125,15 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
   const [business, setBusiness] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const hasVendorToken = Boolean(localStorage.getItem('token'));
+  const publicFallbackPath = hasVendorToken ? '/vendor' : '/discover';
+  const handlePublicFallback = () => {
+    if (hasVendorToken) {
+      onNavigate('dashboard');
+      return;
+    }
+    onNavigate('discover');
+  };
 
   useEffect(() => {
     const fetchBusiness = async () => {
@@ -2149,7 +2188,7 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
     return (
       <div className="page page--gradient">
         <div className="card card--medium">
-          <button type="button" onClick={() => onNavigate('landing')} className="link-button">← Back</button>
+          <BackLink fallbackPath={publicFallbackPath} onFallbackNavigate={handlePublicFallback} />
           <div className="stack-md text-center">
             <h1 className="heading-xl">We&apos;ll be right back</h1>
             <p className="subtitle">This page is temporarily unavailable due to technical difficulties.</p>
@@ -2166,7 +2205,7 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
   return (
     <div className="page page--gradient">
       <div className="card card--medium">
-        <button type="button" onClick={() => onNavigate('landing')} className="link-button">← Back</button>
+        <BackLink fallbackPath={publicFallbackPath} onFallbackNavigate={handlePublicFallback} />
         <div className="stack-md text-center">
           <div className="avatar">{business.logo}</div>
           <div>
@@ -2300,7 +2339,7 @@ const ContactSupport = ({ onNavigate, prefill }) => {
   return (
     <div className="page page--gradient">
       <div className="card card--medium">
-        <button type="button" onClick={() => onNavigate('dashboard')} className="link-button">← Back</button>
+        <BackLink fallbackPath="/vendor" onFallbackNavigate={() => onNavigate('dashboard')} />
         <div className="stack-sm text-center">
           <h1 className="heading-xl">Contact Support</h1>
           <p className="subtitle">Tell us what you need help with.</p>
