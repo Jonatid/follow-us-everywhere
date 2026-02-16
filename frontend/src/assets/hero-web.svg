@@ -1,5 +1,5 @@
 <svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <g stroke="rgba(255,255,255,0.24)" stroke-width="1.6" stroke-linecap="round">
+  <g stroke="rgba(255,255,255,0.16)" stroke-width="1.6" stroke-linecap="round">
     <path d="M160 160L360 120L560 180L780 140L980 210L1200 170L1420 230"/>
     <path d="M120 340L320 300L520 360L740 320L960 380L1180 340L1400 400"/>
     <path d="M180 520L380 470L600 540L820 500L1040 560L1260 520L1460 590"/>
@@ -20,7 +20,7 @@
     <path d="M560 720L820 500L1000 740"/>
   </g>
 
-  <g fill="rgba(255,255,255,0.5)">
+  <g fill="rgba(255,255,255,0.18)">
     <circle cx="160" cy="160" r="3.5"/>
     <circle cx="360" cy="120" r="3.5"/>
     <circle cx="560" cy="180" r="3.5"/>
