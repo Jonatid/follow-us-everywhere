@@ -77,7 +77,6 @@ body {
 .home-hero {
   width: 100%;
   min-height: 440px;
-  background-image: url('/hero-mark.svg'), url('/hero-crowd.svg') !important;
   background-size: min(125vw, 1600px), cover;
   background-position: center center, center;
   background-repeat: no-repeat, no-repeat;
