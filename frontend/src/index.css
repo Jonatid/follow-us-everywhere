@@ -78,15 +78,18 @@ body {
   width: 100%;
   min-height: 440px;
   background:
-    url("./assets/hero-web.svg"),
-    url("./assets/hero-mark.svg"),
-    url("./assets/hero-crowd.svg"),
-    radial-gradient(80% 60% at 20% 20%, rgba(242, 172, 5, 0.18) 0%, rgba(242, 172, 5, 0) 60%),
-    radial-gradient(60% 50% at 80% 30%, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 55%),
+    radial-gradient(circle at 12% 28%, rgba(255, 255, 255, 0.18) 0 1px, transparent 2px),
+    radial-gradient(circle at 78% 22%, rgba(255, 255, 255, 0.14) 0 1px, transparent 2px),
+    radial-gradient(circle at 35% 70%, rgba(255, 255, 255, 0.12) 0 1px, transparent 2px),
+    radial-gradient(circle at 62% 62%, rgba(255, 255, 255, 0.16) 0 1px, transparent 2px),
+    radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1.5px),
+    radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1.5px),
+    repeating-linear-gradient(25deg, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 38px),
+    repeating-linear-gradient(-18deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 44px),
     linear-gradient(180deg, rgba(4, 66, 179, 0.95) 0%, rgba(4, 66, 179, 0.9) 60%, rgba(4, 66, 179, 0.95) 100%);
-  background-size: 120% 120%, contain, cover, cover, cover, cover !important;
-  background-position: center, center, center, center, center, center !important;
-  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat !important;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, repeat, repeat, no-repeat, no-repeat, no-repeat;
+  background-size: auto, auto, auto, auto, 42px 42px, 68px 68px, cover, cover, cover;
+  background-position: 12% 28%, 78% 22%, 35% 70%, 62% 62%, 0 0, 24px 18px, center, center, center;
 }
 
 .home-hero__overlay {
@@ -716,8 +719,6 @@ body {
 
   .home-hero {
     min-height: 380px;
-    background-size: 170vw, cover, cover, cover, cover !important;
-    background-position: center 45%, center, center, center, center !important;
   }
 
   .home-hero__overlay {
