@@ -231,8 +231,8 @@ const MarketingLandingPage = ({ onNavigate }) => {
       >
         <div className="home-hero__overlay">
           <div className="home-hero__content stack-lg text-center">
-            <h1 className="heading-xxl" style={{ marginBottom: '8px' }}>Built for Businesses That Show Up.</h1>
-            <p className="subtitle-lg" style={{ maxWidth: '640px', margin: '0 auto' }}>
+            <h1 className="heading-xxl home-hero__title">Built for Businesses That Show Up.</h1>
+            <p className="subtitle-lg home-hero__tagline">
               Share your links, your services, and what matters to your business — all in one trusted place.
             </p>
             <div>
@@ -259,7 +259,7 @@ const MarketingLandingPage = ({ onNavigate }) => {
                   <p className="subtitle marketing-feature-card__preview">{feature.preview}</p>
                   <button
                     type="button"
-                    className="button button-muted button-sm marketing-feature-card__button"
+                    className="marketing-feature-card__button card-toggle-link"
                     onClick={() => setOpenFeatureCard(isOpen ? null : feature.id)}
                     aria-expanded={isOpen}
                   >
@@ -283,7 +283,7 @@ const MarketingLandingPage = ({ onNavigate }) => {
         <div className="site-footer__inner">
           <div className="site-footer__column">
             <h3 className="site-footer__heading">Follow Us Everywhere</h3>
-            <p className="site-footer__text">One smart business link for links, socials, and customer connection.</p>
+            <p className="site-footer__text">One Smart Business Link For Links, Socials, And Customer Connection</p>
           </div>
           <div className="site-footer__column">
             <h4 className="site-footer__heading">Platform</h4>
