@@ -78,8 +78,8 @@ body {
   width: 100%;
   min-height: 440px;
   background:
-    url("hero-mark.svg"),
-    url("hero-crowd.svg"),
+    url("./assets/hero-mark.svg"),
+    url("./assets/hero-crowd.svg"),
     radial-gradient(80% 60% at 20% 20%, rgba(242, 172, 5, 0.18) 0%, rgba(242, 172, 5, 0) 60%),
     radial-gradient(60% 50% at 80% 30%, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 55%),
     linear-gradient(180deg, rgba(4, 66, 179, 0.95) 0%, rgba(4, 66, 179, 0.9) 60%, rgba(4, 66, 179, 0.95) 100%);
