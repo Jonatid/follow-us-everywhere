@@ -254,10 +254,10 @@ const MarketingLandingPage = ({ onNavigate }) => {
         className="home-hero"
         aria-label="Home hero"
         style={{
-          backgroundImage: `url(${process.env.PUBLIC_URL}/hero-mark.svg), url(${process.env.PUBLIC_URL}/hero-crowd.jpg)`,
-          backgroundPosition: 'center, center',
-          backgroundRepeat: 'no-repeat, no-repeat',
-          backgroundSize: '900px auto, cover'
+          backgroundImage: `url(${process.env.PUBLIC_URL}/hero-mark.svg), url(${process.env.PUBLIC_URL}/hero-crowd.jpg), radial-gradient(80% 60% at 20% 20%, rgba(242, 172, 5, 0.18) 0%, rgba(242, 172, 5, 0) 60%), radial-gradient(60% 50% at 80% 30%, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 55%), linear-gradient(180deg, rgba(4, 66, 179, 0.95) 0%, rgba(4, 66, 179, 0.9) 60%, rgba(4, 66, 179, 0.95) 100%)`,
+          backgroundPosition: 'center, center, center, center, center',
+          backgroundRepeat: 'no-repeat, no-repeat, no-repeat, no-repeat, no-repeat',
+          backgroundSize: '900px auto, cover, cover, cover, cover'
         }}
       >
         <div className="home-hero__overlay">
