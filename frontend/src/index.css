@@ -100,18 +100,25 @@ body {
 
 .home-hero__title {
   margin: 0 auto;
-  max-width: 18ch;
-  font-size: clamp(2.1rem, 4.8vw, 3.5rem);
-  font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: 0.01em;
+  max-width: 16ch;
+  font-size: clamp(2.2rem, 5.2vw, 3.8rem);
+  font-weight: 900;
+  line-height: 1.08;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+  text-align: center;
+  text-shadow: 0 6px 22px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.35);
 }
 
 .home-hero__tagline {
   margin: 0 auto;
-  max-width: 38ch;
-  font-size: clamp(1.05rem, 2.2vw, 1.35rem);
-  line-height: 1.45;
+  max-width: 31ch;
+  font-size: clamp(1.05rem, 2.25vw, 1.35rem);
+  line-height: 1.5;
+  font-style: italic;
+  text-align: center;
+  text-wrap: balance;
+  text-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
 }
 
 .home-hero__content .heading-xxl,
@@ -659,6 +666,13 @@ body {
   color: #f2ac05;
 }
 
+
+@media (min-width: 769px) {
+  .site-header__nav {
+    display: flex !important;
+  }
+}
+
 @media (max-width: 768px) {
   .marketing-main {
     padding: 0 16px 16px;
@@ -671,6 +685,7 @@ body {
 
   .site-header__menu-toggle {
     display: inline-flex;
+    margin-left: auto;
   }
 
   .site-header__nav {
@@ -697,12 +712,12 @@ body {
   }
 
   .home-hero__title {
-    max-width: 16ch;
-    font-size: clamp(1.9rem, 8vw, 2.7rem);
+    max-width: 14ch;
+    font-size: clamp(1.95rem, 8vw, 2.85rem);
   }
 
   .home-hero__tagline {
-    max-width: 30ch;
+    max-width: 26ch;
   }
 
   .site-footer__inner {
