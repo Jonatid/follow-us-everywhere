@@ -1,40 +1,116 @@
 <svg width="1200" height="1200" viewBox="0 0 1200 1200" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="heroMarkTitle heroMarkDesc">
-  <title id="heroMarkTitle">Connection unity mark</title>
-  <desc id="heroMarkDesc">A faint abstract mark of interconnected arcs and nodes symbolizing unity.</desc>
-  <defs>
-    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(600 600) rotate(90) scale(520)">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.6"/>
-      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="ring" x1="240" y1="600" x2="960" y2="600" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#EAF3FF" stop-opacity="0.72"/>
-      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0.9"/>
-      <stop offset="1" stop-color="#EAF3FF" stop-opacity="0.72"/>
-    </linearGradient>
-  </defs>
+  <title id="heroMarkTitle">Decentralized network mark</title>
+  <desc id="heroMarkDesc">A subtle abstract decentralized network of thin lines and nodes.</desc>
 
-  <circle cx="600" cy="600" r="600" fill="url(#glow)"/>
-
-  <g opacity="0.42" stroke="url(#ring)" stroke-width="22" stroke-linecap="round">
-    <circle cx="600" cy="600" r="290"/>
-    <path d="M280 686C359 850 543 960 748 924C953 888 1103 710 1103 500"/>
-    <path d="M129 530C170 357 301 212 474 159C647 106 833 155 961 284"/>
+  <g stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.16">
+    <line x1="92" y1="208" x2="248" y2="132" />
+    <line x1="92" y1="208" x2="186" y2="352" />
+    <line x1="248" y1="132" x2="384" y2="198" />
+    <line x1="248" y1="132" x2="352" y2="74" />
+    <line x1="352" y1="74" x2="492" y2="126" />
+    <line x1="384" y1="198" x2="492" y2="126" />
+    <line x1="384" y1="198" x2="448" y2="338" />
+    <line x1="186" y1="352" x2="328" y2="434" />
+    <line x1="328" y1="434" x2="448" y2="338" />
+    <line x1="448" y1="338" x2="568" y2="284" />
+    <line x1="492" y1="126" x2="636" y2="96" />
+    <line x1="568" y1="284" x2="706" y2="236" />
+    <line x1="636" y1="96" x2="762" y2="146" />
+    <line x1="762" y1="146" x2="886" y2="116" />
+    <line x1="706" y1="236" x2="822" y2="292" />
+    <line x1="822" y1="292" x2="954" y2="244" />
+    <line x1="886" y1="116" x2="1036" y2="176" />
+    <line x1="954" y1="244" x2="1098" y2="314" />
+    <line x1="822" y1="292" x2="884" y2="430" />
+    <line x1="706" y1="236" x2="686" y2="388" />
+    <line x1="568" y1="284" x2="582" y2="446" />
+    <line x1="448" y1="338" x2="524" y2="504" />
+    <line x1="328" y1="434" x2="414" y2="562" />
+    <line x1="186" y1="352" x2="198" y2="528" />
+    <line x1="198" y1="528" x2="346" y2="650" />
+    <line x1="414" y1="562" x2="346" y2="650" />
+    <line x1="414" y1="562" x2="524" y2="504" />
+    <line x1="524" y1="504" x2="582" y2="446" />
+    <line x1="582" y1="446" x2="686" y2="388" />
+    <line x1="686" y1="388" x2="884" y2="430" />
+    <line x1="884" y1="430" x2="1032" y2="518" />
+    <line x1="1032" y1="518" x2="1108" y2="660" />
+    <line x1="884" y1="430" x2="884" y2="592" />
+    <line x1="686" y1="388" x2="704" y2="560" />
+    <line x1="582" y1="446" x2="610" y2="602" />
+    <line x1="524" y1="504" x2="492" y2="640" />
+    <line x1="346" y1="650" x2="478" y2="748" />
+    <line x1="478" y1="748" x2="612" y2="702" />
+    <line x1="612" y1="702" x2="748" y2="764" />
+    <line x1="748" y1="764" x2="884" y2="592" />
+    <line x1="884" y1="592" x2="980" y2="728" />
+    <line x1="980" y1="728" x2="1102" y2="782" />
+    <line x1="748" y1="764" x2="832" y2="892" />
+    <line x1="612" y1="702" x2="606" y2="854" />
+    <line x1="478" y1="748" x2="414" y2="888" />
+    <line x1="414" y1="888" x2="544" y2="972" />
+    <line x1="544" y1="972" x2="706" y2="1004" />
+    <line x1="706" y1="1004" x2="832" y2="892" />
+    <line x1="832" y1="892" x2="956" y2="962" />
+    <line x1="706" y1="1004" x2="768" y2="1120" />
+    <line x1="544" y1="972" x2="468" y2="1102" />
+    <line x1="414" y1="888" x2="292" y2="976" />
+    <line x1="292" y1="976" x2="176" y2="888" />
+    <line x1="176" y1="888" x2="216" y2="746" />
+    <line x1="216" y1="746" x2="346" y2="650" />
+    <line x1="980" y1="728" x2="956" y2="962" />
+    <line x1="1098" y1="314" x2="1032" y2="518" />
+    <line x1="1036" y1="176" x2="1098" y2="314" />
+    <line x1="762" y1="146" x2="706" y2="236" />
+    <line x1="492" y1="126" x2="568" y2="284" />
+    <line x1="248" y1="132" x2="186" y2="352" />
   </g>
 
-  <g opacity="0.5" fill="#FFFFFF">
-    <circle cx="310" cy="686" r="26"/>
-    <circle cx="474" cy="159" r="24"/>
-    <circle cx="748" cy="924" r="28"/>
-    <circle cx="1103" cy="500" r="22"/>
-    <circle cx="961" cy="284" r="20"/>
-    <circle cx="600" cy="600" r="35"/>
-  </g>
-
-  <g opacity="0.3" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round">
-    <path d="M600 600L748 924"/>
-    <path d="M600 600L310 686"/>
-    <path d="M600 600L961 284"/>
-    <path d="M600 600L474 159"/>
-    <path d="M600 600L1103 500"/>
+  <g fill="#FFFFFF">
+    <circle cx="92" cy="208" r="4" opacity="0.16" />
+    <circle cx="248" cy="132" r="5" opacity="0.2" />
+    <circle cx="352" cy="74" r="3.5" opacity="0.14" />
+    <circle cx="384" cy="198" r="4.5" opacity="0.18" />
+    <circle cx="492" cy="126" r="4" opacity="0.16" />
+    <circle cx="636" cy="96" r="5" opacity="0.2" />
+    <circle cx="762" cy="146" r="4" opacity="0.17" />
+    <circle cx="886" cy="116" r="3.5" opacity="0.14" />
+    <circle cx="1036" cy="176" r="5" opacity="0.22" />
+    <circle cx="1098" cy="314" r="4" opacity="0.16" />
+    <circle cx="954" cy="244" r="3.5" opacity="0.14" />
+    <circle cx="822" cy="292" r="4.5" opacity="0.19" />
+    <circle cx="706" cy="236" r="5" opacity="0.2" />
+    <circle cx="568" cy="284" r="4" opacity="0.16" />
+    <circle cx="448" cy="338" r="5.5" opacity="0.23" />
+    <circle cx="328" cy="434" r="4" opacity="0.18" />
+    <circle cx="186" cy="352" r="4.5" opacity="0.19" />
+    <circle cx="198" cy="528" r="4" opacity="0.17" />
+    <circle cx="346" cy="650" r="5" opacity="0.22" />
+    <circle cx="414" cy="562" r="4" opacity="0.16" />
+    <circle cx="524" cy="504" r="5.5" opacity="0.24" />
+    <circle cx="582" cy="446" r="4" opacity="0.18" />
+    <circle cx="686" cy="388" r="5" opacity="0.2" />
+    <circle cx="884" cy="430" r="4.5" opacity="0.19" />
+    <circle cx="1032" cy="518" r="4" opacity="0.16" />
+    <circle cx="1108" cy="660" r="5" opacity="0.21" />
+    <circle cx="884" cy="592" r="5" opacity="0.2" />
+    <circle cx="704" cy="560" r="4" opacity="0.17" />
+    <circle cx="610" cy="602" r="4.5" opacity="0.18" />
+    <circle cx="492" cy="640" r="4" opacity="0.16" />
+    <circle cx="478" cy="748" r="5.5" opacity="0.24" />
+    <circle cx="612" cy="702" r="4" opacity="0.17" />
+    <circle cx="748" cy="764" r="5" opacity="0.22" />
+    <circle cx="980" cy="728" r="4" opacity="0.16" />
+    <circle cx="1102" cy="782" r="4.5" opacity="0.19" />
+    <circle cx="832" cy="892" r="5" opacity="0.21" />
+    <circle cx="956" cy="962" r="4" opacity="0.18" />
+    <circle cx="706" cy="1004" r="5.5" opacity="0.25" />
+    <circle cx="768" cy="1120" r="4" opacity="0.15" />
+    <circle cx="544" cy="972" r="5" opacity="0.21" />
+    <circle cx="468" cy="1102" r="4" opacity="0.16" />
+    <circle cx="414" cy="888" r="4.5" opacity="0.19" />
+    <circle cx="292" cy="976" r="4" opacity="0.16" />
+    <circle cx="176" cy="888" r="5" opacity="0.2" />
+    <circle cx="216" cy="746" r="4" opacity="0.17" />
   </g>
 </svg>
