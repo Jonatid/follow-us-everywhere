@@ -119,7 +119,7 @@ const RoleChooserModal = ({ mode, onClose, onChoose }) => {
 
 const MarketingLandingPage = ({ onNavigate }) => {
   const [roleModalMode, setRoleModalMode] = useState(null);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [openFeatureCard, setOpenFeatureCard] = useState('one-smart-profile');
 
   const marketingFeatureCards = [{
@@ -197,7 +197,7 @@ const MarketingLandingPage = ({ onNavigate }) => {
     }
   };
 
-  const closeMenu = () => setIsMenuOpen(false);
+  const closeMobileNav = () => setIsMobileNavOpen(false);
 
   return (
     <div className="page page--gradient marketing-page" style={{ minHeight: '100vh', justifyContent: 'flex-start' }}>
@@ -210,16 +210,16 @@ const MarketingLandingPage = ({ onNavigate }) => {
             type="button"
             className="button button-secondary button-sm site-header__menu-toggle"
             aria-label="Toggle navigation menu"
-            aria-expanded={isMenuOpen}
-            onClick={() => setIsMenuOpen((prev) => !prev)}
+            aria-expanded={isMobileNavOpen}
+            onClick={() => setIsMobileNavOpen((prev) => !prev)}
           >
             ☰
           </button>
-          <nav className={`site-header__nav${isMenuOpen ? ' site-header__nav--open' : ''}`}>
-            <button type="button" className="link-button" onClick={() => { onNavigate('about', null, '/about'); closeMenu(); }}>About</button>
-            <button type="button" className="link-button" onClick={() => { onNavigate('faq', null, '/faq'); closeMenu(); }}>FAQ</button>
-            <button type="button" className="link-button" onClick={() => { onNavigate('discover', null, '/discover'); closeMenu(); }}>Explore businesses</button>
-            <button type="button" className="button button-primary button-sm" onClick={() => { setRoleModalMode('signup'); closeMenu(); }}>Sign up free</button>
+          <nav className={`site-header__nav${isMobileNavOpen ? ' site-header__nav--open' : ''}`}>
+            <button type="button" className="link-button" onClick={() => { onNavigate('about', null, '/about'); closeMobileNav(); }}>About</button>
+            <button type="button" className="link-button" onClick={() => { onNavigate('faq', null, '/faq'); closeMobileNav(); }}>FAQ</button>
+            <button type="button" className="link-button" onClick={() => { onNavigate('discover', null, '/discover'); closeMobileNav(); }}>Explore businesses</button>
+            <button type="button" className="button button-primary button-sm" onClick={() => { setRoleModalMode('signup'); closeMobileNav(); }}>Sign up free</button>
           </nav>
         </div>
       </header>
