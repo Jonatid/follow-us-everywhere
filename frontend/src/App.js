@@ -253,7 +253,12 @@ const MarketingLandingPage = ({ onNavigate }) => {
       <section
         className="home-hero"
         aria-label="Home hero"
-        style={{ backgroundImage: `url(${process.env.PUBLIC_URL}/logo512.png)` }}
+        style={{
+          backgroundImage: `url(${process.env.PUBLIC_URL}/hero-mark.svg), url(${process.env.PUBLIC_URL}/hero-crowd.jpg)`,
+          backgroundPosition: 'center, center',
+          backgroundRepeat: 'no-repeat, no-repeat',
+          backgroundSize: '900px auto, cover'
+        }}
       >
         <div className="home-hero__overlay">
           <div className="home-hero__content stack-lg text-center">
