@@ -77,9 +77,10 @@ body {
 .home-hero {
   width: 100%;
   min-height: 440px;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  background-image: url('/hero-mark.svg'), url('/hero-crowd.svg') !important;
+  background-size: min(125vw, 1600px), cover;
+  background-position: center center, center;
+  background-repeat: no-repeat, no-repeat;
 }
 
 .home-hero__overlay {
@@ -709,6 +710,8 @@ body {
 
   .home-hero {
     min-height: 380px;
+    background-size: 170vw, cover;
+    background-position: center 45%, center;
   }
 
   .home-hero__overlay {

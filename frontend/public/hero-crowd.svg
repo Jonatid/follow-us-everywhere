@@ -1,0 +1,52 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="heroCrowdTitle heroCrowdDesc">
+  <title id="heroCrowdTitle">Stylized diverse crowd silhouette</title>
+  <desc id="heroCrowdDesc">Layered silhouettes representing a diverse crowd gathered together.</desc>
+  <defs>
+    <linearGradient id="crowdSky" x1="800" y1="0" x2="800" y2="900" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0C2F78"/>
+      <stop offset="1" stop-color="#051535"/>
+    </linearGradient>
+    <linearGradient id="crowdNear" x1="800" y1="460" x2="800" y2="900" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#122B65"/>
+      <stop offset="1" stop-color="#040B1F"/>
+    </linearGradient>
+    <linearGradient id="crowdMid" x1="800" y1="410" x2="800" y2="900" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#224A9C"/>
+      <stop offset="1" stop-color="#102957"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#crowdSky)"/>
+
+  <g opacity="0.55">
+    <circle cx="220" cy="140" r="72" fill="#2A59B5"/>
+    <circle cx="1400" cy="190" r="98" fill="#2F66CE"/>
+    <circle cx="910" cy="120" r="58" fill="#316ED8"/>
+  </g>
+
+  <g fill="url(#crowdMid)">
+    <path d="M0 900V630C72 610 127 565 173 520C219 478 267 432 340 442C410 451 449 496 490 529C536 566 587 598 662 598C737 598 790 559 838 523C885 487 925 452 991 452C1058 452 1099 487 1149 525C1200 564 1258 607 1343 612C1432 617 1512 582 1600 542V900H0Z"/>
+  </g>
+
+  <g fill="url(#crowdNear)">
+    <path d="M0 900V700C57 681 116 666 175 668C251 671 306 711 367 752C428 793 492 835 581 840C672 845 746 815 817 783C888 751 958 720 1043 724C1135 728 1207 773 1278 815C1346 855 1412 892 1501 892C1535 892 1568 887 1600 880V900H0Z"/>
+  </g>
+
+  <g>
+    <g fill="#0B1E4A">
+      <circle cx="140" cy="594" r="48"/>
+      <circle cx="240" cy="572" r="54"/>
+      <circle cx="348" cy="603" r="45"/>
+      <circle cx="470" cy="565" r="60"/>
+      <circle cx="605" cy="586" r="50"/>
+      <circle cx="740" cy="554" r="64"/>
+      <circle cx="878" cy="592" r="52"/>
+      <circle cx="1005" cy="559" r="58"/>
+      <circle cx="1128" cy="595" r="49"/>
+      <circle cx="1260" cy="565" r="61"/>
+      <circle cx="1390" cy="598" r="47"/>
+      <circle cx="1510" cy="578" r="53"/>
+    </g>
+    <path d="M39 900V686C60 666 93 657 123 661C158 665 181 685 206 709C232 733 261 758 301 760C340 763 369 742 394 717C419 692 443 669 478 669C514 669 541 691 568 716C595 742 625 771 667 771C709 771 741 742 770 714C799 686 828 658 869 658C910 658 941 686 971 715C1001 744 1033 773 1078 773C1121 773 1154 742 1185 713C1216 684 1248 654 1291 654C1334 654 1366 686 1397 716C1428 747 1460 778 1503 781C1530 783 1558 775 1582 762L1600 752V900H39Z" fill="#07132F"/>
+  </g>
+</svg>
