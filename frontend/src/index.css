@@ -667,13 +667,17 @@ body {
 }
 
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
+  .site-header__menu-toggle {
+    display: none;
+  }
+
   .site-header__nav {
     display: flex !important;
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .marketing-main {
     padding: 0 16px 16px;
   }
