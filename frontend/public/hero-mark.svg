@@ -1,0 +1,40 @@
+<svg width="1200" height="1200" viewBox="0 0 1200 1200" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="heroMarkTitle heroMarkDesc">
+  <title id="heroMarkTitle">Connection unity mark</title>
+  <desc id="heroMarkDesc">A faint abstract mark of interconnected arcs and nodes symbolizing unity.</desc>
+  <defs>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(600 600) rotate(90) scale(520)">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ring" x1="240" y1="600" x2="960" y2="600" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EAF3FF" stop-opacity="0.72"/>
+      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#EAF3FF" stop-opacity="0.72"/>
+    </linearGradient>
+  </defs>
+
+  <circle cx="600" cy="600" r="600" fill="url(#glow)"/>
+
+  <g opacity="0.42" stroke="url(#ring)" stroke-width="22" stroke-linecap="round">
+    <circle cx="600" cy="600" r="290"/>
+    <path d="M280 686C359 850 543 960 748 924C953 888 1103 710 1103 500"/>
+    <path d="M129 530C170 357 301 212 474 159C647 106 833 155 961 284"/>
+  </g>
+
+  <g opacity="0.5" fill="#FFFFFF">
+    <circle cx="310" cy="686" r="26"/>
+    <circle cx="474" cy="159" r="24"/>
+    <circle cx="748" cy="924" r="28"/>
+    <circle cx="1103" cy="500" r="22"/>
+    <circle cx="961" cy="284" r="20"/>
+    <circle cx="600" cy="600" r="35"/>
+  </g>
+
+  <g opacity="0.3" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round">
+    <path d="M600 600L748 924"/>
+    <path d="M600 600L310 686"/>
+    <path d="M600 600L961 284"/>
+    <path d="M600 600L474 159"/>
+    <path d="M600 600L1103 500"/>
+  </g>
+</svg>
