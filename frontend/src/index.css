@@ -804,25 +804,51 @@ body {
 
 .platform-page {
   justify-content: flex-start;
-  padding: 32px 20px 56px;
+  padding: 0 0 56px;
 }
 
 .platform-page__content {
   width: 100%;
-  max-width: 960px;
+  max-width: none;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: var(--home-section-gap);
+}
+
+.platform-page__inner {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 24px 24px 0;
 }
 
 .platform-hero {
-  margin-top: 4px;
-  border-radius: 22px;
+  margin-top: 0;
   overflow: hidden;
   position: relative;
   background: linear-gradient(140deg, #030a2e 0%, #0a2f9a 100%);
   box-shadow: 0 20px 45px rgba(2, 8, 32, 0.34);
+}
+
+.platform-main {
+  width: 100%;
+  max-width: 1168px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.platform-cards-group {
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+  padding: 0;
+}
+
+.platform-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
 }
 
 .platform-hero::before {
@@ -923,11 +949,19 @@ body {
 
 @media (max-width: 767px) {
   .platform-page {
-    padding: 22px 16px 44px;
+    padding: 0 0 44px;
   }
 
   .platform-page__content {
-    gap: 16px;
+    gap: 44px;
+  }
+
+  .platform-page__inner {
+    padding: 18px 16px 0;
+  }
+
+  .platform-main {
+    padding: 0 16px;
   }
 
   .platform-hero__overlay {
@@ -938,6 +972,7 @@ body {
     padding: 20px;
   }
 
+  .platform-cards-grid,
   .platform-difference-grid {
     grid-template-columns: 1fr;
   }

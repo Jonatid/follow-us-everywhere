@@ -300,7 +300,10 @@ const MarketingLandingPage = ({ onNavigate, onOpenRoleModal }) => {
 const AboutPage = ({ onNavigate }) => (
   <div className="page page--gradient platform-page">
     <div className="platform-page__content">
-      <BackLink fallbackPath="/" onFallbackNavigate={() => onNavigate('marketing-landing', null, '/')} label="← Back to home" />
+      <div className="platform-page__inner">
+        <BackLink fallbackPath="/" onFallbackNavigate={() => onNavigate('marketing-landing', null, '/')} label="← Back to home" />
+      </div>
+
       <section className="platform-hero" aria-label="The Platform mission">
         <div className="platform-hero__overlay">
           <h1 className="heading-xl platform-hero__title">The Trust Layer for Business Identity.</h1>
@@ -316,60 +319,76 @@ const AboutPage = ({ onNavigate }) => (
         </div>
       </section>
 
-      <section className="platform-section-card" aria-labelledby="platform-problem-title">
-        <h2 id="platform-problem-title" className="heading-lg platform-section-card__title">The Problem</h2>
-        <div className="platform-rhythm-lines">
-          <p className="subtitle">The internet made it easy to create links.</p>
-          <p className="subtitle">It did not make it easy to build trust.</p>
-        </div>
-        <ul className="platform-list">
-          <li>No governance</li>
-          <li>No verification</li>
-          <li>No accountability</li>
-        </ul>
-      </section>
+      <main className="platform-main">
+        <section className="home-cards-section" aria-label="The Platform sections">
+          <div className="home-cards-container platform-cards-group">
+            <div className="platform-cards-grid">
+              <section className="platform-section-card" aria-labelledby="platform-problem-title">
+                <h2 id="platform-problem-title" className="heading-lg platform-section-card__title">The Problem</h2>
+                <div className="platform-rhythm-lines">
+                  <p className="subtitle">The internet made it easy to create links.</p>
+                  <p className="subtitle">It did not make it easy to build trust.</p>
+                </div>
+                <ul className="platform-list">
+                  <li>No governance</li>
+                  <li>No verification</li>
+                  <li>No accountability</li>
+                </ul>
+              </section>
 
-      <section className="platform-section-card" aria-labelledby="platform-difference-title">
-        <h2 id="platform-difference-title" className="heading-lg platform-section-card__title">The Difference</h2>
-        <div className="platform-difference-grid">
-          <div className="platform-difference-grid__column">
-            <h3 className="heading-md">Personal link pages</h3>
+              <section className="platform-section-card" aria-labelledby="platform-difference-title">
+                <h2 id="platform-difference-title" className="heading-lg platform-section-card__title">The Difference</h2>
+                <div className="platform-difference-grid">
+                  <div className="platform-difference-grid__column">
+                    <h3 className="heading-md">Personal link pages</h3>
+                  </div>
+                  <div className="platform-difference-grid__column">
+                    <h3 className="heading-md">Verified business infrastructure</h3>
+                  </div>
+                </div>
+                <ul className="platform-list">
+                  <li>Business-only accounts</li>
+                  <li>Admin-governed platform</li>
+                  <li>Policy enforcement</li>
+                  <li>Community verification</li>
+                  <li>Built for scale</li>
+                </ul>
+              </section>
+            </div>
           </div>
-          <div className="platform-difference-grid__column">
-            <h3 className="heading-md">Verified business infrastructure</h3>
+
+          <div className="home-blue-band" aria-hidden="true">
+            <div className="home-blue-band__inner" />
           </div>
-        </div>
-        <ul className="platform-list">
-          <li>Business-only accounts</li>
-          <li>Admin-governed platform</li>
-          <li>Policy enforcement</li>
-          <li>Community verification</li>
-          <li>Built for scale</li>
-        </ul>
-      </section>
 
-      <section className="platform-section-card" aria-labelledby="platform-vision-title">
-        <h2 id="platform-vision-title" className="heading-lg platform-section-card__title">The Vision</h2>
-        <div className="platform-rhythm-lines">
-          <p className="subtitle">We are building digital infrastructure for real businesses.</p>
-          <p className="subtitle">Not profiles.</p>
-          <p className="subtitle">Not vanity pages.</p>
-          <p className="subtitle">Infrastructure.</p>
-          <p className="subtitle">Governed.</p>
-          <p className="subtitle">Scalable.</p>
-          <p className="subtitle">Designed for partnerships, programs, and economic development.</p>
-        </div>
-      </section>
+          <div className="home-cards-container platform-cards-group">
+            <div className="platform-cards-grid">
+              <section className="platform-section-card" aria-labelledby="platform-vision-title">
+                <h2 id="platform-vision-title" className="heading-lg platform-section-card__title">The Vision</h2>
+                <div className="platform-rhythm-lines">
+                  <p className="subtitle">We are building digital infrastructure for real businesses.</p>
+                  <p className="subtitle">Not profiles.</p>
+                  <p className="subtitle">Not vanity pages.</p>
+                  <p className="subtitle">Infrastructure.</p>
+                  <p className="subtitle">Governed.</p>
+                  <p className="subtitle">Scalable.</p>
+                  <p className="subtitle">Designed for partnerships, programs, and economic development.</p>
+                </div>
+              </section>
 
-      <section className="platform-section-card" aria-labelledby="platform-direction-title">
-        <h2 id="platform-direction-title" className="heading-lg platform-section-card__title">The Long-Term Direction</h2>
-        <div className="platform-rhythm-lines">
-          <p className="subtitle">Thousands of businesses.</p>
-          <p className="subtitle">Verified community impact.</p>
-          <p className="subtitle">Searchable digital identity.</p>
-          <p className="subtitle">A trust-first marketplace.</p>
-        </div>
-      </section>
+              <section className="platform-section-card" aria-labelledby="platform-direction-title">
+                <h2 id="platform-direction-title" className="heading-lg platform-section-card__title">The Long-Term Direction</h2>
+                <div className="platform-rhythm-lines">
+                  <p className="subtitle">Thousands of businesses.</p>
+                  <p className="subtitle">Verified community impact.</p>
+                  <p className="subtitle">Searchable digital identity.</p>
+                  <p className="subtitle">A trust-first marketplace.</p>
+                </div>
+              </section>
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
   </div>
 );
