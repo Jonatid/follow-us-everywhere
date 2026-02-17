@@ -87,6 +87,7 @@ body {
   max-width: 1120px;
   margin: 0 auto;
   background: transparent;
+  border: none;
   box-shadow: none;
 }
 
@@ -215,6 +216,12 @@ body {
   box-shadow: var(--shadow);
   padding: var(--space-8);
   width: 100%;
+}
+
+.home-cards-container.card {
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 .card--wide {
