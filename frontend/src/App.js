@@ -300,10 +300,6 @@ const MarketingLandingPage = ({ onNavigate, onOpenRoleModal }) => {
 const AboutPage = ({ onNavigate }) => (
   <div className="page page--gradient platform-page">
     <div className="platform-page__content">
-      <div className="platform-page__inner">
-        <BackLink fallbackPath="/" onFallbackNavigate={() => onNavigate('marketing-landing', null, '/')} label="← Back to home" />
-      </div>
-
       <section className="platform-hero" aria-label="The Platform mission">
         <div className="platform-hero__overlay">
           <h1 className="heading-xl platform-hero__title">The Trust Layer for Business Identity.</h1>
