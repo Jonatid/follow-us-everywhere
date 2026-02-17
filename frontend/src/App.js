@@ -2389,47 +2389,62 @@ export default function App() {
 
   const isVendorPath = (pathname) => pathname === '/vendor' || pathname.startsWith('/vendor/');
 
-  useEffect(() => {
-    const { pathname, search } = window.location;
+  const getScreenFromPath = (pathname) => {
+    if (pathname === '/') return 'marketing-landing';
+    if (pathname === '/about') return 'about';
+    if (pathname === '/faq') return 'faq';
+    if (pathname === '/vendor') return 'landing';
+    if (pathname === '/reset-password') return 'reset';
+    if (pathname === '/customer' || pathname === '/customer/login') return 'customer-login';
+    if (pathname === '/customer/signup') return 'customer-signup';
+    if (pathname === '/customer/forgot-password') return 'customer-forgot';
+    if (pathname === '/customer/reset-password') return 'customer-reset';
+    if (pathname === '/discover') return 'discover';
+    if (pathname === '/favorites') return 'favorites';
+    if (pathname === '/customer/profile') return 'customer-profile';
+    if (pathname.startsWith('/business/')) return 'public';
+    return null;
+  };
 
-    if (pathname === '/') {
-      setCurrentScreen('marketing-landing');
-    } else if (pathname === '/about') {
-      setCurrentScreen('about');
-    } else if (pathname === '/faq') {
-      setCurrentScreen('faq');
-    } else if (pathname === '/vendor') {
-      setCurrentScreen('landing');
-    } else if (pathname === '/reset-password') {
-      const params = new URLSearchParams(search);
-      setResetToken(params.get('token'));
-      setCurrentScreen('reset');
-    } else if (pathname === '/customer') {
+  const syncScreenWithPath = (path) => {
+    const parsedUrl = new URL(path, window.location.origin);
+    const { pathname, search } = parsedUrl;
+    const mappedScreen = getScreenFromPath(pathname);
+
+    if (pathname === '/customer') {
       window.history.replaceState({}, '', '/customer/login');
       setCurrentScreen('customer-login');
-    } else if (pathname === '/customer/login') {
-      setCurrentScreen('customer-login');
-    } else if (pathname === '/customer/signup') {
-      setCurrentScreen('customer-signup');
-    } else if (pathname === '/customer/forgot-password') {
-      setCurrentScreen('customer-forgot');
-    } else if (pathname === '/customer/reset-password') {
+      return 'customer-login';
+    }
+
+    if (pathname === '/reset-password') {
+      const params = new URLSearchParams(search);
+      setResetToken(params.get('token'));
+    }
+
+    if (pathname === '/customer/reset-password') {
       const params = new URLSearchParams(search);
       setCustomerResetToken(params.get('token'));
-      setCurrentScreen('customer-reset');
-    } else if (pathname === '/discover') {
-      setCurrentScreen('discover');
-    } else if (pathname === '/favorites') {
-      setCurrentScreen('favorites');
-    } else if (pathname === '/customer/profile') {
-      setCurrentScreen('customer-profile');
-    } else if (pathname.startsWith('/business/')) {
+    }
+
+    if (pathname.startsWith('/business/')) {
       const slug = pathname.replace('/business/', '').trim();
       if (slug) {
         setPublicSlug(slug);
-        setCurrentScreen('public');
       }
     }
+
+    if (mappedScreen) {
+      setCurrentScreen(mappedScreen);
+    }
+
+    return mappedScreen;
+  };
+
+  useEffect(() => {
+    const { pathname, search } = window.location;
+
+    syncScreenWithPath(`${pathname}${search}`);
 
     const token = localStorage.getItem('token');
     if (token && isVendorPath(pathname) && !isCustomerOrPublicPath(pathname)) {
@@ -2439,6 +2454,16 @@ export default function App() {
     if (hasCustomerToken()) {
       fetchCurrentCustomer();
     }
+
+    const handlePopState = () => {
+      syncScreenWithPath(`${window.location.pathname}${window.location.search}`);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, []);
 
   const fetchCurrentBusiness = async () => {
@@ -2462,7 +2487,12 @@ export default function App() {
   };
 
   const handleNavigate = (screen, data = null, path = null) => {
-    setCurrentScreen(screen);
+    if (path) {
+      window.history.pushState({}, '', path);
+      setCurrentScreen(getScreenFromPath(new URL(path, window.location.origin).pathname) || screen);
+    } else {
+      setCurrentScreen(screen);
+    }
     if (screen === 'public') {
       setPublicSlug(data);
     }
@@ -2470,9 +2500,6 @@ export default function App() {
       setContactPrefill(data);
     } else {
       setContactPrefill(null);
-    }
-    if (path) {
-      window.history.pushState({}, '', path);
     }
   };
 
