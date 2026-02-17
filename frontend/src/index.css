@@ -197,7 +197,7 @@ body {
 }
 
 .site-logo {
-  height: 44px;
+  height: 54px;
   width: auto;
   margin-right: 10px;
   display: block;
@@ -707,7 +707,7 @@ body {
 }
 
 .footer-logo {
-  height: 48px;
+  height: 60px;
   width: auto;
   max-width: 100%;
   object-fit: contain;
@@ -752,11 +752,7 @@ body {
     padding: 12px 16px;
   }
 
-  .site-logo {
-    height: 38px;
-  }
-
-  .site-header__menu-toggle {
+    .site-header__menu-toggle {
     display: inline-flex;
     margin-left: auto;
   }
@@ -798,11 +794,7 @@ body {
     grid-template-columns: 1fr 1fr;
   }
 
-  .footer-logo {
-    height: 40px;
-  }
-}
-
+  
 @media (max-width: 520px) {
   .site-footer__inner {
     grid-template-columns: 1fr;
