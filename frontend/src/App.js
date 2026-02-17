@@ -230,7 +230,6 @@ const MarketingLandingPage = ({ onNavigate }) => {
       <header className="site-header">
         <div className="site-header__inner">
           <button type="button" className="link-button site-header__logo" onClick={() => onNavigate('marketing-landing', null, '/')}>
-            <img src={process.env.PUBLIC_URL + '/logo1.png'} alt="Follow Us Everywhere" className="site-logo" />
             Follow Us Everywhere
           </button>
           <button
@@ -344,7 +343,6 @@ const MarketingLandingPage = ({ onNavigate }) => {
       <footer className="site-footer" aria-label="Site footer">
         <div className="site-footer__inner">
           <div className="site-footer__column">
-            <img src={process.env.PUBLIC_URL + '/logo1.png'} alt="Follow Us Everywhere" className="footer-logo" />
             <h3 className="site-footer__heading">Follow Us Everywhere</h3>
             <p className="site-footer__text">One Smart Business Link For Links, Socials, And Customer Connection</p>
           </div>
