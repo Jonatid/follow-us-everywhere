@@ -143,9 +143,7 @@ const RoleChooserModal = ({ mode, onClose, onChoose }) => {
   );
 };
 
-const MarketingLandingPage = ({ onNavigate }) => {
-  const [roleModalMode, setRoleModalMode] = useState(null);
-  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+const MarketingLandingPage = ({ onNavigate, onOpenRoleModal }) => {
   const [openFeatureCard, setOpenFeatureCard] = useState('one-smart-profile');
 
   const marketingFeatureCards = [{
@@ -204,52 +202,8 @@ const MarketingLandingPage = ({ onNavigate }) => {
     ]
   }];
 
-  const handleChoose = (screen) => {
-    setRoleModalMode(null);
-    if (screen === 'customer-login') {
-      onNavigate(screen, null, '/customer/login');
-      return;
-    }
-    if (screen === 'customer-signup') {
-      onNavigate(screen, null, '/customer/signup');
-      return;
-    }
-    if (screen === 'login') {
-      onNavigate(screen, null, '/vendor');
-      return;
-    }
-    if (screen === 'signup') {
-      onNavigate(screen, null, '/vendor');
-    }
-  };
-
-  const closeMobileNav = () => setIsMobileNavOpen(false);
-
   return (
     <div className="page page--gradient marketing-page" style={{ minHeight: '100vh', justifyContent: 'flex-start' }}>
-      <header className="site-header">
-        <div className="site-header__inner">
-          <button type="button" className="link-button site-header__logo" onClick={() => onNavigate('marketing-landing', null, '/')}>
-            Follow Us Everywhere
-          </button>
-          <button
-            type="button"
-            className="button button-secondary button-sm site-header__menu-toggle"
-            aria-label="Toggle navigation menu"
-            aria-expanded={isMobileNavOpen}
-            onClick={() => setIsMobileNavOpen((prev) => !prev)}
-          >
-            ☰
-          </button>
-          <nav className={`site-header__nav${isMobileNavOpen ? ' site-header__nav--open' : ''}`}>
-            <button type="button" className="link-button" onClick={() => { onNavigate('about', null, '/about'); closeMobileNav(); }}>About</button>
-            <button type="button" className="link-button" onClick={() => { onNavigate('faq', null, '/faq'); closeMobileNav(); }}>FAQ</button>
-            <button type="button" className="link-button" onClick={() => { onNavigate('discover', null, '/discover'); closeMobileNav(); }}>Explore businesses</button>
-            <button type="button" className="button button-primary button-sm" onClick={() => { setRoleModalMode('signup'); closeMobileNav(); }}>Sign up free</button>
-          </nav>
-        </div>
-      </header>
-
       <section
         className="home-hero"
         aria-label="Home hero"
@@ -261,7 +215,7 @@ const MarketingLandingPage = ({ onNavigate }) => {
               Share your links, your services, and what matters to your business — all in one trusted place.
             </p>
             <div>
-              <button type="button" className="button button-primary button-lg" onClick={() => setRoleModalMode('signup')}>
+              <button type="button" className="button button-primary button-lg" onClick={() => onOpenRoleModal('signup')}>
                 Sign up free
               </button>
               <button type="button" className="button button-secondary button-lg" style={{ marginLeft: '12px' }} onClick={() => onNavigate('discover', null, '/discover')}>
@@ -339,39 +293,6 @@ const MarketingLandingPage = ({ onNavigate }) => {
           </div>
         </section>
       </main>
-
-      <footer className="site-footer" aria-label="Site footer">
-        <div className="site-footer__inner">
-          <div className="site-footer__column">
-            <h3 className="site-footer__heading">Follow Us Everywhere</h3>
-            <p className="site-footer__text">One Smart Business Link For Links, Socials, And Customer Connection</p>
-          </div>
-          <div className="site-footer__column">
-            <h4 className="site-footer__heading">Platform</h4>
-            <button type="button" className="site-footer__link" onClick={() => onNavigate('about', null, '/about')}>About</button>
-            <button type="button" className="site-footer__link" onClick={() => onNavigate('faq', null, '/faq')}>FAQ</button>
-            <button type="button" className="site-footer__link" onClick={() => onNavigate('discover', null, '/discover')}>Explore businesses</button>
-          </div>
-          <div className="site-footer__column">
-            <h4 className="site-footer__heading">Account</h4>
-            <button type="button" className="site-footer__link" onClick={() => setRoleModalMode('signup')}>Sign up free</button>
-            <button type="button" className="site-footer__link" onClick={() => setRoleModalMode('login')}>Log in</button>
-          </div>
-          <div className="site-footer__column">
-            <h4 className="site-footer__heading">Legal</h4>
-            <span className="site-footer__text">Privacy (coming soon)</span>
-            <span className="site-footer__text">Terms (coming soon)</span>
-          </div>
-        </div>
-      </footer>
-
-      {roleModalMode ? (
-        <RoleChooserModal
-          mode={roleModalMode}
-          onClose={() => setRoleModalMode(null)}
-          onChoose={handleChoose}
-        />
-      ) : null}
     </div>
   );
 };
@@ -2455,6 +2376,8 @@ export default function App() {
   const [customerResetToken, setCustomerResetToken] = useState(null);
   const [customerLoginMessage, setCustomerLoginMessage] = useState('');
   const [currentCustomer, setCurrentCustomer] = useState(null);
+  const [roleModalMode, setRoleModalMode] = useState(null);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   const hasCustomerToken = () => Boolean(localStorage.getItem('customer_token'));
   const isCustomerOrPublicPath = (pathname) =>
@@ -2604,10 +2527,31 @@ export default function App() {
     setCurrentCustomer(customer);
   };
 
+  const handleRoleModalChoose = (screen) => {
+    setRoleModalMode(null);
+    if (screen === 'customer-login') {
+      handleNavigate(screen, null, '/customer/login');
+      return;
+    }
+    if (screen === 'customer-signup') {
+      handleNavigate(screen, null, '/customer/signup');
+      return;
+    }
+    if (screen === 'login') {
+      handleNavigate(screen, null, '/vendor');
+      return;
+    }
+    if (screen === 'signup') {
+      handleNavigate(screen, null, '/vendor');
+    }
+  };
+
+  const closeMobileNav = () => setIsMobileNavOpen(false);
+
   const renderScreen = () => {
     switch (currentScreen) {
       case 'marketing-landing':
-        return <MarketingLandingPage onNavigate={handleNavigate} />;
+        return <MarketingLandingPage onNavigate={handleNavigate} onOpenRoleModal={setRoleModalMode} />;
       case 'about':
         return <AboutPage onNavigate={handleNavigate} />;
       case 'faq':
@@ -2674,9 +2618,69 @@ export default function App() {
       case 'contact':
         return <ContactSupport onNavigate={handleNavigate} prefill={contactPrefill} />;
       default:
-        return <MarketingLandingPage onNavigate={handleNavigate} />;
+        return <MarketingLandingPage onNavigate={handleNavigate} onOpenRoleModal={setRoleModalMode} />;
     }
   };
 
-  return <div>{renderScreen()}</div>;
+  return (
+    <div className="app-shell">
+      <header className="site-header">
+        <div className="site-header__inner">
+          <button type="button" className="link-button site-header__logo" onClick={() => { handleNavigate('marketing-landing', null, '/'); closeMobileNav(); }}>
+            Follow Us Everywhere
+          </button>
+          <button
+            type="button"
+            className="button button-secondary button-sm site-header__menu-toggle"
+            aria-label="Toggle navigation menu"
+            aria-expanded={isMobileNavOpen}
+            onClick={() => setIsMobileNavOpen((prev) => !prev)}
+          >
+            ☰
+          </button>
+          <nav className={`site-header__nav${isMobileNavOpen ? ' site-header__nav--open' : ''}`}>
+            <button type="button" className="link-button" onClick={() => { handleNavigate('about', null, '/about'); closeMobileNav(); }}>About</button>
+            <button type="button" className="link-button" onClick={() => { handleNavigate('faq', null, '/faq'); closeMobileNav(); }}>FAQ</button>
+            <button type="button" className="link-button" onClick={() => { handleNavigate('discover', null, '/discover'); closeMobileNav(); }}>Explore businesses</button>
+            <button type="button" className="button button-primary button-sm" onClick={() => { setRoleModalMode('signup'); closeMobileNav(); }}>Sign up free</button>
+          </nav>
+        </div>
+      </header>
+
+      <div className="app-shell__content">{renderScreen()}</div>
+
+      <footer className="site-footer" aria-label="Site footer">
+        <div className="site-footer__inner">
+          <div className="site-footer__column">
+            <h3 className="site-footer__heading">Follow Us Everywhere</h3>
+            <p className="site-footer__text">One Smart Business Link For Links, Socials, And Customer Connection</p>
+          </div>
+          <div className="site-footer__column">
+            <h4 className="site-footer__heading">Platform</h4>
+            <button type="button" className="site-footer__link" onClick={() => handleNavigate('about', null, '/about')}>About</button>
+            <button type="button" className="site-footer__link" onClick={() => handleNavigate('faq', null, '/faq')}>FAQ</button>
+            <button type="button" className="site-footer__link" onClick={() => handleNavigate('discover', null, '/discover')}>Explore businesses</button>
+          </div>
+          <div className="site-footer__column">
+            <h4 className="site-footer__heading">Account</h4>
+            <button type="button" className="site-footer__link" onClick={() => setRoleModalMode('signup')}>Sign up free</button>
+            <button type="button" className="site-footer__link" onClick={() => setRoleModalMode('login')}>Log in</button>
+          </div>
+          <div className="site-footer__column">
+            <h4 className="site-footer__heading">Legal</h4>
+            <span className="site-footer__text">Privacy (coming soon)</span>
+            <span className="site-footer__text">Terms (coming soon)</span>
+          </div>
+        </div>
+      </footer>
+
+      {roleModalMode ? (
+        <RoleChooserModal
+          mode={roleModalMode}
+          onClose={() => setRoleModalMode(null)}
+          onChoose={handleRoleModalChoose}
+        />
+      ) : null}
+    </div>
+  );
 }
