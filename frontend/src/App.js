@@ -2669,6 +2669,7 @@ export default function App() {
             <button type="button" className="link-button" onClick={() => { handleNavigate('about', null, '/about'); closeMobileNav(); }}>About</button>
             <button type="button" className="link-button" onClick={() => { handleNavigate('faq', null, '/faq'); closeMobileNav(); }}>FAQ</button>
             <button type="button" className="link-button" onClick={() => { handleNavigate('discover', null, '/discover'); closeMobileNav(); }}>Explore businesses</button>
+            <button type="button" className="link-button" onClick={() => { setRoleModalMode('login'); closeMobileNav(); }}>Log in</button>
             <button type="button" className="button button-primary button-sm" onClick={() => { setRoleModalMode('signup'); closeMobileNav(); }}>Sign up free</button>
           </nav>
         </div>
