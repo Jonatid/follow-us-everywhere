@@ -745,7 +745,7 @@ body {
 @media (max-width: 767px) {
   .marketing-main {
     padding: 0 16px var(--home-section-gap);
-  }
+  }}
 
   .site-header__inner {
     flex-wrap: wrap;
