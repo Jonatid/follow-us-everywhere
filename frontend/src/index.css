@@ -197,7 +197,7 @@ body {
 }
 
 .site-logo {
-  height: 34px;
+  height: 44px;
   width: auto;
   margin-right: 10px;
   display: block;
@@ -707,7 +707,7 @@ body {
 }
 
 .footer-logo {
-  height: 24px;
+  height: 48px;
   width: auto;
   max-width: 100%;
   object-fit: contain;
@@ -753,7 +753,7 @@ body {
   }
 
   .site-logo {
-    height: 30px;
+    height: 38px;
   }
 
   .site-header__menu-toggle {
@@ -799,7 +799,7 @@ body {
   }
 
   .footer-logo {
-    height: 20px;
+    height: 40px;
   }
 }
 
