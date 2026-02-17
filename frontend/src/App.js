@@ -301,13 +301,22 @@ const AboutPage = ({ onNavigate }) => (
   <div className="page page--gradient">
     <div className="card card--wide" style={{ maxWidth: '900px' }}>
       <BackLink fallbackPath="/" onFallbackNavigate={() => onNavigate('marketing-landing', null, '/')} label="← Back to home" />
-      <h1 className="heading-xl" style={{ marginTop: '14px' }}>About Fuse101</h1>
-      <p className="subtitle">
-        Fuse101 is a simple profile-link platform designed to help people and businesses share important links in one place.
-      </p>
-      <p className="subtitle">
-        This page is intentionally minimal so your team can quickly edit copy as your product messaging evolves.
-      </p>
+      <section className="platform-hero" aria-label="The Platform mission">
+        <div className="platform-hero__overlay">
+          <h1 className="heading-xl platform-hero__title">The Platform</h1>
+          <p className="subtitle platform-hero__tagline">
+            One trusted space where businesses can show up clearly, stay connected, and grow real relationships.
+          </p>
+        </div>
+      </section>
+      <div className="stack-sm" style={{ marginTop: '20px' }}>
+        <p className="subtitle">
+          Our mission is to give every business a simple, dependable way to share who they are and how customers can reach them.
+        </p>
+        <p className="subtitle">
+          Our vision is a more connected marketplace where visibility is built through clarity, consistency, and authentic community presence.
+        </p>
+      </div>
     </div>
   </div>
 );
@@ -2666,7 +2675,7 @@ export default function App() {
             ☰
           </button>
           <nav className={`site-header__nav${isMobileNavOpen ? ' site-header__nav--open' : ''}`}>
-            <button type="button" className="link-button" onClick={() => { handleNavigate('about', null, '/about'); closeMobileNav(); }}>About</button>
+            <button type="button" className="link-button" onClick={() => { handleNavigate('about', null, '/about'); closeMobileNav(); }}>The Platform</button>
             <button type="button" className="link-button" onClick={() => { handleNavigate('faq', null, '/faq'); closeMobileNav(); }}>FAQ</button>
             <button type="button" className="link-button" onClick={() => { handleNavigate('discover', null, '/discover'); closeMobileNav(); }}>Explore businesses</button>
             <button type="button" className="link-button" onClick={() => { setRoleModalMode('login'); closeMobileNav(); }}>Log in</button>
