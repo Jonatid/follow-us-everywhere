@@ -123,9 +123,9 @@ body {
     repeating-linear-gradient(25deg, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 38px),
     repeating-linear-gradient(-18deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 44px),
     linear-gradient(180deg, rgba(4, 66, 179, 0.95) 0%, rgba(4, 66, 179, 0.9) 60%, rgba(4, 66, 179, 0.95) 100%);
-  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, repeat, repeat, no-repeat, no-repeat, no-repeat;
-  background-size: auto, auto, auto, auto, 42px 42px, 68px 68px, cover, cover, cover;
-  background-position: 12% 28%, 78% 22%, 35% 70%, 62% 62%, 0 0, 24px 18px, center, center, center;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, repeat, repeat, no-repeat, no-repeat, no-repeat;
+  background-size: cover, auto, auto, auto, auto, 42px 42px, 68px 68px, cover, cover, cover;
+  background-position: center, 12% 28%, 78% 22%, 35% 70%, 62% 62%, 0 0, 24px 18px, center, center, center;
 }
 
 .home-hero__overlay {
