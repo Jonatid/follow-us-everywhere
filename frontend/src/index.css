@@ -78,6 +78,7 @@ body {
   width: 100%;
   min-height: 440px;
   background:
+    url('./assets/hero.png'),
     radial-gradient(circle at 12% 28%, rgba(255, 255, 255, 0.18) 0 1px, transparent 2px),
     radial-gradient(circle at 78% 22%, rgba(255, 255, 255, 0.14) 0 1px, transparent 2px),
     radial-gradient(circle at 35% 70%, rgba(255, 255, 255, 0.12) 0 1px, transparent 2px),
