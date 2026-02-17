@@ -230,6 +230,7 @@ const MarketingLandingPage = ({ onNavigate }) => {
       <header className="site-header">
         <div className="site-header__inner">
           <button type="button" className="link-button site-header__logo" onClick={() => onNavigate('marketing-landing', null, '/')}>
+            <img src={process.env.PUBLIC_URL + '/logo1.png'} alt="Follow Us Everywhere" className="site-logo" />
             Follow Us Everywhere
           </button>
           <button
@@ -273,12 +274,47 @@ const MarketingLandingPage = ({ onNavigate }) => {
       </section>
 
       <main className="marketing-main">
-        <div className="card card--wide" style={{ width: '100%', maxWidth: '1120px', margin: '20px auto 0' }}>
-          <div className="marketing-feature-grid" style={{ marginTop: '8px' }}>
-            {marketingFeatureCards.map((feature) => {
-              const isOpen = openFeatureCard === feature.id;
+        <section className="home-cards-section" aria-label="Home feature cards">
+          <div className="home-cards-container card card--wide" style={{ width: '100%', maxWidth: '1120px' }}>
+            <div className="marketing-feature-grid" style={{ marginTop: '8px' }}>
+              {marketingFeatureCards.slice(0, 3).map((feature) => {
+                const isOpen = openFeatureCard === feature.id;
 
-              return (
+                return (
+                  <div key={feature.id} className={`marketing-feature-card${isOpen ? ' marketing-feature-card--open' : ''}`}>
+                    <h3 className="heading-md marketing-feature-card__title">{feature.title}</h3>
+                    <p className="subtitle marketing-feature-card__preview">{feature.preview}</p>
+                    <button
+                      type="button"
+                      className="marketing-feature-card__button card-toggle-link"
+                      onClick={() => setOpenFeatureCard(isOpen ? null : feature.id)}
+                      aria-expanded={isOpen}
+                    >
+                      {isOpen ? 'Less info' : 'More info'}
+                    </button>
+                    <div className={`marketing-feature-card__details${isOpen ? ' marketing-feature-card__details--open' : ''}`}>
+                      <ul className="marketing-feature-card__list">
+                        {feature.bullets.map((point) => (
+                          <li key={point}>{point}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="home-blue-band" aria-hidden="true">
+            <div className="home-blue-band__inner" />
+          </div>
+
+          <div className="home-cards-container card card--wide" style={{ width: '100%', maxWidth: '1120px' }}>
+            <div className="marketing-feature-grid" style={{ marginTop: '8px' }}>
+              {marketingFeatureCards.slice(3).map((feature) => {
+                const isOpen = openFeatureCard === feature.id;
+
+                return (
                 <div key={feature.id} className={`marketing-feature-card${isOpen ? ' marketing-feature-card--open' : ''}`}>
                   <h3 className="heading-md marketing-feature-card__title">{feature.title}</h3>
                   <p className="subtitle marketing-feature-card__preview">{feature.preview}</p>
@@ -299,14 +335,16 @@ const MarketingLandingPage = ({ onNavigate }) => {
                   </div>
                 </div>
               );
-            })}
+              })}
+            </div>
           </div>
-        </div>
+        </section>
       </main>
 
       <footer className="site-footer" aria-label="Site footer">
         <div className="site-footer__inner">
           <div className="site-footer__column">
+            <img src={process.env.PUBLIC_URL + '/logo1.png'} alt="Follow Us Everywhere" className="footer-logo" />
             <h3 className="site-footer__heading">Follow Us Everywhere</h3>
             <p className="site-footer__text">One Smart Business Link For Links, Socials, And Customer Connection</p>
           </div>
