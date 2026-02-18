@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
+import verifiedIcon from './assets/md-verified.svg';
 
 // API base URL (override with VITE_API_BASE_URL at build time if needed).
 const API_BASE_URL =
@@ -1229,33 +1230,41 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
         <div className="card dashboard-card">
           <CustomerNav onNavigate={onNavigate} onLogout={onLogout} activeScreen="discover" customer={customer} />
           <BackLink fallbackPath="/discover" onFallbackNavigate={() => onNavigate('discover')} />
-          <h1 className="heading-lg">Discover Businesses</h1>
-          <p className="subtitle" style={{ marginTop: '16px', marginBottom: '8px' }}>Search by</p>
-          <div className="row row-wrap" style={{ gap: '12px', alignItems: 'flex-end' }}>
-            <div className="field" style={{ marginTop: 0, flex: '1 1 220px' }}>
-              <input
-                className="input"
-                type="text"
-                placeholder="Business name"
-                value={businessName}
-                onChange={(e) => setBusinessName(e.target.value)}
-              />
+          <section className="discover-hero">
+            <div className="discover-hero__inner">
+              <h1 className="discover-hero__title">Discover Verified Businesses</h1>
+              <p className="discover-hero__subtext">Search, filter, and connect with trusted organizations.</p>
             </div>
-            <div className="field" style={{ marginTop: 0, flex: '1 1 220px' }}>
-              <select className="input" value={communitySupport} onChange={(e) => setCommunitySupport(e.target.value)}>
-                <option value="">Community support</option>
-                <option value="Community One">Community One</option>
-                <option value="Community Two">Community Two</option>
-                <option value="Community Three">Community Three</option>
-              </select>
-            </div>
-            <div className="field" style={{ marginTop: 0, flex: '1 1 220px' }}>
-              <select className="input" value={badge} onChange={(e) => setBadge(e.target.value)}>
-                <option value="">Badges</option>
-                <option value="Badge One">Badge One</option>
-                <option value="Badge Two">Badge Two</option>
-                <option value="Badge Three">Badge Three</option>
-              </select>
+          </section>
+
+          <div className="discover-controls card">
+            <p className="subtitle" style={{ marginTop: 0, marginBottom: '8px' }}>Search by</p>
+            <div className="row row-wrap" style={{ gap: '12px', alignItems: 'flex-end' }}>
+              <div className="field" style={{ marginTop: 0, flex: '1 1 220px' }}>
+                <input
+                  className="input"
+                  type="text"
+                  placeholder="Business name"
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                />
+              </div>
+              <div className="field" style={{ marginTop: 0, flex: '1 1 220px' }}>
+                <select className="input" value={communitySupport} onChange={(e) => setCommunitySupport(e.target.value)}>
+                  <option value="">Community support</option>
+                  <option value="Community One">Community One</option>
+                  <option value="Community Two">Community Two</option>
+                  <option value="Community Three">Community Three</option>
+                </select>
+              </div>
+              <div className="field" style={{ marginTop: 0, flex: '1 1 220px' }}>
+                <select className="input" value={badge} onChange={(e) => setBadge(e.target.value)}>
+                  <option value="">Badges</option>
+                  <option value="Badge One">Badge One</option>
+                  <option value="Badge Two">Badge Two</option>
+                  <option value="Badge Three">Badge Three</option>
+                </select>
+              </div>
             </div>
           </div>
           {error && <div className="alert alert-error">{error}</div>}
@@ -1274,12 +1283,24 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
               </div>
               {filteredBusinesses.map((business) => {
                 const isFavorited = favoriteIds.has(business.id);
+                const statusValue = (business.status || 'active').toLowerCase();
+                const isActive = statusValue === 'active';
+                const isVerified = business.verified === true || business.verification === 'verified';
                 return (
                   <div key={business.id} className="card" style={{ border: '1px solid var(--border)', boxShadow: 'none', padding: '20px' }}>
                     <div className="row space-between row-wrap" style={{ alignItems: 'flex-start' }}>
                       <div>
                         <p className="heading-md">{business.name}</p>
                         <p className="subtitle">{business.tagline || 'No tagline available.'}</p>
+                        <div className="row row-wrap" style={{ marginTop: '8px', gap: '8px' }}>
+                          {isActive ? <span className="badge badge--active">Active</span> : null}
+                          {isVerified ? (
+                            <span className="badge badge--verified">
+                              <img src={verifiedIcon} alt="" className="badge__icon" aria-hidden="true" />
+                              Verified
+                            </span>
+                          ) : null}
+                        </div>
                         <p className="muted-text">Status: {business.verification_status || 'unknown'}</p>
                       </div>
                       <div className="row" style={{ gap: '8px' }}>
