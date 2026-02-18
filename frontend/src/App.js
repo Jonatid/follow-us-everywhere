@@ -1225,17 +1225,16 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
   };
 
   return (
-    <div className="dashboard">
-      <div className="dashboard-container">
+    <div className="dashboard discover-page">
+      <section className="discover-hero">
+        <div className="discover-hero__inner">
+          <h1 className="discover-hero__title">Discover Verified Businesses</h1>
+          <p className="discover-hero__subtext">Search, filter, and connect with trusted organizations.</p>
+        </div>
+      </section>
+      <div className="dashboard-container discover-shell">
         <div className="card dashboard-card">
           <CustomerNav onNavigate={onNavigate} onLogout={onLogout} activeScreen="discover" customer={customer} />
-          <BackLink fallbackPath="/discover" onFallbackNavigate={() => onNavigate('discover')} />
-          <section className="discover-hero">
-            <div className="discover-hero__inner">
-              <h1 className="discover-hero__title">Discover Verified Businesses</h1>
-              <p className="discover-hero__subtext">Search, filter, and connect with trusted organizations.</p>
-            </div>
-          </section>
 
           <div className="discover-controls card">
             <p className="subtitle" style={{ marginTop: 0, marginBottom: '8px' }}>Search by</p>
@@ -1281,54 +1280,56 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
                   </select>
                 </label>
               </div>
-              {filteredBusinesses.map((business) => {
-                const isFavorited = favoriteIds.has(business.id);
-                const statusValue = (business.status || 'active').toLowerCase();
-                const isActive = statusValue === 'active';
-                const isVerified = business.verified === true || business.verification === 'verified';
-                return (
-                  <div key={business.id} className="card" style={{ border: '1px solid var(--border)', boxShadow: 'none', padding: '20px' }}>
-                    <div className="row space-between row-wrap" style={{ alignItems: 'flex-start' }}>
-                      <div>
-                        <p className="heading-md">{business.name}</p>
-                        <p className="subtitle">{business.tagline || 'No tagline available.'}</p>
-                        <div className="row row-wrap" style={{ marginTop: '8px', gap: '8px' }}>
-                          {isActive ? <span className="badge badge--active">Active</span> : null}
-                          {isVerified ? (
-                            <span className="badge badge--verified">
-                              <img src={verifiedIcon} alt="" className="badge__icon" aria-hidden="true" />
-                              Verified
-                            </span>
-                          ) : null}
+              <div className="discover-results">
+                {filteredBusinesses.map((business) => {
+                  const isFavorited = favoriteIds.has(business.id);
+                  const statusValue = (business.status || 'active').toLowerCase();
+                  const isActive = statusValue === 'active';
+                  const isVerified = business.verified === true || business.verification === 'verified';
+                  return (
+                    <div key={business.id} className="card discover-result-card" style={{ border: '1px solid var(--border)', boxShadow: 'none', padding: '20px' }}>
+                      <div className="row space-between row-wrap" style={{ alignItems: 'flex-start' }}>
+                        <div>
+                          <p className="heading-md">{business.name}</p>
+                          <p className="subtitle">{business.tagline || 'No tagline available.'}</p>
+                          <div className="row row-wrap" style={{ marginTop: '8px', gap: '8px' }}>
+                            {isActive ? <span className="badge badge--active">Active</span> : null}
+                            {isVerified ? (
+                              <span className="badge badge--verified">
+                                <img src={verifiedIcon} alt="" className="badge__icon" aria-hidden="true" />
+                                Verified
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="muted-text">Status: {business.verification_status || 'unknown'}</p>
                         </div>
-                        <p className="muted-text">Status: {business.verification_status || 'unknown'}</p>
-                      </div>
-                      <div className="row" style={{ gap: '8px' }}>
-                        <button
-                          type="button"
-                          className="button button-muted button-sm"
-                          onClick={() => {
-                            if (!localStorage.getItem('customer_token')) {
-                              setShowSoftGate(true);
-                              return;
-                            }
-                            onNavigate('public-route', business.slug);
-                          }}
-                        >
-                          View Profile
-                        </button>
-                        <button
-                          type="button"
-                          className={`button button-sm ${isFavorited ? 'button-secondary' : 'button-primary'}`}
-                          onClick={() => toggleFavorite(business.id, isFavorited)}
-                        >
-                          {isFavorited ? 'Unfavorite' : 'Favorite'}
-                        </button>
+                        <div className="row" style={{ gap: '8px' }}>
+                          <button
+                            type="button"
+                            className="button button-muted button-sm"
+                            onClick={() => {
+                              if (!localStorage.getItem('customer_token')) {
+                                setShowSoftGate(true);
+                                return;
+                              }
+                              onNavigate('public-route', business.slug);
+                            }}
+                          >
+                            View Profile
+                          </button>
+                          <button
+                            type="button"
+                            className={`button button-sm ${isFavorited ? 'button-secondary' : 'button-primary'}`}
+                            onClick={() => toggleFavorite(business.id, isFavorited)}
+                          >
+                            {isFavorited ? 'Unfavorite' : 'Favorite'}
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
               {filteredBusinesses.length === 0 && <p className="muted-text">No businesses found.</p>}
               {totalBusinesses > 0 && (
                 <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>

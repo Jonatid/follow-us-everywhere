@@ -974,16 +974,30 @@ body {
   }
 }
 
+.discover-page {
+  padding: 0 0 56px;
+}
+
+.discover-shell {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 24px 24px 0;
+}
+
+.discover-page .dashboard-card {
+  background: transparent;
+  box-shadow: none;
+  border: none;
+  padding: 0;
+}
+
 .discover-hero {
+  width: 100%;
   min-height: 140px;
-  border-radius: 18px;
-  margin-top: 16px;
+  margin-top: 0;
   position: relative;
   overflow: hidden;
-  background-image: linear-gradient(120deg, #dbeafe 0%, #bfdbfe 45%, #e0f2fe 100%), url('./assets/vector-network.png');
-  background-size: cover, cover;
-  background-position: center, center;
-  background-repeat: no-repeat;
+  background: linear-gradient(140deg, #030a2e 0%, #0a2f9a 100%);
 }
 
 .discover-hero::before {
@@ -994,7 +1008,7 @@ body {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  opacity: 0.12;
+  opacity: 0.2;
   pointer-events: none;
 }
 
@@ -1002,7 +1016,9 @@ body {
   position: relative;
   z-index: 1;
   min-height: 140px;
-  padding: 30px 24px;
+  padding: 32px 24px;
+  max-width: 1120px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1010,13 +1026,13 @@ body {
 
 .discover-hero__title {
   margin: 0;
-  color: #0f172a;
+  color: #fff;
   font-size: clamp(1.25rem, 2.4vw, 1.7rem);
 }
 
 .discover-hero__subtext {
   margin: 10px 0 0;
-  color: #334155;
+  color: rgba(243, 246, 255, 0.92);
 }
 
 .discover-controls {
@@ -1025,6 +1041,16 @@ body {
   border-radius: 16px;
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
   padding: 18px;
+}
+
+.discover-results {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.discover-result-card {
+  height: 100%;
 }
 
 .badge {
@@ -1055,11 +1081,20 @@ body {
 }
 
 @media (max-width: 767px) {
+  .discover-shell {
+    padding: 18px 16px 0;
+  }
+
   .discover-hero__inner {
-    padding: 24px 18px;
+    min-height: 128px;
+    padding: 24px 16px;
   }
 
   .discover-controls {
     padding: 16px;
+  }
+
+  .discover-results {
+    grid-template-columns: 1fr;
   }
 }
