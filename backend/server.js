@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const db = require('./config/db');
 const { ensureSchema } = require('./config/schema');
 
@@ -41,6 +42,7 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Test database connection
 app.get('/api/health', async (req, res) => {
