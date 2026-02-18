@@ -10,6 +10,122 @@ const router = express.Router();
 router.use(authenticateAdminToken);
 
 
+// @route   GET /api/admin/documents
+// @desc    List business documents for admin review
+// @access  Private (admin)
+router.get('/documents', async (req, res) => {
+  const { status, business_id } = req.query;
+  const allowedStatuses = new Set(['Pending', 'Verified', 'Rejected']);
+
+  try {
+    const filters = [];
+    const values = [];
+
+    if (status) {
+      if (!allowedStatuses.has(status)) {
+        return res.status(400).json({ message: 'Invalid status filter' });
+      }
+      filters.push(`bd.status = $${values.length + 1}`);
+      values.push(status);
+    }
+
+    if (business_id) {
+      filters.push(`bd.business_id = $${values.length + 1}`);
+      values.push(Number(business_id));
+    }
+
+    const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
+
+    const result = await pool.query(
+      `SELECT bd.id,
+              bd.business_id AS "businessId",
+              b.name AS "businessName",
+              b.slug AS "businessSlug",
+              bd.document_type AS "documentType",
+              bd.original_file_name AS "originalFileName",
+              bd.stored_file_name AS "storedFileName",
+              bd.storage_provider AS "storageProvider",
+              bd.storage_path AS "storagePath",
+              bd.mime_type AS "mimeType",
+              bd.file_size AS "fileSize",
+              bd.status,
+              bd.submitted_at AS "submittedAt",
+              bd.reviewed_at AS "reviewedAt",
+              bd.reviewed_by_admin_id AS "reviewedByAdminId",
+              bd.rejection_reason AS "rejectionReason",
+              bd.notes
+       FROM business_documents bd
+       JOIN businesses b ON b.id = bd.business_id
+       ${whereClause}
+       ORDER BY bd.submitted_at DESC`,
+      values
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Admin list business documents error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PATCH /api/admin/documents/:id
+// @desc    Review a business document
+// @access  Private (admin)
+router.patch('/documents/:id', async (req, res) => {
+  const { status, rejection_reason } = req.body;
+  const allowedStatuses = new Set(['Verified', 'Rejected']);
+
+  if (!status || !allowedStatuses.has(status)) {
+    return res.status(400).json({ message: 'Invalid status' });
+  }
+
+  if (status === 'Rejected' && (!rejection_reason || !String(rejection_reason).trim())) {
+    return res.status(400).json({ message: 'rejection_reason is required for Rejected status' });
+  }
+
+  try {
+    const result = await pool.query(
+      `UPDATE business_documents
+       SET status = $1,
+           reviewed_at = CURRENT_TIMESTAMP,
+           reviewed_by_admin_id = $2,
+           rejection_reason = $3
+       WHERE id = $4
+       RETURNING id,
+                 business_id AS "businessId",
+                 document_type AS "documentType",
+                 original_file_name AS "originalFileName",
+                 stored_file_name AS "storedFileName",
+                 storage_provider AS "storageProvider",
+                 storage_path AS "storagePath",
+                 mime_type AS "mimeType",
+                 file_size AS "fileSize",
+                 status,
+                 submitted_at AS "submittedAt",
+                 reviewed_at AS "reviewedAt",
+                 reviewed_by_admin_id AS "reviewedByAdminId",
+                 rejection_reason AS "rejectionReason",
+                 notes`,
+      [
+        status,
+        req.adminId,
+        status === 'Rejected' ? String(rejection_reason).trim() : null,
+        req.params.id
+      ]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Document not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Admin review business document error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
 // @route   GET /api/admin/dashboard/summary
 // @desc    Get admin dashboard business/admin counts
 // @access  Private (admin)

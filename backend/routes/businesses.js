@@ -1,10 +1,153 @@
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
+const multer = require('multer');
 const { body, validationResult } = require('express-validator');
 const pool = require('../config/db');
 const { authenticateToken } = require('../middleware/auth');
 const { resolveVerificationStatus, buildAccountRestrictionError } = require('../utils/verification');
 
 const router = express.Router();
+
+
+const uploadRootDir = path.join(__dirname, '..', 'uploads', 'business_documents');
+
+const allowedDocumentTypes = new Set(['lara', 'incorporation', 'insurance', 'other']);
+const allowedMimeTypes = new Set([
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/webp'
+]);
+
+const documentStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const businessDir = path.join(uploadRootDir, String(req.businessId));
+    fs.mkdirSync(businessDir, { recursive: true });
+    cb(null, businessDir);
+  },
+  filename: (req, file, cb) => {
+    const timestamp = Date.now();
+    const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+    cb(null, `${timestamp}-${safeName}`);
+  }
+});
+
+const documentUpload = multer({
+  storage: documentStorage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (!allowedMimeTypes.has(file.mimetype)) {
+      return cb(new Error('Unsupported file type'));
+    }
+    cb(null, true);
+  }
+});
+
+// Upload a business verification document
+router.post('/documents', authenticateToken, (req, res) => {
+  documentUpload.single('document')(req, res, async (uploadErr) => {
+    if (uploadErr) {
+      if (uploadErr instanceof multer.MulterError && uploadErr.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: 'File exceeds 10MB limit' });
+      }
+      return res.status(400).json({ error: uploadErr.message || 'Invalid upload' });
+    }
+
+    try {
+      const { document_type, notes } = req.body;
+
+      if (!document_type || !allowedDocumentTypes.has(document_type)) {
+        return res.status(400).json({ error: 'Invalid document_type' });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ error: 'Document file is required' });
+      }
+
+      const storagePath = path.relative(path.join(__dirname, '..'), req.file.path).replace(/\\/g, '/');
+
+      const result = await pool.query(
+        `INSERT INTO business_documents (
+           business_id,
+           document_type,
+           original_file_name,
+           stored_file_name,
+           storage_provider,
+           storage_path,
+           mime_type,
+           file_size,
+           status,
+           notes
+         )
+         VALUES ($1, $2, $3, $4, 'local', $5, $6, $7, 'Pending', $8)
+         RETURNING id,
+                   business_id AS "businessId",
+                   document_type AS "documentType",
+                   original_file_name AS "originalFileName",
+                   stored_file_name AS "storedFileName",
+                   storage_provider AS "storageProvider",
+                   storage_path AS "storagePath",
+                   mime_type AS "mimeType",
+                   file_size AS "fileSize",
+                   status,
+                   submitted_at AS "submittedAt",
+                   reviewed_at AS "reviewedAt",
+                   reviewed_by_admin_id AS "reviewedByAdminId",
+                   rejection_reason AS "rejectionReason",
+                   notes`,
+        [
+          req.businessId,
+          document_type,
+          req.file.originalname,
+          req.file.filename,
+          storagePath,
+          req.file.mimetype,
+          req.file.size,
+          notes || null
+        ]
+      );
+
+      res.status(201).json(result.rows[0]);
+    } catch (error) {
+      console.error('Error uploading business document:', error);
+      res.status(500).json({ error: 'Failed to upload document' });
+    }
+  });
+});
+
+// List documents for authenticated business
+router.get('/documents', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id,
+              business_id AS "businessId",
+              document_type AS "documentType",
+              original_file_name AS "originalFileName",
+              stored_file_name AS "storedFileName",
+              storage_provider AS "storageProvider",
+              storage_path AS "storagePath",
+              mime_type AS "mimeType",
+              file_size AS "fileSize",
+              status,
+              submitted_at AS "submittedAt",
+              reviewed_at AS "reviewedAt",
+              reviewed_by_admin_id AS "reviewedByAdminId",
+              rejection_reason AS "rejectionReason",
+              notes
+       FROM business_documents
+       WHERE business_id = $1
+       ORDER BY submitted_at DESC`,
+      [req.businessId]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error listing business documents:', error);
+    res.status(500).json({ error: 'Failed to fetch documents' });
+  }
+});
+
 
 // Get public business profile by slug
 router.get('/:slug', async (req, res) => {
@@ -90,6 +233,7 @@ router.get('/:slug', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch business' });
   }
 });
+
 
 // Update community support (requires authentication)
 router.put(

@@ -10,7 +10,8 @@ const REQUIRED_TABLES = [
   'customer_favorites',
   'badges',
   'business_badges',
-  'customer_password_resets'
+  'customer_password_resets',
+  'business_documents'
 ];
 
 const getMissingTables = async (client = pool) => {
@@ -192,6 +193,30 @@ const ensureSchema = async () => {
     await pool.query('CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_business_id ON password_reset_tokens(business_id);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_customer_password_resets_token_hash ON customer_password_resets(token_hash);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_customer_password_resets_customer_id ON customer_password_resets(customer_id);');
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS business_documents (
+        id SERIAL PRIMARY KEY,
+        business_id INTEGER NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+        document_type VARCHAR(100) NOT NULL,
+        original_file_name VARCHAR(255) NOT NULL,
+        stored_file_name VARCHAR(255) NOT NULL,
+        storage_provider VARCHAR(50) NOT NULL DEFAULT 'local',
+        storage_path TEXT NOT NULL,
+        mime_type VARCHAR(255) NOT NULL,
+        file_size BIGINT NOT NULL,
+        status VARCHAR(20) NOT NULL DEFAULT 'Pending' CHECK (status IN ('Pending', 'Verified', 'Rejected')),
+        submitted_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        reviewed_at TIMESTAMP,
+        reviewed_by_admin_id INTEGER REFERENCES admins(id) ON DELETE SET NULL,
+        rejection_reason TEXT,
+        notes TEXT
+      );
+    `);
+
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_business_documents_business_id ON business_documents(business_id);');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_business_documents_status ON business_documents(status);');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_business_documents_submitted_at ON business_documents(submitted_at);');
   } catch (error) {
     if (error.code === '42501') {
       const dbUser = process.env.DATABASE_URL
