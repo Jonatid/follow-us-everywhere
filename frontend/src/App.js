@@ -136,7 +136,7 @@ const RoleChooserModal = ({ mode, onClose, onChoose }) => {
             {isLogin ? 'Customer login' : 'Customer signup'}
           </button>
           <button type="button" className="button button-secondary button-full" onClick={() => onChoose(isLogin ? 'login' : 'signup')}>
-            {isLogin ? 'Vendor login' : 'Vendor signup'}
+            {isLogin ? 'Business login' : 'Business signup'}
           </button>
         </div>
       </div>
@@ -310,7 +310,7 @@ const AboutPage = ({ onNavigate }) => (
               Explore Businesses
             </button>
             <button type="button" className="button button-secondary button-lg" onClick={() => onNavigate('signup')}>
-              Become a Vendor
+              Become a Business
             </button>
           </div>
         </div>
@@ -402,11 +402,11 @@ const FAQPage = ({ onNavigate }) => (
         </div>
         <div>
           <h3 className="heading-md">How do I get started?</h3>
-          <p className="subtitle">Choose Customer or Vendor from Sign up free and follow the existing onboarding flow.</p>
+          <p className="subtitle">Choose Customer or Business from Sign up free and follow the existing onboarding flow.</p>
         </div>
         <div>
-          <h3 className="heading-md">Can I still access vendor tools?</h3>
-          <p className="subtitle">Yes. Vendor access remains available at /vendor with no backend changes.</p>
+          <h3 className="heading-md">Can I still access business tools?</h3>
+          <p className="subtitle">Yes. Business access remains available at /business with no backend changes.</p>
         </div>
       </div>
     </div>
@@ -473,7 +473,7 @@ const BusinessSignup = ({ onNavigate, onLoginSuccess }) => {
   return (
     <div className="page page--gradient">
       <div className="card card--medium">
-        <BackLink fallbackPath="/vendor" onFallbackNavigate={() => onNavigate('landing')} />
+        <BackLink fallbackPath="/business" onFallbackNavigate={() => onNavigate('landing')} />
         <div className="stack-sm text-center">
           <h1 className="heading-xl">Create Your Follow Hub</h1>
           <p className="subtitle">Get started in under 2 minutes</p>
@@ -602,7 +602,7 @@ const BusinessLogin = ({ onNavigate, onLoginSuccess }) => {
   return (
     <div className="page page--gradient">
       <div className="card card--medium">
-        <BackLink fallbackPath="/vendor" onFallbackNavigate={() => onNavigate('landing')} />
+        <BackLink fallbackPath="/business" onFallbackNavigate={() => onNavigate('landing')} />
         <div className="stack-sm text-center">
           <h1 className="heading-xl">Business Login</h1>
           <p className="subtitle">Access your dashboard</p>
@@ -706,7 +706,7 @@ const CustomerSignup = ({ onNavigate, onAuthSuccess, initialMessage = '' }) => {
   return (
     <div className="page page--gradient">
       <div className="card card--medium">
-        <BackLink fallbackPath="/vendor" onFallbackNavigate={() => onNavigate('landing')} />
+        <BackLink fallbackPath="/business" onFallbackNavigate={() => onNavigate('landing')} />
         <div className="stack-sm text-center">
           <h1 className="heading-xl">Customer Signup</h1>
           <p className="subtitle">Save your favorite businesses</p>
@@ -833,7 +833,7 @@ const CustomerLogin = ({ onNavigate, onAuthSuccess, initialMessage = '' }) => {
   return (
     <div className="page page--gradient">
       <div className="card card--medium">
-        <BackLink fallbackPath="/vendor" onFallbackNavigate={() => onNavigate('landing')} />
+        <BackLink fallbackPath="/business" onFallbackNavigate={() => onNavigate('landing')} />
         <div className="stack-sm text-center">
           <h1 className="heading-xl">Customer Login</h1>
           <p className="subtitle">Welcome back</p>
@@ -1585,7 +1585,7 @@ const BusinessForgotPassword = ({ onNavigate, initialMessage = '' }) => {
   return (
     <div className="page page--gradient">
       <div className="card card--medium">
-        <BackLink fallbackPath="/vendor" onFallbackNavigate={() => onNavigate('login')} />
+        <BackLink fallbackPath="/business" onFallbackNavigate={() => onNavigate('login')} />
         <div className="stack-sm text-center">
           <h1 className="heading-xl">Reset your password</h1>
           <p className="subtitle">We&apos;ll email you a secure reset link.</p>
@@ -1661,7 +1661,7 @@ const BusinessResetPassword = ({ onNavigate, token, initialMessage = '' }) => {
   return (
     <div className="page page--gradient">
       <div className="card card--medium">
-        <BackLink fallbackPath="/vendor" onFallbackNavigate={() => onNavigate('login')} />
+        <BackLink fallbackPath="/business" onFallbackNavigate={() => onNavigate('login')} />
         <div className="stack-sm text-center">
           <h1 className="heading-xl">Choose a new password</h1>
           <p className="subtitle">Your new password must meet our security requirements.</p>
@@ -1937,7 +1937,7 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
             <h1 className="heading-lg">Dashboard</h1>
             <button type="button" onClick={onLogout} className="link-button link-button--inline">Logout</button>
           </div>
-          <BackLink fallbackPath="/vendor" onFallbackNavigate={() => onNavigate('dashboard')} />
+          <BackLink fallbackPath="/business" onFallbackNavigate={() => onNavigate('dashboard')} />
           {showComplianceBanner && (
             <div className={`banner ${isSuspended ? 'banner-warning' : 'banner-info'}`}>
               <div className="stack-sm">
@@ -2180,10 +2180,10 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
   const [business, setBusiness] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const hasVendorToken = Boolean(localStorage.getItem('token'));
-  const publicFallbackPath = hasVendorToken ? '/vendor' : '/discover';
+  const hasBusinessToken = Boolean(localStorage.getItem('token'));
+  const publicFallbackPath = hasBusinessToken ? '/business' : '/discover';
   const handlePublicFallback = () => {
-    if (hasVendorToken) {
+    if (hasBusinessToken) {
       onNavigate('dashboard');
       return;
     }
@@ -2394,7 +2394,7 @@ const ContactSupport = ({ onNavigate, prefill }) => {
   return (
     <div className="page page--gradient">
       <div className="card card--medium">
-        <BackLink fallbackPath="/vendor" onFallbackNavigate={() => onNavigate('dashboard')} />
+        <BackLink fallbackPath="/business" onFallbackNavigate={() => onNavigate('dashboard')} />
         <div className="stack-sm text-center">
           <h1 className="heading-xl">Contact Support</h1>
           <p className="subtitle">Tell us what you need help with.</p>
@@ -2486,13 +2486,13 @@ export default function App() {
     pathname === '/favorites' ||
     pathname.startsWith('/business/');
 
-  const isVendorPath = (pathname) => pathname === '/vendor' || pathname.startsWith('/vendor/');
+  const isBusinessPath = (pathname) => pathname === '/business' || pathname.startsWith('/business/');
 
   const getScreenFromPath = (pathname) => {
     if (pathname === '/') return 'marketing-landing';
     if (pathname === '/about') return 'about';
     if (pathname === '/faq') return 'faq';
-    if (pathname === '/vendor') return 'landing';
+    if (pathname === '/business') return 'landing';
     if (pathname === '/reset-password') return 'reset';
     if (pathname === '/customer' || pathname === '/customer/login') return 'customer-login';
     if (pathname === '/customer/signup') return 'customer-signup';
@@ -2546,7 +2546,7 @@ export default function App() {
     syncScreenWithPath(`${pathname}${search}`);
 
     const token = localStorage.getItem('token');
-    if (token && isVendorPath(pathname) && !isCustomerOrPublicPath(pathname)) {
+    if (token && isBusinessPath(pathname) && !isCustomerOrPublicPath(pathname)) {
       fetchCurrentBusiness();
     }
 
@@ -2664,11 +2664,11 @@ export default function App() {
       return;
     }
     if (screen === 'login') {
-      handleNavigate(screen, null, '/vendor');
+      handleNavigate(screen, null, '/business');
       return;
     }
     if (screen === 'signup') {
-      handleNavigate(screen, null, '/vendor');
+      handleNavigate(screen, null, '/business');
     }
   };
 
