@@ -1712,6 +1712,85 @@ const BusinessResetPassword = ({ onNavigate, token, initialMessage = '' }) => {
 // BUSINESS DASHBOARD
 // =============================================================================
 
+const BusinessAccountMenu = ({ businessName, onNavigate, onLogout }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return undefined;
+    }
+
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  return (
+    <div ref={menuRef} style={{ position: 'relative' }}>
+      <button
+        type="button"
+        className="button button-secondary button-sm"
+        onClick={() => setIsOpen((prev) => !prev)}
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
+      >
+        {businessName} ▾
+      </button>
+      {isOpen ? (
+        <div
+          role="menu"
+          style={{
+            position: 'absolute',
+            right: 0,
+            top: 'calc(100% + 8px)',
+            minWidth: '170px',
+            border: '1px solid var(--border)',
+            borderRadius: '10px',
+            background: 'white',
+            boxShadow: '0 8px 24px rgba(15, 23, 42, 0.12)',
+            padding: '8px',
+            zIndex: 30,
+          }}
+        >
+          <button
+            type="button"
+            className="link-button"
+            role="menuitem"
+            onClick={() => {
+              setIsOpen(false);
+              onNavigate('business-profile', null, '/business/profile');
+            }}
+            style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px' }}
+          >
+            Profile
+          </button>
+          <button
+            type="button"
+            className="link-button"
+            role="menuitem"
+            onClick={() => {
+              setIsOpen(false);
+              onLogout();
+            }}
+            style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px' }}
+          >
+            Logout
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
 const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
   const [socials, setSocials] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
@@ -1935,7 +2014,7 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
         <div className="card dashboard-card">
           <div className="dashboard-header">
             <h1 className="heading-lg">Dashboard</h1>
-            <button type="button" onClick={onLogout} className="link-button link-button--inline">Logout</button>
+            <BusinessAccountMenu businessName={business.name} onNavigate={onNavigate} onLogout={onLogout} />
           </div>
           <BackLink fallbackPath="/business" onFallbackNavigate={() => onNavigate('dashboard')} />
           {showComplianceBanner && (
@@ -2358,6 +2437,192 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
   );
 };
 
+
+const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated }) => {
+  const [formData, setFormData] = useState({
+    name: business?.name || '',
+    tagline: business?.tagline || '',
+    logo: business?.logo || '',
+    laraNumber: '',
+  });
+  const [logoPreview, setLogoPreview] = useState(business?.logo || '');
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState('');
+  const [saveError, setSaveError] = useState('');
+  const [badgeRequest, setBadgeRequest] = useState({
+    badgeName: '',
+    reason: '',
+    link: '',
+  });
+  const [placeholderMessage, setPlaceholderMessage] = useState('');
+
+  useEffect(() => {
+    setFormData({
+      name: business?.name || '',
+      tagline: business?.tagline || '',
+      logo: business?.logo || '',
+      laraNumber: '',
+    });
+    setLogoPreview(business?.logo || '');
+  }, [business]);
+
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (field === 'logo') {
+      setLogoPreview(value);
+    }
+  };
+
+  const handleLogoFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+    const objectUrl = URL.createObjectURL(file);
+    setLogoPreview(objectUrl);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveMessage('');
+    setSaveError('');
+    try {
+      const response = await api.put('/businesses/profile/update', {
+        name: formData.name,
+        tagline: formData.tagline,
+        logo: formData.logo,
+      });
+      onBusinessUpdated((prev) => ({
+        ...prev,
+        name: response.data?.business?.name ?? formData.name,
+        tagline: response.data?.business?.tagline ?? formData.tagline,
+        logo: response.data?.business?.logo ?? formData.logo,
+      }));
+      setSaveMessage('Profile saved. LARA number saved once verification is enabled.');
+    } catch (err) {
+      if (err?.response?.status === 404) {
+        setSaveMessage('Profile saving is not enabled yet.');
+      } else {
+        setSaveError(getApiErrorMessage(err, 'Unable to save profile right now.'));
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="dashboard">
+      <div className="dashboard-container">
+        <div className="card dashboard-card">
+          <div className="dashboard-header">
+            <h1 className="heading-lg">Business Profile</h1>
+            <BusinessAccountMenu businessName={business?.name || 'Business'} onNavigate={onNavigate} onLogout={onLogout} />
+          </div>
+          <BackLink fallbackPath="/business" onFallbackNavigate={() => onNavigate('dashboard')} />
+          {saveMessage && <div className="alert alert-success">{saveMessage}</div>}
+          {saveError && <div className="alert alert-error">{saveError}</div>}
+
+          <div className="stack-md" style={{ marginTop: '14px' }}>
+            <div className="card" style={{ border: '1px solid var(--border)', boxShadow: 'none' }}>
+              <h2 className="heading-md">Profile details</h2>
+              <div className="field" style={{ marginTop: '14px' }}>
+                <label className="label">Business Name</label>
+                <input className="input" type="text" value={formData.name} onChange={(e) => handleChange('name', e.target.value)} />
+              </div>
+              <div className="field">
+                <label className="label">Tagline</label>
+                <input className="input" type="text" value={formData.tagline} onChange={(e) => handleChange('tagline', e.target.value)} />
+              </div>
+              <div className="field">
+                <label className="label">Logo URL (optional)</label>
+                <input
+                  className="input"
+                  type="url"
+                  value={formData.logo}
+                  onChange={(e) => handleChange('logo', e.target.value)}
+                  placeholder="https://example.com/logo.png"
+                />
+              </div>
+              <div className="field">
+                <label className="label">Or upload a logo preview (optional)</label>
+                <input className="input" type="file" accept="image/*" onChange={handleLogoFileChange} />
+              </div>
+              {logoPreview ? (
+                <div style={{ marginTop: '12px' }}>
+                  <p className="muted-text" style={{ marginBottom: '8px' }}>Logo preview</p>
+                  <img src={logoPreview} alt="Logo preview" style={{ maxWidth: '140px', maxHeight: '140px', borderRadius: '10px', border: '1px solid var(--border)' }} />
+                </div>
+              ) : null}
+              <div className="field" style={{ marginTop: '14px' }}>
+                <label className="label">LARA / Articles of Incorporation Number</label>
+                <input className="input" type="text" value={formData.laraNumber} onChange={(e) => handleChange('laraNumber', e.target.value)} />
+                <p className="helper-text">Used for verification review</p>
+                <p className="muted-text">Saved once verification is enabled.</p>
+              </div>
+              <button type="button" className="button button-primary" onClick={handleSave} disabled={saving}>
+                {saving ? 'Saving...' : 'Save profile'}
+              </button>
+            </div>
+
+            <div className="card" style={{ border: '1px solid var(--border)', boxShadow: 'none' }}>
+              <h2 className="heading-md">Documents / uploads</h2>
+              <p className="subtitle">
+                Upload docs/images needed for verification (Articles required; optional licenses/insurance). Admin can view/download.
+              </p>
+              {placeholderMessage && <div className="alert">{placeholderMessage}</div>}
+              <div className="row row-wrap" style={{ marginTop: '12px', gap: '10px' }}>
+                <button type="button" className="button button-secondary" onClick={() => setPlaceholderMessage('Coming soon')}>
+                  Upload Articles
+                </button>
+                <button type="button" className="button button-secondary" onClick={() => setPlaceholderMessage('Coming soon')}>
+                  Upload Optional Docs
+                </button>
+              </div>
+            </div>
+
+            <div className="card" style={{ border: '1px solid var(--border)', boxShadow: 'none' }}>
+              <h2 className="heading-md">Badge requests</h2>
+              <p className="subtitle">
+                Apply for badges by uploading documentation to prove eligibility. Request a badge not in the system.
+              </p>
+              <div className="field" style={{ marginTop: '14px' }}>
+                <label className="label">Badge name</label>
+                <input
+                  className="input"
+                  type="text"
+                  value={badgeRequest.badgeName}
+                  onChange={(e) => setBadgeRequest((prev) => ({ ...prev, badgeName: e.target.value }))}
+                />
+              </div>
+              <div className="field">
+                <label className="label">Reason</label>
+                <textarea
+                  className="input"
+                  rows="3"
+                  value={badgeRequest.reason}
+                  onChange={(e) => setBadgeRequest((prev) => ({ ...prev, reason: e.target.value }))}
+                />
+              </div>
+              <div className="field">
+                <label className="label">Optional link</label>
+                <input
+                  className="input"
+                  type="url"
+                  value={badgeRequest.link}
+                  onChange={(e) => setBadgeRequest((prev) => ({ ...prev, link: e.target.value }))}
+                />
+              </div>
+              <button type="button" className="button button-secondary" onClick={() => setPlaceholderMessage('Coming soon')}>
+                Submit request
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // =============================================================================
 // CONTACT SUPPORT
 // =============================================================================
@@ -2484,7 +2749,7 @@ export default function App() {
     pathname.startsWith('/customer/') ||
     pathname === '/discover' ||
     pathname === '/favorites' ||
-    pathname.startsWith('/business/');
+    (pathname.startsWith('/business/') && pathname !== '/business/profile');
 
   const isBusinessPath = (pathname) => pathname === '/business' || pathname.startsWith('/business/');
 
@@ -2493,6 +2758,7 @@ export default function App() {
     if (pathname === '/about') return 'about';
     if (pathname === '/faq') return 'faq';
     if (pathname === '/business') return 'landing';
+    if (pathname === '/business/profile') return 'business-profile';
     if (pathname === '/reset-password') return 'reset';
     if (pathname === '/customer' || pathname === '/customer/login') return 'customer-login';
     if (pathname === '/customer/signup') return 'customer-signup';
@@ -2526,7 +2792,7 @@ export default function App() {
       setCustomerResetToken(params.get('token'));
     }
 
-    if (pathname.startsWith('/business/')) {
+    if (pathname.startsWith('/business/') && pathname !== '/business/profile') {
       const slug = pathname.replace('/business/', '').trim();
       if (slug) {
         setPublicSlug(slug);
@@ -2543,11 +2809,11 @@ export default function App() {
   useEffect(() => {
     const { pathname, search } = window.location;
 
-    syncScreenWithPath(`${pathname}${search}`);
+    const mappedScreen = syncScreenWithPath(`${pathname}${search}`);
 
     const token = localStorage.getItem('token');
     if (token && isBusinessPath(pathname) && !isCustomerOrPublicPath(pathname)) {
-      fetchCurrentBusiness();
+      fetchCurrentBusiness(mappedScreen);
     }
 
     if (hasCustomerToken()) {
@@ -2565,11 +2831,15 @@ export default function App() {
     };
   }, []);
 
-  const fetchCurrentBusiness = async () => {
+  const fetchCurrentBusiness = async (targetScreen = null) => {
     try {
       const response = await api.get('/auth/me');
       setCurrentBusiness(response.data);
-      setCurrentScreen('dashboard');
+      if (targetScreen === 'business-profile') {
+        setCurrentScreen('business-profile');
+      } else {
+        setCurrentScreen('dashboard');
+      }
     } catch (err) {
       localStorage.removeItem('token');
     }
@@ -2735,6 +3005,17 @@ export default function App() {
             onNavigate={handleNavigate}
             onLogout={handleLogout}
             onRefresh={fetchCurrentBusiness}
+          />
+        ) : (
+          <LandingPage onNavigate={handleNavigate} />
+        );
+      case 'business-profile':
+        return currentBusiness ? (
+          <BusinessProfilePage
+            business={currentBusiness}
+            onNavigate={handleNavigate}
+            onLogout={handleLogout}
+            onBusinessUpdated={setCurrentBusiness}
           />
         ) : (
           <LandingPage onNavigate={handleNavigate} />
