@@ -733,10 +733,6 @@ body {
 
 
 @media (min-width: 768px) {
-  .site-header__menu-toggle {
-    display: none;
-  }
-
   .site-header__nav {
     display: flex !important;
   }
