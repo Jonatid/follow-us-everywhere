@@ -1555,31 +1555,6 @@ const CustomerProfilePage = ({ onNavigate, onLogout, customer, onCustomerUpdated
   };
 
 
-  const handleSubmitBadgeRequest = async () => {
-    if (!requestForm.badge_id) {
-      setSaveError('Please select a badge to request.');
-      return;
-    }
-
-    setRequestLoading(true);
-    setSaveError('');
-    setSaveMessage('');
-
-    try {
-      await api.post('/business/badges/request', {
-        badge_id: Number(requestForm.badge_id),
-        business_notes: requestForm.business_notes || null,
-        linked_document_id: requestForm.linked_document_id ? Number(requestForm.linked_document_id) : null
-      });
-      setSaveMessage('Badge request submitted. Submitted by business, pending admin verification.');
-      setRequestForm({ badge_id: '', business_notes: '', linked_document_id: '' });
-      await loadBadgeData();
-    } catch (err) {
-      setSaveError(getApiErrorMessage(err, 'Unable to submit badge request.'));
-    } finally {
-      setRequestLoading(false);
-    }
-  };
 
   const handleSave = async () => {
     setLoading(true);
