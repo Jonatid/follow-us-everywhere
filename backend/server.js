@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const db = require('./config/db');
 const { ensureSchema } = require('./config/schema');
+const { runMigrations } = require('./scripts/runMigrations');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -91,9 +92,10 @@ app.use((err, req, res, next) => {
 
 const startServer = async () => {
   try {
+    await runMigrations();
     await ensureSchema();
   } catch (error) {
-    console.error('Schema initialization error:', error.message);
+    console.error('Startup initialization error:', error.message);
     process.exit(1);
   }
 
