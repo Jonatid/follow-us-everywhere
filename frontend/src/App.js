@@ -1091,6 +1091,7 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
   const [favoriteIds, setFavoriteIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [impactModal, setImpactModal] = useState({ open: false, businessName: '', loading: false, error: '', data: null });
   const discoverRequestIdRef = useRef(0);
 
   useEffect(() => {
@@ -1200,6 +1201,30 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
   }, [businesses, communitySupport, badge]);
 
   const totalPages = Math.max(1, Math.ceil(totalBusinesses / itemsPerPage));
+
+
+  const openImpactModal = async (business) => {
+    setImpactModal({ open: true, businessName: business.name, loading: true, error: '', data: null });
+
+    try {
+      const response = await customerApi.get(`/public/businesses/${business.id}/impact`);
+      setImpactModal({
+        open: true,
+        businessName: business.name,
+        loading: false,
+        error: '',
+        data: response.data
+      });
+    } catch (err) {
+      setImpactModal({
+        open: true,
+        businessName: business.name,
+        loading: false,
+        error: getApiErrorMessage(err, 'Unable to load community impact.'),
+        data: null
+      });
+    }
+  };
 
   const toggleFavorite = async (businessId, isFavorited) => {
     if (!localStorage.getItem('customer_token')) {
@@ -1319,6 +1344,13 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
                           </button>
                           <button
                             type="button"
+                            className="button button-secondary button-sm"
+                            onClick={() => openImpactModal(business)}
+                          >
+                            View Community Impact
+                          </button>
+                          <button
+                            type="button"
                             className={`button button-sm ${isFavorited ? 'button-secondary' : 'button-primary'}`}
                             onClick={() => toggleFavorite(business.id, isFavorited)}
                           >
@@ -1331,6 +1363,35 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
                 })}
               </div>
               {filteredBusinesses.length === 0 && <p className="muted-text">No businesses found.</p>}
+
+              {impactModal.open ? (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200, padding: '16px' }}>
+                  <div className="card" style={{ width: '100%', maxWidth: '640px', maxHeight: '80vh', overflow: 'auto' }}>
+                    <div className="row space-between" style={{ alignItems: 'center' }}>
+                      <h2 className="heading-md" style={{ margin: 0 }}>Community Impact</h2>
+                      <button type="button" className="button button-muted button-sm" onClick={() => setImpactModal({ open: false, businessName: '', loading: false, error: '', data: null })}>Close</button>
+                    </div>
+                    <p className="subtitle" style={{ marginTop: '6px' }}>{impactModal.businessName}</p>
+                    {impactModal.loading ? <p className="muted-text">Loading verified actions...</p> : null}
+                    {impactModal.error ? <div className="alert alert-error">{impactModal.error}</div> : null}
+                    {impactModal.data ? (
+                      <div className="stack-sm" style={{ marginTop: '10px' }}>
+                        <p className="text-strong">Community Impact: {impactModal.data?.summary?.verifiedActionsCount || 0} Verified Actions</p>
+                        {(impactModal.data?.verified_badges || []).length === 0 ? (
+                          <p className="muted-text">No verified badges have been published yet.</p>
+                        ) : (
+                          (impactModal.data?.verified_badges || []).map((item) => (
+                            <div key={item.id} className="card" style={{ border: '1px solid var(--border)', boxShadow: 'none' }}>
+                              <p className="text-strong">{item.name}</p>
+                              <p className="muted-text" style={{ marginTop: '4px' }}>{item.description}</p>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
               {totalBusinesses > 0 && (
                 <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
                   <p className="muted-text">
@@ -1491,6 +1552,33 @@ const CustomerProfilePage = ({ onNavigate, onLogout, customer, onCustomerUpdated
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+
+  const handleSubmitBadgeRequest = async () => {
+    if (!requestForm.badge_id) {
+      setSaveError('Please select a badge to request.');
+      return;
+    }
+
+    setRequestLoading(true);
+    setSaveError('');
+    setSaveMessage('');
+
+    try {
+      await api.post('/business/badges/request', {
+        badge_id: Number(requestForm.badge_id),
+        business_notes: requestForm.business_notes || null,
+        linked_document_id: requestForm.linked_document_id ? Number(requestForm.linked_document_id) : null
+      });
+      setSaveMessage('Badge request submitted. Submitted by business, pending admin verification.');
+      setRequestForm({ badge_id: '', business_notes: '', linked_document_id: '' });
+      await loadBadgeData();
+    } catch (err) {
+      setSaveError(getApiErrorMessage(err, 'Unable to submit badge request.'));
+    } finally {
+      setRequestLoading(false);
+    }
   };
 
   const handleSave = async () => {
@@ -2449,12 +2537,11 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [saveError, setSaveError] = useState('');
-  const [badgeRequest, setBadgeRequest] = useState({
-    badgeName: '',
-    reason: '',
-    link: '',
-  });
-  const [placeholderMessage, setPlaceholderMessage] = useState('');
+  const [badgeCatalog, setBadgeCatalog] = useState([]);
+  const [businessDocuments, setBusinessDocuments] = useState([]);
+  const [requestHistory, setRequestHistory] = useState([]);
+  const [requestForm, setRequestForm] = useState({ badge_id: '', business_notes: '', linked_document_id: '' });
+  const [requestLoading, setRequestLoading] = useState(false);
 
   useEffect(() => {
     setFormData({
@@ -2465,6 +2552,26 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
     });
     setLogoPreview(business?.logo || '');
   }, [business]);
+
+
+  const loadBadgeData = async () => {
+    try {
+      const [catalogRes, docsRes, requestsRes] = await Promise.all([
+        api.get('/badges'),
+        api.get('/businesses/documents'),
+        api.get('/business/badge-requests')
+      ]);
+      setBadgeCatalog(Array.isArray(catalogRes.data) ? catalogRes.data : []);
+      setBusinessDocuments(Array.isArray(docsRes.data) ? docsRes.data : []);
+      setRequestHistory(Array.isArray(requestsRes.data) ? requestsRes.data : []);
+    } catch (err) {
+      setSaveError(getApiErrorMessage(err, 'Unable to load badge request tools.'));
+    }
+  };
+
+  useEffect(() => {
+    loadBadgeData();
+  }, []);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -2480,6 +2587,33 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
     }
     const objectUrl = URL.createObjectURL(file);
     setLogoPreview(objectUrl);
+  };
+
+
+  const handleSubmitBadgeRequest = async () => {
+    if (!requestForm.badge_id) {
+      setSaveError('Please select a badge to request.');
+      return;
+    }
+
+    setRequestLoading(true);
+    setSaveError('');
+    setSaveMessage('');
+
+    try {
+      await api.post('/business/badges/request', {
+        badge_id: Number(requestForm.badge_id),
+        business_notes: requestForm.business_notes || null,
+        linked_document_id: requestForm.linked_document_id ? Number(requestForm.linked_document_id) : null
+      });
+      setSaveMessage('Badge request submitted. Submitted by business, pending admin verification.');
+      setRequestForm({ badge_id: '', business_notes: '', linked_document_id: '' });
+      await loadBadgeData();
+    } catch (err) {
+      setSaveError(getApiErrorMessage(err, 'Unable to submit badge request.'));
+    } finally {
+      setRequestLoading(false);
+    }
   };
 
   const handleSave = async () => {
@@ -2569,52 +2703,74 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
               <p className="subtitle">
                 Upload docs/images needed for verification (Articles required; optional licenses/insurance). Admin can view/download.
               </p>
-              {placeholderMessage && <div className="alert">{placeholderMessage}</div>}
-              <div className="row row-wrap" style={{ marginTop: '12px', gap: '10px' }}>
-                <button type="button" className="button button-secondary" onClick={() => setPlaceholderMessage('Coming soon')}>
-                  Upload Articles
-                </button>
-                <button type="button" className="button button-secondary" onClick={() => setPlaceholderMessage('Coming soon')}>
-                  Upload Optional Docs
-                </button>
-              </div>
+              <p className="muted-text" style={{ marginTop: '12px' }}>
+                Use the dashboard document tools to upload Articles and optional verification files.
+              </p>
             </div>
 
             <div className="card" style={{ border: '1px solid var(--border)', boxShadow: 'none' }}>
-              <h2 className="heading-md">Badge requests</h2>
+              <h2 className="heading-md">Community Impact badge requests</h2>
               <p className="subtitle">
-                Apply for badges by uploading documentation to prove eligibility. Request a badge not in the system.
+                Official recognition with uplifting impact. Submitted by business until approved by admin.
               </p>
               <div className="field" style={{ marginTop: '14px' }}>
-                <label className="label">Badge name</label>
-                <input
+                <label className="label">Select badge</label>
+                <select
                   className="input"
-                  type="text"
-                  value={badgeRequest.badgeName}
-                  onChange={(e) => setBadgeRequest((prev) => ({ ...prev, badgeName: e.target.value }))}
-                />
+                  value={requestForm.badge_id}
+                  onChange={(e) => setRequestForm((prev) => ({ ...prev, badge_id: e.target.value }))}
+                >
+                  <option value="">Choose a community impact badge</option>
+                  {badgeCatalog.map((badgeItem) => (
+                    <option key={badgeItem.id} value={badgeItem.id}>{badgeItem.name} ({badgeItem.category})</option>
+                  ))}
+                </select>
               </div>
               <div className="field">
-                <label className="label">Reason</label>
+                <label className="label">Impact notes (Submitted by business)</label>
                 <textarea
                   className="input"
                   rows="3"
-                  value={badgeRequest.reason}
-                  onChange={(e) => setBadgeRequest((prev) => ({ ...prev, reason: e.target.value }))}
+                  value={requestForm.business_notes}
+                  onChange={(e) => setRequestForm((prev) => ({ ...prev, business_notes: e.target.value }))}
+                  placeholder="Share your action and why it matters to the community."
                 />
               </div>
               <div className="field">
-                <label className="label">Optional link</label>
-                <input
+                <label className="label">Optional supporting document</label>
+                <select
                   className="input"
-                  type="url"
-                  value={badgeRequest.link}
-                  onChange={(e) => setBadgeRequest((prev) => ({ ...prev, link: e.target.value }))}
-                />
+                  value={requestForm.linked_document_id}
+                  onChange={(e) => setRequestForm((prev) => ({ ...prev, linked_document_id: e.target.value }))}
+                >
+                  <option value="">No supporting document</option>
+                  {businessDocuments.map((doc) => (
+                    <option key={doc.id} value={doc.id}>{doc.documentType} — {doc.originalFileName} ({doc.status})</option>
+                  ))}
+                </select>
               </div>
-              <button type="button" className="button button-secondary" onClick={() => setPlaceholderMessage('Coming soon')}>
-                Submit request
+              <button type="button" className="button button-secondary" onClick={handleSubmitBadgeRequest} disabled={requestLoading}>
+                {requestLoading ? 'Submitting...' : 'Submit badge request'}
               </button>
+
+              <div style={{ marginTop: '16px' }}>
+                <h3 className="heading-sm">Request history</h3>
+                {requestHistory.length === 0 ? (
+                  <p className="muted-text">No requests submitted yet.</p>
+                ) : (
+                  <div className="stack-sm">
+                    {requestHistory.map((item) => (
+                      <div key={item.id} className="card" style={{ border: '1px solid var(--border)', boxShadow: 'none' }}>
+                        <p className="text-strong">{item.badgeName}</p>
+                        <p className="muted-text">Status: {item.status}</p>
+                        {item.businessNotes ? <p className="muted-text">Submitted by business: {item.businessNotes}</p> : null}
+                        {item.adminNotes ? <p className="muted-text">Admin notes: {item.adminNotes}</p> : null}
+                        {item.rejectionReason ? <p className="muted-text">Rejection reason: {item.rejectionReason}</p> : null}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
