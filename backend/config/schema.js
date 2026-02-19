@@ -171,6 +171,13 @@ const ensureSchema = async () => {
     `);
 
     await pool.query(`
+      ALTER TABLE badges
+        ADD COLUMN IF NOT EXISTS slug VARCHAR(255),
+        ADD COLUMN IF NOT EXISTS category VARCHAR(100),
+        ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true;
+    `);
+
+    await pool.query(`
       UPDATE badges
       SET slug = LOWER(REGEXP_REPLACE(name, '[^a-zA-Z0-9]+', '-', 'g'))
       WHERE slug IS NULL;
@@ -191,7 +198,13 @@ const ensureSchema = async () => {
     await pool.query(`
       DO $$
       BEGIN
-        IF NOT EXISTS (
+        IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'public'
+            AND table_name = 'badges'
+            AND column_name = 'slug'
+        ) AND NOT EXISTS (
           SELECT 1
           FROM pg_constraint
           WHERE conname = 'badges_slug_unique'
