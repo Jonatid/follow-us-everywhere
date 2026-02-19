@@ -14,6 +14,7 @@ const adminRoutes = require('./routes/admin');
 const customerAuthRoutes = require('./routes/customers-auth');
 const customerRoutes = require('./routes/customers');
 const publicRoutes = require('./routes/public');
+const badgesRoutes = require('./routes/badges');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -69,6 +70,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/businesses', businessesRoutes);
 app.use('/api/socials', socialsRoutes);
 app.use('/api/admin/auth', adminAuthRoutes);
+app.use('/api', badgesRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/customers/auth', customerAuthRoutes);
 app.use('/api/customers', customerRoutes);

@@ -10,6 +10,7 @@ const REQUIRED_TABLES = [
   'customer_favorites',
   'badges',
   'business_badges',
+  'badge_requests',
   'customer_password_resets',
   'business_documents'
 ];
@@ -162,8 +163,43 @@ const ensureSchema = async () => {
         name TEXT UNIQUE NOT NULL,
         description TEXT NOT NULL,
         icon TEXT,
+        slug VARCHAR(255),
+        category VARCHAR(100),
+        is_active BOOLEAN NOT NULL DEFAULT true,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+    `);
+
+    await pool.query(`
+      UPDATE badges
+      SET slug = LOWER(REGEXP_REPLACE(name, '[^a-zA-Z0-9]+', '-', 'g'))
+      WHERE slug IS NULL;
+    `);
+
+    await pool.query(`
+      UPDATE badges
+      SET category = 'Community'
+      WHERE category IS NULL;
+    `);
+
+    await pool.query(`
+      ALTER TABLE badges
+        ALTER COLUMN slug SET NOT NULL,
+        ALTER COLUMN category SET NOT NULL;
+    `);
+
+    await pool.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'badges_slug_unique'
+        ) THEN
+          ALTER TABLE badges
+            ADD CONSTRAINT badges_slug_unique UNIQUE (slug);
+        END IF;
+      END $$;
     `);
 
     await pool.query(`
@@ -175,9 +211,37 @@ const ensureSchema = async () => {
         evidence_url TEXT,
         notes TEXT,
         awarded_by_admin_id INTEGER REFERENCES admins(id) ON DELETE SET NULL,
+        granted_by_admin_id INTEGER REFERENCES admins(id) ON DELETE SET NULL,
+        granted_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        source_badge_request_id INTEGER,
         UNIQUE (business_id, badge_id)
       );
     `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS badge_requests (
+        id SERIAL PRIMARY KEY,
+        business_id INTEGER NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+        badge_id INTEGER NOT NULL REFERENCES badges(id) ON DELETE CASCADE,
+        request_type VARCHAR(50) NOT NULL DEFAULT 'badge',
+        status VARCHAR(20) NOT NULL DEFAULT 'Pending' CHECK (status IN ('Pending', 'Approved', 'Rejected')),
+        submitted_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        reviewed_at TIMESTAMP,
+        reviewed_by_admin_id INTEGER REFERENCES admins(id) ON DELETE SET NULL,
+        business_notes TEXT,
+        admin_notes TEXT,
+        rejection_reason TEXT,
+        linked_document_id INTEGER REFERENCES business_documents(id) ON DELETE SET NULL
+      );
+    `);
+
+    await pool.query(`
+      ALTER TABLE business_badges
+      ADD COLUMN IF NOT EXISTS source_badge_request_id INTEGER REFERENCES badge_requests(id) ON DELETE SET NULL;
+    `);
+
+    await pool.query('UPDATE business_badges SET granted_by_admin_id = awarded_by_admin_id WHERE granted_by_admin_id IS NULL;');
+    await pool.query('UPDATE business_badges SET granted_at = COALESCE(awarded_at, CURRENT_TIMESTAMP) WHERE granted_at IS NULL;');
 
     await pool.query('CREATE INDEX IF NOT EXISTS idx_businesses_slug ON businesses(slug);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_businesses_email ON businesses(email);');
@@ -187,6 +251,10 @@ const ensureSchema = async () => {
     await pool.query('CREATE INDEX IF NOT EXISTS idx_customers_email ON customers(email);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_business_badges_business_id ON business_badges(business_id);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_business_badges_badge_id ON business_badges(badge_id);');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_badge_requests_business_id ON badge_requests(business_id);');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_badge_requests_status ON badge_requests(status);');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_badge_requests_submitted_at ON badge_requests(submitted_at);');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_badge_requests_badge_id ON badge_requests(badge_id);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_customer_favorites_customer_id ON customer_favorites(customer_id);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_customer_favorites_business_id ON customer_favorites(business_id);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token ON password_reset_tokens(token);');
