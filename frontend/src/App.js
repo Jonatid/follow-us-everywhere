@@ -1376,7 +1376,7 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
                     {impactModal.error ? <div className="alert alert-error">{impactModal.error}</div> : null}
                     {impactModal.data ? (
                       <div className="stack-sm" style={{ marginTop: '10px' }}>
-                        <p className="text-strong">Community Impact: {impactModal.data?.summary?.verifiedActionsCount || 0} Verified Actions</p>
+                        <p className="text-strong">Community Impact: {impactModal.data?.verified_count || 0} Verified Actions</p>
                         {(impactModal.data?.verified_badges || []).length === 0 ? (
                           <p className="muted-text">No verified badges have been published yet.</p>
                         ) : (
@@ -2686,7 +2686,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
             <div className="card" style={{ border: '1px solid var(--border)', boxShadow: 'none' }}>
               <h2 className="heading-md">Community Impact badge requests</h2>
               <p className="subtitle">
-                Official recognition with uplifting impact. Submitted by business until approved by admin.
+                Official recognition with uplifting impact. Only admin-approved badges appear publicly.
               </p>
               <div className="field" style={{ marginTop: '14px' }}>
                 <label className="label">Select badge</label>
@@ -2702,7 +2702,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
                 </select>
               </div>
               <div className="field">
-                <label className="label">Impact notes (Submitted by business)</label>
+                <label className="label">Impact notes (optional)</label>
                 <textarea
                   className="input"
                   rows="3"
@@ -2738,7 +2738,9 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
                       <div key={item.id} className="card" style={{ border: '1px solid var(--border)', boxShadow: 'none' }}>
                         <p className="text-strong">{item.badgeName}</p>
                         <p className="muted-text">Status: {item.status}</p>
-                        {item.businessNotes ? <p className="muted-text">Submitted by business: {item.businessNotes}</p> : null}
+                        <p className="muted-text">Submitted: {item.submittedAt ? new Date(item.submittedAt).toLocaleString() : '—'}</p>
+                        {item.status === 'Approved' ? <p className="muted-text">Granted ✅</p> : null}
+                        {item.businessNotes ? <p className="muted-text">Business notes: {item.businessNotes}</p> : null}
                         {item.adminNotes ? <p className="muted-text">Admin notes: {item.adminNotes}</p> : null}
                         {item.rejectionReason ? <p className="muted-text">Rejection reason: {item.rejectionReason}</p> : null}
                       </div>
