@@ -113,6 +113,9 @@ router.post(
       });
     } catch (error) {
       console.error('Create badge request error:', error);
+      if (error.code === '23505') {
+        return res.status(409).json({ message: 'A pending request already exists for this badge' });
+      }
       res.status(500).json({ message: 'Server error' });
     }
   }
@@ -368,7 +371,7 @@ router.get('/public/businesses/:id/impact', async (req, res) => {
               b.name,
               b.description,
               b.category,
-              bb.granted_at AS "grantedAt"
+              bb.granted_at
        FROM business_badges bb
        JOIN badges b ON b.id = bb.badge_id
        WHERE bb.business_id = $1
@@ -377,11 +380,7 @@ router.get('/public/businesses/:id/impact', async (req, res) => {
     );
 
     res.json({
-      businessId,
-      summary: {
-        verifiedActionsCount: verifiedBadgesResult.rows.length,
-        label: 'Community Impact'
-      },
+      verified_count: verifiedBadgesResult.rows.length,
       verified_badges: verifiedBadgesResult.rows
     });
   } catch (error) {
