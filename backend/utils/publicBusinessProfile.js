@@ -102,23 +102,23 @@ const getPublicBusinessBySlug = async (slug) => {
   }
 
   const badgesResult = await pool.query(
-    `SELECT bb.id,
-            bb.awarded_at,
-            bb.evidence_url,
-            bb.notes,
-            bb.category,
-            bb.expires_at,
-            b.name,
-            b.description,
-            b.icon,
-            b.slug
-     FROM business_badges bb
+  `SELECT bb.id,
+          bb.awarded_at,
+          bb.evidence_url,
+          bb.notes,
+          b.category,
+          bb.expires_at,
+          b.name,
+          b.description,
+          b.icon,
+          b.slug
+   FROM business_badges bb
      JOIN badges b ON b.id = bb.badge_id
-     WHERE bb.business_id = $1
-       AND bb.status = 'active'
-     ORDER BY bb.awarded_at DESC`,
-    [business.id]
-  );
+   WHERE bb.business_id = $1
+     AND bb.status = 'active'
+   ORDER BY bb.awarded_at DESC`,
+  [business.id]
+);
 
   business.badges = badgesResult.rows;
 
