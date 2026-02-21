@@ -12,6 +12,15 @@ const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
   (import.meta.env.DEV ? 'http://localhost:5000/api' : 'https://followuseverywhere-api.onrender.com/api');
 
+const configuredPublicWebUrl =
+  (typeof process !== 'undefined' && process.env?.REACT_APP_PUBLIC_WEB_URL) ||
+  import.meta.env.VITE_PUBLIC_WEB_URL ||
+  '';
+
+const publicBase = (configuredPublicWebUrl || window.location.origin).replace(/\/$/, '');
+
+const buildPublicBusinessUrl = (slug) => `${publicBase}/b/${slug}`;
+
 // =============================================================================
 // API SERVICE
 // =============================================================================
@@ -1953,7 +1962,7 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
   }, [business]);
 
   const handleCopyLink = () => {
-    const link = `https://follow-us-everywhere-web.onrender.com/b/${business.slug}`;
+    const link = buildPublicBusinessUrl(business.slug);
     navigator.clipboard
       .writeText(link)
       .then(() => {
@@ -1962,6 +1971,11 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
       .catch(() => {
         alert(`Failed to copy. Link: ${link}`);
       });
+  };
+
+  const handlePreviewPublicPage = () => {
+    const publicUrl = buildPublicBusinessUrl(business.slug);
+    window.open(publicUrl, '_blank', 'noopener,noreferrer');
   };
 
   const handleEdit = (index) => {
@@ -2166,14 +2180,14 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
             <p className="subtitle">Your Follow Us Everywhere link:</p>
             <div className="row row-wrap">
               <code className="code-block">
-                https://follow-us-everywhere-web.onrender.com/b/{business.slug}
+                {buildPublicBusinessUrl(business.slug)}
               </code>
               <button type="button" onClick={handleCopyLink} className="button button-primary button-sm">
                 Copy Link
               </button>
             </div>
           </div>
-          <button type="button" onClick={() => onNavigate('public', business.slug)} className="button button-secondary button-full">
+          <button type="button" onClick={handlePreviewPublicPage} className="button button-secondary button-full">
             Preview Public Follow Page
           </button>
           <h2 className="heading-md">Your Social Profiles</h2>
