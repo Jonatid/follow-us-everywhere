@@ -1861,8 +1861,12 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
   const [saving, setSaving] = useState(false);
   const [socialFieldErrorIndex, setSocialFieldErrorIndex] = useState(null);
   const [socialFieldError, setSocialFieldError] = useState('');
-  const [supportText, setSupportText] = useState('');
-  const [supportLinks, setSupportLinks] = useState([]);
+  const [philanthropicContentType, setPhilanthropicContentType] = useState('philanthropic_goals');
+  const [philanthropicValues, setPhilanthropicValues] = useState({
+    mission_statement: '',
+    vision_statement: '',
+    philanthropic_goals: '',
+  });
   const [supportSaving, setSupportSaving] = useState(false);
   const [warning, setWarning] = useState(null);
   const [actionError, setActionError] = useState('');
@@ -1873,7 +1877,7 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
   const policyCode = business.policy_violation_code;
   const lastNudgeAt = business.last_nudge_at;
   const canEditBusiness = ['active', 'flagged'].includes(verificationStatus);
-  const canEditCommunitySupport = canEditBusiness;
+  const canEditPhilanthropic = canEditBusiness;
   const showStatusBanner = ['flagged', 'suspended', 'disabled'].includes(verificationStatus);
   const statusBannerMessage =
     nudgeMessage ||
@@ -1914,8 +1918,11 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
 
   useEffect(() => {
     setSocials(Array.isArray(business.socials) ? business.socials : []);
-    setSupportText(business.community_support_text || '');
-    setSupportLinks(Array.isArray(business.community_support_links) ? business.community_support_links : []);
+    setPhilanthropicValues({
+      mission_statement: business.mission_statement || '',
+      vision_statement: business.vision_statement || '',
+      philanthropic_goals: business.philanthropic_goals || '',
+    });
   }, [business]);
 
   const handleCopyLink = () => {
@@ -2032,40 +2039,21 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
     }
   };
 
-  const handleSupportLinkChange = (index, field, value) => {
-    setSupportLinks((prev) =>
-      prev.map((link, linkIndex) =>
-        linkIndex === index ? { ...link, [field]: value } : link
-      )
-    );
-  };
-
-  const handleAddSupportLink = () => {
-    setSupportLinks((prev) => [...prev, { label: '', url: '' }]);
-  };
-
-  const handleRemoveSupportLink = (index) => {
-    setSupportLinks((prev) => prev.filter((_, linkIndex) => linkIndex !== index));
-  };
-
   const handleSaveCommunitySupport = async () => {
-    if (!canEditCommunitySupport) {
+    if (!canEditPhilanthropic) {
       return;
     }
     setSupportSaving(true);
     setActionError('');
     try {
-      const filteredLinks = supportLinks
-        .map((link) => ({ label: link.label?.trim() || '', url: link.url?.trim() || '' }))
-        .filter((link) => link.label && link.url);
-      await api.put('/businesses/community-support', {
-        community_support_text: supportText,
-        community_support_links: filteredLinks.length ? filteredLinks : [],
-      });
-      alert('Community support updated successfully!');
+      const payload = {
+        [philanthropicContentType]: philanthropicValues[philanthropicContentType] || ''
+      };
+      await api.put('/businesses/profile/update', payload);
+      alert('Philanthropic content updated successfully!');
       onRefresh();
     } catch (err) {
-      setActionError(getApiErrorMessage(err, 'Failed to update community support. Please try again.'));
+      setActionError(getApiErrorMessage(err, 'Failed to update philanthropic content. Please try again.'));
     } finally {
       setSupportSaving(false);
     }
@@ -2234,78 +2222,49 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
           </div>
           <div className="section-divider" />
           <div className="stack-sm">
-            <h2 className="heading-md">Community Support</h2>
-            <p className="muted-text">
-              Share how your business supports the community. This appears publicly as “Submitted by business.”
-            </p>
-            {!canEditCommunitySupport && (
+            <h2 className="heading-md">Philanthropic</h2>
+            {!canEditPhilanthropic && (
               <div className="alert alert-error">
-                Community support updates are disabled while your account is suspended or disabled.
+                Philanthropic updates are disabled while your account is suspended or disabled.
               </div>
             )}
             <div className="field">
-              <label className="label" htmlFor="community-support-text">Support summary</label>
-              <textarea
-                id="community-support-text"
-                className="input textarea"
-                value={supportText}
-                onChange={(event) => setSupportText(event.target.value)}
-                placeholder="Example: We sponsor local youth programs and donate meals weekly."
-                disabled={!canEditCommunitySupport}
-              />
+              <label className="label" htmlFor="philanthropic-content-select">Select content</label>
+              <select
+                id="philanthropic-content-select"
+                className="input"
+                value={philanthropicContentType}
+                onChange={(event) => setPhilanthropicContentType(event.target.value)}
+                disabled={!canEditPhilanthropic}
+              >
+                <option value="philanthropic_goals">Philanthropic Goals</option>
+                <option value="vision_statement">Vision Statement</option>
+                <option value="mission_statement">Mission Statement</option>
+              </select>
             </div>
-            <div className="stack-sm">
-              <div className="row space-between">
-                <p className="text-strong">Support links (optional)</p>
-                <button
-                  type="button"
-                  className="link-button link-button--inline"
-                  onClick={handleAddSupportLink}
-                  disabled={!canEditCommunitySupport}
-                >
-                  + Add link
-                </button>
-              </div>
-              {supportLinks.length === 0 ? (
-                <p className="muted-text">Add links to press coverage, partnerships, or community pages.</p>
-              ) : (
-                supportLinks.map((link, index) => (
-                  <div key={`support-link-${index}`} className="support-link-row">
-                    <input
-                      type="text"
-                      className="input"
-                      value={link.label || ''}
-                      onChange={(event) => handleSupportLinkChange(index, 'label', event.target.value)}
-                      placeholder="Link label"
-                      disabled={!canEditCommunitySupport}
-                    />
-                    <input
-                      type="url"
-                      className="input"
-                      value={link.url || ''}
-                      onChange={(event) => handleSupportLinkChange(index, 'url', event.target.value)}
-                      placeholder="https://"
-                      disabled={!canEditCommunitySupport}
-                    />
-                    <button
-                      type="button"
-                      className="link-button"
-                      onClick={() => handleRemoveSupportLink(index)}
-                      disabled={!canEditCommunitySupport}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))
-              )}
+            <div className="field">
+              <label className="label" htmlFor="philanthropic-content-text">Content</label>
+              <textarea
+                id="philanthropic-content-text"
+                className="input textarea"
+                value={philanthropicValues[philanthropicContentType] || ''}
+                onChange={(event) =>
+                  setPhilanthropicValues((prev) => ({
+                    ...prev,
+                    [philanthropicContentType]: event.target.value,
+                  }))
+                }
+                placeholder="Enter content"
+                disabled={!canEditPhilanthropic}
+              />
             </div>
             <button
               type="button"
               className="button button-primary"
               onClick={handleSaveCommunitySupport}
-              disabled={!canEditCommunitySupport || supportSaving}
+              disabled={!canEditPhilanthropic || supportSaving}
             >
-              {supportSaving ? 'Saving...' : 'Save Community Support'}
+              {supportSaving ? 'Saving...' : 'Save'}
             </button>
           </div>
         </div>
@@ -2398,6 +2357,9 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
   const activeSocials = business.socials.filter((s) => s.url);
   const supportLinks = Array.isArray(business.community_support_links) ? business.community_support_links : [];
   const badges = Array.isArray(business.badges) ? business.badges : [];
+  const missionStatement = business.mission_statement || '';
+  const visionStatement = business.vision_statement || '';
+  const philanthropicGoals = business.philanthropic_goals || '';
 
   return (
     <div className="page page--gradient">
@@ -2454,9 +2416,12 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
             )}
           </>
         )}
-        {(business.community_support_text || supportLinks.length > 0) && (
+        {(missionStatement || visionStatement || philanthropicGoals || business.community_support_text || supportLinks.length > 0) && (
           <div className="public-section">
             <h2 className="heading-md">Submitted by business</h2>
+            {missionStatement && <p className="muted-text"><strong>Mission Statement:</strong> {missionStatement}</p>}
+            {visionStatement && <p className="muted-text"><strong>Vision Statement:</strong> {visionStatement}</p>}
+            {philanthropicGoals && <p className="muted-text"><strong>Philanthropic Goals:</strong> {philanthropicGoals}</p>}
             {business.community_support_text && (
               <p className="muted-text">{business.community_support_text}</p>
             )}
@@ -2516,7 +2481,12 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
   const [businessDocuments, setBusinessDocuments] = useState([]);
   const [requestHistory, setRequestHistory] = useState([]);
   const [requestForm, setRequestForm] = useState({ badge_id: '', business_notes: '', linked_document_id: '' });
+  const [selectedBadgeCategory, setSelectedBadgeCategory] = useState('');
+  const [documentType, setDocumentType] = useState('incorporation');
+  const [documentFile, setDocumentFile] = useState(null);
+  const [uploadLoading, setUploadLoading] = useState(false);
   const [requestLoading, setRequestLoading] = useState(false);
+  const documentFileInputRef = useRef(null);
 
   useEffect(() => {
     setFormData({
@@ -2533,7 +2503,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
     try {
       const [catalogRes, docsRes, requestsRes] = await Promise.all([
         api.get('/badges'),
-        api.get('/businesses/documents'),
+        api.get('/business/documents'),
         api.get('/business/badge-requests')
       ]);
       setBadgeCatalog(Array.isArray(catalogRes.data) ? catalogRes.data : []);
@@ -2547,6 +2517,63 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
   useEffect(() => {
     loadBadgeData();
   }, []);
+
+  const badgeCategories = useMemo(() => (
+    [...new Set(badgeCatalog.map((badge) => badge.category).filter(Boolean))]
+  ), [badgeCatalog]);
+
+  const filteredBadges = useMemo(() => (
+    badgeCatalog.filter((badge) => !selectedBadgeCategory || badge.category === selectedBadgeCategory)
+  ), [badgeCatalog, selectedBadgeCategory]);
+
+  const handleUploadDocument = async () => {
+    if (!documentFile) {
+      setSaveError('Please choose a file to upload.');
+      return;
+    }
+
+    setUploadLoading(true);
+    setSaveError('');
+    setSaveMessage('');
+
+    try {
+      const form = new FormData();
+      form.append('document_type', documentType);
+      form.append('document', documentFile);
+      await api.post('/business/documents/upload', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setSaveMessage('Document uploaded successfully.');
+      setDocumentFile(null);
+      if (documentFileInputRef.current) {
+        documentFileInputRef.current.value = '';
+      }
+      await loadBadgeData();
+    } catch (err) {
+      setSaveError(getApiErrorMessage(err, 'Unable to upload document.'));
+    } finally {
+      setUploadLoading(false);
+    }
+  };
+
+  const handleDownloadDocument = async (documentId, fileName) => {
+    try {
+      const response = await api.get(`/business/documents/${documentId}/download`, {
+        responseType: 'blob',
+      });
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.setAttribute('download', fileName || `document-${documentId}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      setSaveError(getApiErrorMessage(err, 'Unable to download document.'));
+    }
+  };
+
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -2567,7 +2594,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
 
   const handleSubmitBadgeRequest = async () => {
     if (!requestForm.badge_id) {
-      setSaveError('Please select a badge to request.');
+      setSaveError('Please select a category and badge to request.');
       return;
     }
 
@@ -2675,12 +2702,52 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
 
             <div className="card" style={{ border: '1px solid var(--border)', boxShadow: 'none' }}>
               <h2 className="heading-md">Documents / uploads</h2>
-              <p className="subtitle">
-                Upload docs/images needed for verification (Articles required; optional licenses/insurance). Admin can view/download.
-              </p>
-              <p className="muted-text" style={{ marginTop: '12px' }}>
-                Use the dashboard document tools to upload Articles and optional verification files.
-              </p>
+              <div className="field" style={{ marginTop: '14px' }}>
+                <label className="label">Document type</label>
+                <select className="input" value={documentType} onChange={(e) => setDocumentType(e.target.value)}>
+                  <option value="lara">LARA</option>
+                  <option value="incorporation">Incorporation</option>
+                  <option value="insurance">Insurance</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div className="field">
+                <label className="label">File</label>
+                <input
+                  ref={documentFileInputRef}
+                  className="input"
+                  type="file"
+                  onChange={(e) => setDocumentFile(e.target.files?.[0] || null)}
+                />
+              </div>
+              <button type="button" className="button button-primary" onClick={handleUploadDocument} disabled={uploadLoading}>
+                {uploadLoading ? 'Uploading...' : 'Upload document'}
+              </button>
+
+              <div style={{ marginTop: '16px' }}>
+                <h3 className="heading-sm">Uploaded documents</h3>
+                {businessDocuments.length === 0 ? (
+                  <p className="muted-text">No documents uploaded yet.</p>
+                ) : (
+                  <div className="stack-sm">
+                    {businessDocuments.map((doc) => (
+                      <div key={doc.id} className="card" style={{ border: '1px solid var(--border)', boxShadow: 'none' }}>
+                        <p className="muted-text">Type: {doc.documentType}</p>
+                        <p className="muted-text">Filename: {doc.originalFileName}</p>
+                        <p className="muted-text">Status: {doc.status}</p>
+                        <p className="muted-text">Submitted: {doc.submittedAt ? new Date(doc.submittedAt).toLocaleString() : '—'}</p>
+                        <button
+                          type="button"
+                          className="button button-secondary"
+                          onClick={() => handleDownloadDocument(doc.id, doc.originalFileName)}
+                        >
+                          Download
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="card" style={{ border: '1px solid var(--border)', boxShadow: 'none' }}>
@@ -2689,15 +2756,33 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
                 Official recognition with uplifting impact. Only admin-approved badges appear publicly.
               </p>
               <div className="field" style={{ marginTop: '14px' }}>
-                <label className="label">Select badge</label>
+                <label className="label">Category</label>
+                <select
+                  className="input"
+                  value={selectedBadgeCategory}
+                  onChange={(e) => {
+                    const nextCategory = e.target.value;
+                    setSelectedBadgeCategory(nextCategory);
+                    setRequestForm((prev) => ({ ...prev, badge_id: '' }));
+                  }}
+                >
+                  <option value="">Choose a category</option>
+                  {badgeCategories.map((category) => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label className="label">Badge</label>
                 <select
                   className="input"
                   value={requestForm.badge_id}
                   onChange={(e) => setRequestForm((prev) => ({ ...prev, badge_id: e.target.value }))}
+                  disabled={!selectedBadgeCategory}
                 >
-                  <option value="">Choose a community impact badge</option>
-                  {badgeCatalog.map((badgeItem) => (
-                    <option key={badgeItem.id} value={badgeItem.id}>{badgeItem.name} ({badgeItem.category})</option>
+                  <option value="">Choose a badge</option>
+                  {filteredBadges.map((badgeItem) => (
+                    <option key={badgeItem.id} value={badgeItem.id}>{badgeItem.name}</option>
                   ))}
                 </select>
               </div>
@@ -2712,7 +2797,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
                 />
               </div>
               <div className="field">
-                <label className="label">Optional supporting document</label>
+                <label className="label">Supporting document</label>
                 <select
                   className="input"
                   value={requestForm.linked_document_id}

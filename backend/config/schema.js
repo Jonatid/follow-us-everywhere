@@ -61,6 +61,9 @@ const ensureSchema = async () => {
         policy_violation_text TEXT,
         community_support_text TEXT,
         community_support_links JSONB,
+        mission_statement TEXT,
+        vision_statement TEXT,
+        philanthropic_goals TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
@@ -77,7 +80,10 @@ const ensureSchema = async () => {
         ADD COLUMN IF NOT EXISTS policy_violation_code TEXT,
         ADD COLUMN IF NOT EXISTS policy_violation_text TEXT,
         ADD COLUMN IF NOT EXISTS community_support_text TEXT,
-        ADD COLUMN IF NOT EXISTS community_support_links JSONB;
+        ADD COLUMN IF NOT EXISTS community_support_links JSONB,
+        ADD COLUMN IF NOT EXISTS mission_statement TEXT,
+        ADD COLUMN IF NOT EXISTS vision_statement TEXT,
+        ADD COLUMN IF NOT EXISTS philanthropic_goals TEXT;
     `);
 
     await pool.query(`
