@@ -8,6 +8,7 @@ const { authenticateToken } = require('../middleware/auth');
 const { resolveVerificationStatus } = require('../utils/verification');
 const { sendPasswordResetEmail } = require('../utils/email');
 const crypto = require('crypto');
+const { resolveUniqueBusinessSlug } = require('../utils/businessSlug');
 
 const router = express.Router();
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,64}$/;
@@ -36,7 +37,7 @@ router.post(
       return true;
     }),
     body('name').notEmpty(),
-    body('slug').notEmpty(),
+    body('slug').optional({ nullable: true }).isString(),
   ],
   async (req, res) => {
     const errorResponse = handleValidationErrors(req, res);
@@ -51,18 +52,17 @@ router.post(
       client = await pool.connect();
       await client.query('BEGIN');
 
-      // Check if business already exists
-      const existingBusiness = await client.query('SELECT 1 FROM businesses WHERE email = $1 OR slug = $2', [
-        email,
-        slug,
-      ]);
+      // Check if business email already exists
+      const existingBusinessByEmail = await client.query('SELECT 1 FROM businesses WHERE email = $1', [email]);
 
-      if (existingBusiness.rows.length > 0) {
+      if (existingBusinessByEmail.rows.length > 0) {
         await client.query('ROLLBACK');
         return res.status(400).json({
-          message: 'Business with this email or slug already exists',
+          message: 'Business with this email already exists',
         });
       }
+
+      const resolvedSlug = await resolveUniqueBusinessSlug(client, { slug, name });
 
       // Hash password
       const salt = await bcrypt.genSalt(10);
@@ -94,7 +94,7 @@ router.post(
                    mission_statement,
                    vision_statement,
                    philanthropic_goals`,
-        [name, slug, tagline || '', logo, email, passwordHash]
+        [name, resolvedSlug, tagline || '', logo, email, passwordHash]
       );
 
       const business = result.rows[0];
@@ -137,7 +137,7 @@ router.post(
 
       if (err.code === '23505') {
         return res.status(400).json({
-          message: 'Business with this email or slug already exists',
+          message: 'Business with this email already exists',
         });
       }
 
