@@ -26,7 +26,7 @@ const getPublicBusinessBySlug = async (slug) => {
   const usesUsername = await checkUsernameColumn();
   const slugValue = typeof slug === 'string' ? slug.trim() : '';
   const fieldMatchSql = usesUsername
-    ? '(LOWER(slug) = LOWER($1) OR LOWER(COALESCE(username, \''\')) = LOWER($1))'
+    ? "(LOWER(slug) = LOWER($1) OR LOWER(COALESCE(username, '')) = LOWER($1))"
     : 'LOWER(slug) = LOWER($1)';
 
   if (process.env.NODE_ENV !== 'production') {
