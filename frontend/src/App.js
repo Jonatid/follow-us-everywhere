@@ -7,11 +7,19 @@ import axios from 'axios';
 import verifiedIcon from './assets/md-verified.svg';
 import heroBg from './assets/vector-network.png';
 
-// API base URL (override with VITE_API_BASE_URL / REACT_APP_API_BASE_URL at build time if needed).
-const API_BASE_URL =
+// API base URL resolution order:
+// 1) explicit env override, 2) localhost for local dev, 3) same-origin /api in production.
+// Using same-origin in production prevents cross-environment drift when custom domains change.
+const configuredApiBaseUrl =
   (typeof process !== 'undefined' && process.env?.REACT_APP_API_BASE_URL) ||
   import.meta.env.VITE_API_BASE_URL ||
-  (import.meta.env.DEV ? 'http://localhost:5000/api' : 'https://followuseverywhere-api.onrender.com/api');
+  '';
+
+const API_BASE_URL =
+  configuredApiBaseUrl ||
+  (import.meta.env.DEV
+    ? 'http://localhost:5000/api'
+    : `${window.location.origin.replace(/\/$/, '')}/api`);
 
 const configuredPublicWebUrl =
   (typeof process !== 'undefined' && process.env?.REACT_APP_PUBLIC_WEB_URL) ||
@@ -2400,12 +2408,7 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
           }
         }
 
-        const normalizedBusiness = normalizePublicBusinessPayload(response.data);
-        if (!normalizedBusiness) {
-          throw new Error('Invalid public business payload');
-        }
-
-        setBusiness(normalizedBusiness);
+        setBusiness(response.data);
       } catch (err) {
         setError('Business not found');
       } finally {
