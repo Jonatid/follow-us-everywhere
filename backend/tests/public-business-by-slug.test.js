@@ -6,16 +6,18 @@ function createDbMock() {
   return {
     async query(sql, params = []) {
       if (sql.includes('FROM information_schema.columns') && sql.includes("table_name = 'businesses'") && sql.includes("column_name = 'username'")) {
-        return { rows: [] };
+        return { rows: [{ '?column?': 1 }] };
       }
 
-      if (sql.includes('FROM businesses') && sql.includes('LOWER(slug) = LOWER($1)')) {
-        if (String(params[0]).toLowerCase() === 'acme-co') {
+      if (sql.includes('FROM businesses') && sql.includes('LOWER(slug) = LOWER($1) OR LOWER(COALESCE(username')) {
+        const key = String(params[0]).toLowerCase();
+        if (key === 'acme-co' || key === 'acmeuser') {
           return {
             rows: [{
               id: 42,
               name: 'Acme Co',
               slug: 'acme-co',
+              username: 'acmeuser',
               tagline: 'Hello',
               logo: 'AC',
               logo_url: null,
@@ -86,10 +88,10 @@ async function createServer() {
   };
 }
 
-test('GET /api/public/businesses/slug/:slug returns profile payload', async () => {
+test('GET /api/public/businesses/by-slug/:key returns profile payload by slug', async () => {
   const server = await createServer();
   try {
-    const { response, body } = await server.get('/api/public/businesses/slug/Acme-Co');
+    const { response, body } = await server.get('/api/public/businesses/by-slug/Acme-Co');
     assert.equal(response.status, 200);
     assert.equal(body.slug, 'acme-co');
     assert.ok(Array.isArray(body.socials));
@@ -98,10 +100,21 @@ test('GET /api/public/businesses/slug/:slug returns profile payload', async () =
   }
 });
 
-test('GET /api/public/businesses/slug/:slug returns 404 for unknown business', async () => {
+test('GET /api/public/businesses/by-slug/:key returns profile payload by username', async () => {
   const server = await createServer();
   try {
-    const { response } = await server.get('/api/public/businesses/slug/unknown');
+    const { response, body } = await server.get('/api/public/businesses/by-slug/AcmeUser');
+    assert.equal(response.status, 200);
+    assert.equal(body.slug, 'acme-co');
+  } finally {
+    await server.close();
+  }
+});
+
+test('GET /api/public/businesses/by-slug/:key returns 404 for unknown business', async () => {
+  const server = await createServer();
+  try {
+    const { response } = await server.get('/api/public/businesses/by-slug/unknown');
     assert.equal(response.status, 404);
   } finally {
     await server.close();

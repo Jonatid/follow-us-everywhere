@@ -151,20 +151,24 @@ router.get('/businesses', async (req, res) => {
 });
 
 
-router.get('/businesses/slug/:slug', async (req, res) => {
+const handlePublicBusinessLookup = async (req, res) => {
   try {
-    const { slug } = req.params;
-    const business = await getPublicBusinessBySlug(slug);
+    const key = typeof req.params.key === 'string' ? req.params.key.trim() : '';
+    const business = await getPublicBusinessBySlug(key);
 
     if (!business) {
+      console.warn('[public-business-lookup] not found', { key });
       return res.status(404).json({ error: 'Business not found' });
     }
 
     return res.json(business);
   } catch (error) {
-    console.error('Error fetching public business by slug:', error);
+    console.error('Error fetching public business profile:', error);
     return res.status(500).json({ error: 'Failed to fetch business profile' });
   }
-});
+};
+
+router.get('/businesses/by-slug/:key', handlePublicBusinessLookup);
+router.get('/businesses/slug/:key', handlePublicBusinessLookup);
 
 module.exports = router;
