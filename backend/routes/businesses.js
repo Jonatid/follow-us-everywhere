@@ -6,6 +6,7 @@ const { body, validationResult } = require('express-validator');
 const pool = require('../config/db');
 const { authenticateToken } = require('../middleware/auth');
 const { resolveVerificationStatus, buildAccountRestrictionError } = require('../utils/verification');
+const { getPublicBusinessBySlug } = require('../utils/publicBusinessProfile');
 
 const router = express.Router();
 
@@ -224,88 +225,16 @@ router.get('/documents/:id/download', authenticateToken, async (req, res) => {
 router.get('/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
+    const business = await getPublicBusinessBySlug(slug);
 
-    const result = await pool.query(
-      `SELECT id,
-              name,
-              slug,
-              tagline,
-              logo,
-              logo_url,
-              verification_status,
-              disabled_at,
-              community_support_text,
-              community_support_links,
-              mission_statement,
-              vision_statement,
-              philanthropic_goals
-       FROM businesses
-       WHERE slug = $1`,
-      [slug]
-    );
-
-    if (result.rows.length === 0) {
+    if (!business) {
       return res.status(404).json({ error: 'Business not found' });
     }
 
-    const business = result.rows[0];
-    business.verification_status = resolveVerificationStatus(business);
-    business.verificationStatus = business.verification_status;
-    const isRestricted = ['suspended', 'disabled'].includes(business.verification_status);
-
-    if (business.verification_status === 'disabled' && business.disabled_at) {
-      const disabledAt = new Date(business.disabled_at);
-      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      if (disabledAt <= sevenDaysAgo) {
-        return res.status(404).json({ error: 'Business not found' });
-      }
-    }
-
-    const hasIsActiveResult = await pool.query(
-      `SELECT 1
-       FROM information_schema.columns
-       WHERE table_name = 'social_links'
-         AND column_name = 'is_active'`
-    );
-    const hasIsActive = hasIsActiveResult.rows.length > 0;
-
-    const socialsQuery = `
-      SELECT id, platform, url, icon, display_order${hasIsActive ? ', is_active' : ''}
-      FROM social_links
-      WHERE business_id = $1
-      ORDER BY display_order
-    `;
-    const socialsResult = await pool.query(socialsQuery, [business.id]);
-
-    business.socials = isRestricted ? [] : socialsResult.rows;
-    if (isRestricted) {
-      business.status = business.verification_status;
-      business.message = 'This page is temporarily unavailable due to technical difficulties.';
-    }
-
-    const badgesResult = await pool.query(
-      `SELECT bb.id,
-              bb.awarded_at,
-              bb.evidence_url,
-              bb.notes,
-              b.id AS badge_id,
-              b.name,
-              b.description,
-              b.icon
-       FROM business_badges bb
-       JOIN badges b ON bb.badge_id = b.id
-       WHERE bb.business_id = $1
-       ORDER BY bb.awarded_at DESC, b.name ASC`,
-      [business.id]
-    );
-
-    business.badges = badgesResult.rows;
-    delete business.disabled_at;
-
-    res.json(business);
+    return res.json(business);
   } catch (error) {
     console.error('Error fetching business:', error);
-    res.status(500).json({ error: 'Failed to fetch business' });
+    return res.status(500).json({ error: 'Failed to fetch business' });
   }
 });
 

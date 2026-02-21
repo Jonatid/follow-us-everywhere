@@ -1,5 +1,6 @@
 const express = require('express');
 const pool = require('../config/db');
+const { getPublicBusinessBySlug } = require('../utils/publicBusinessProfile');
 
 const router = express.Router();
 
@@ -146,6 +147,23 @@ router.get('/businesses', async (req, res) => {
   } catch (error) {
     console.error('Error searching public businesses:', error);
     return res.status(500).json({ error: 'Failed to search businesses' });
+  }
+});
+
+
+router.get('/businesses/slug/:slug', async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const business = await getPublicBusinessBySlug(slug);
+
+    if (!business) {
+      return res.status(404).json({ error: 'Business not found' });
+    }
+
+    return res.json(business);
+  } catch (error) {
+    console.error('Error fetching public business by slug:', error);
+    return res.status(500).json({ error: 'Failed to fetch business profile' });
   }
 });
 

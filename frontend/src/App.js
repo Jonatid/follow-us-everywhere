@@ -1953,7 +1953,7 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
   }, [business]);
 
   const handleCopyLink = () => {
-    const link = `https://follow-us-everywhere-web.onrender.com/${business.slug}`;
+    const link = `https://follow-us-everywhere-web.onrender.com/b/${business.slug}`;
     navigator.clipboard
       .writeText(link)
       .then(() => {
@@ -2166,7 +2166,7 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
             <p className="subtitle">Your Follow Us Everywhere link:</p>
             <div className="row row-wrap">
               <code className="code-block">
-                https://follow-us-everywhere-web.onrender.com/{business.slug}
+                https://follow-us-everywhere-web.onrender.com/b/{business.slug}
               </code>
               <button type="button" onClick={handleCopyLink} className="button button-primary button-sm">
                 Copy Link
@@ -2337,7 +2337,7 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
   useEffect(() => {
     const fetchBusiness = async () => {
       try {
-        const response = await api.get(`/businesses/${slug}`);
+        const response = await customerApi.get(`/public/businesses/slug/${encodeURIComponent(slug)}`);
         setBusiness(response.data);
       } catch (err) {
         setError('Business not found');
@@ -3060,7 +3060,7 @@ export default function App() {
     pathname.startsWith('/customer/') ||
     pathname === '/discover' ||
     pathname === '/favorites' ||
-    (pathname.startsWith('/business/') && pathname !== '/business/profile');
+    (pathname.startsWith('/business/') && pathname !== '/business/profile') || pathname.startsWith('/b/');
 
   const isBusinessPath = (pathname) => pathname === '/business' || pathname.startsWith('/business/');
 
@@ -3078,6 +3078,7 @@ export default function App() {
     if (pathname === '/discover') return 'discover';
     if (pathname === '/favorites') return 'favorites';
     if (pathname === '/customer/profile') return 'customer-profile';
+    if (pathname.startsWith('/b/')) return 'public';
     if (pathname.startsWith('/business/')) return 'public';
     return null;
   };
@@ -3101,6 +3102,13 @@ export default function App() {
     if (pathname === '/customer/reset-password') {
       const params = new URLSearchParams(search);
       setCustomerResetToken(params.get('token'));
+    }
+
+    if (pathname.startsWith('/b/')) {
+      const slug = pathname.replace('/b/', '').trim();
+      if (slug) {
+        setPublicSlug(slug);
+      }
     }
 
     if (pathname.startsWith('/business/') && pathname !== '/business/profile') {
@@ -3206,7 +3214,7 @@ export default function App() {
       return handleNavigate(screen, null, '/customer/profile');
     }
     if (screen === 'public-route') {
-      return handleNavigate('public', data, `/business/${data}`);
+      return handleNavigate('public', data, `/b/${data}`);
     }
     return handleNavigate('marketing-landing', null, '/');
   };
