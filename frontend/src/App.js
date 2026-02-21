@@ -2325,13 +2325,6 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
     }
     window.open(url, '_blank');
   };
-
-  const handleFollowEverywhere = () => {
-    const activeSocials = business.socials.filter((s) => s.url);
-    activeSocials.forEach((social) => window.open(social.url, '_blank'));
-    alert(`Opened ${activeSocials.length} platforms! Click Follow on each to connect.`);
-  };
-
   if (loading) {
     return (
       <div className="page">
@@ -2380,18 +2373,16 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
 
   return (
     <div className="page page--gradient">
-      <div className="card card--medium">
-        <BackLink fallbackPath={publicFallbackPath} onFallbackNavigate={handlePublicFallback} />
+      <div className="public-business-shell">
+        <header className="card public-business-hero text-center">
+          <div className="avatar">{business.logo}</div>
+          <h1 className="heading-xl">{business.name}</h1>
+          <p className="subtitle">Follow this business everywhere.</p>
+        </header>
+
         <div className="public-business-layout">
-          <div className="public-business-left">
-            <div className="stack-md text-center">
-              <div className="avatar">{business.logo}</div>
-              <div>
-                <h1 className="heading-xl">{business.name}</h1>
-                <p className="subtitle">{business.tagline}</p>
-                <p className="muted-text">Follow this business everywhere in two taps.</p>
-              </div>
-            </div>
+          <section className="card public-business-column" aria-label="Follow links">
+            <p className="public-follow-helper">Tap a link to follow</p>
             {activeSocials.length === 0 ? (
               <div className="empty-state">This business hasn't added their social links yet.</div>
             ) : (
@@ -2425,14 +2416,7 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
                     ) : null
                   )}
                 </div>
-                {activeSocials.length > 1 && (
-                  <>
-                    <button type="button" onClick={handleFollowEverywhere} className="button button-primary button-full">
-                      Tap a link to follow
-                    </button>
-                    <p className="public-follow-subtitle">Connect with us across the web</p>
-                  </>
-                )}
+                {activeSocials.length > 1 && <p className="public-follow-subtitle">Connect with us across the web</p>}
               </>
             )}
             {badges.length > 0 && (
@@ -2453,8 +2437,9 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
                 </div>
               </div>
             )}
-          </div>
-          <div className="public-business-right">
+          </section>
+
+          <section className="card public-business-column public-business-right" aria-label="Statements">
             {statementCards.length === 0 ? (
               <div className="statement-card statement-card--placeholder">No statements provided yet.</div>
             ) : (
@@ -2467,7 +2452,7 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
                 ))}
               </div>
             )}
-          </div>
+          </section>
         </div>
       </div>
     </div>
