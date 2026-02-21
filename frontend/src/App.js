@@ -8,18 +8,21 @@ import verifiedIcon from './assets/md-verified.svg';
 import heroBg from './assets/vector-network.png';
 
 // API base URL resolution order:
-// 1) explicit env override, 2) localhost for local dev, 3) same-origin /api in production.
-// Using same-origin in production prevents cross-environment drift when custom domains change.
+// 1) explicit env override, 2) localhost for local dev, 3) hosted Render API fallback.
+// We use a stable hosted fallback because customer/business auth + discover must always
+// target the same backend as admin (custom web domains may not proxy /api).
 const configuredApiBaseUrl =
   (typeof process !== 'undefined' && process.env?.REACT_APP_API_BASE_URL) ||
   import.meta.env.VITE_API_BASE_URL ||
   '';
 
+const DEFAULT_API_BASE_URL = 'https://followuseverywhere-api.onrender.com/api';
+
 const API_BASE_URL =
   configuredApiBaseUrl ||
   (import.meta.env.DEV
     ? 'http://localhost:5000/api'
-    : `${window.location.origin.replace(/\/$/, '')}/api`);
+    : DEFAULT_API_BASE_URL);
 
 const configuredPublicWebUrl =
   (typeof process !== 'undefined' && process.env?.REACT_APP_PUBLIC_WEB_URL) ||
@@ -3133,12 +3136,14 @@ export default function App() {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   const hasCustomerToken = () => Boolean(localStorage.getItem('customer_token'));
+  const isBusinessAuthPath = (pathname) =>
+    pathname === '/business/login' || pathname === '/business/signup';
   const isCustomerOrPublicPath = (pathname) =>
     pathname === '/customer' ||
     pathname.startsWith('/customer/') ||
     pathname === '/discover' ||
     pathname === '/favorites' ||
-    (pathname.startsWith('/business/') && pathname !== '/business/profile') || pathname.startsWith('/b/');
+    ((pathname.startsWith('/business/') && pathname !== '/business/profile' && !isBusinessAuthPath(pathname)) || pathname.startsWith('/b/'));
 
   const isBusinessPath = (pathname) => pathname === '/business' || pathname.startsWith('/business/');
 
@@ -3147,6 +3152,8 @@ export default function App() {
     if (pathname === '/about') return 'about';
     if (pathname === '/faq') return 'faq';
     if (pathname === '/business') return 'dashboard';
+    if (pathname === '/business/login') return 'login';
+    if (pathname === '/business/signup') return 'signup';
     if (pathname === '/business/profile') return 'business-profile';
     if (pathname === '/reset-password') return 'reset';
     if (pathname === '/customer' || pathname === '/customer/login') return 'customer-login';
@@ -3157,7 +3164,7 @@ export default function App() {
     if (pathname === '/favorites') return 'favorites';
     if (pathname === '/customer/profile') return 'customer-profile';
     if (pathname.startsWith('/b/')) return 'public';
-    if (pathname.startsWith('/business/')) return 'public';
+    if (pathname.startsWith('/business/') && !isBusinessAuthPath(pathname) && pathname !== '/business/profile') return 'public';
     return null;
   };
 
@@ -3189,7 +3196,7 @@ export default function App() {
       }
     }
 
-    if (pathname.startsWith('/business/') && pathname !== '/business/profile') {
+    if (pathname.startsWith('/business/') && pathname !== '/business/profile' && !isBusinessAuthPath(pathname)) {
       const slug = normalizePublicBusinessKey(pathname.replace('/business/', ''));
       if (slug) {
         setPublicSlug(slug);
@@ -3332,11 +3339,11 @@ export default function App() {
       return;
     }
     if (screen === 'login') {
-      handleNavigate(screen, null, '/business');
+      handleNavigate(screen, null, '/business/login');
       return;
     }
     if (screen === 'signup') {
-      handleNavigate(screen, null, '/business');
+      handleNavigate(screen, null, '/business/signup');
     }
   };
 
@@ -3405,7 +3412,7 @@ export default function App() {
             onRefresh={fetchCurrentBusiness}
           />
         ) : (
-          <LandingPage onNavigate={handleNavigate} />
+          <BusinessLogin onNavigate={handleNavigate} onLoginSuccess={handleLoginSuccess} />
         );
       case 'business-profile':
         return currentBusiness ? (
