@@ -7,8 +7,9 @@ import axios from 'axios';
 import verifiedIcon from './assets/md-verified.svg';
 import heroBg from './assets/vector-network.png';
 
-// API base URL (override with VITE_API_BASE_URL at build time if needed).
+// API base URL (override with VITE_API_BASE_URL / REACT_APP_API_BASE_URL at build time if needed).
 const API_BASE_URL =
+  (typeof process !== 'undefined' && process.env?.REACT_APP_API_BASE_URL) ||
   import.meta.env.VITE_API_BASE_URL ||
   (import.meta.env.DEV ? 'http://localhost:5000/api' : 'https://followuseverywhere-api.onrender.com/api');
 
@@ -68,6 +69,17 @@ const getApiErrorMessage = (error, fallback = 'Something went wrong. Please try 
   error?.message ||
   fallback;
 
+const normalizePublicBusinessPayload = (payload) => {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return null;
+  }
+
+  return {
+    ...payload,
+    socials: Array.isArray(payload.socials) ? payload.socials : [],
+    badges: Array.isArray(payload.badges) ? payload.badges : [],
+  };
+};
 
 const toAbsoluteAssetUrl = (assetPath) => {
   const normalized = typeof assetPath === 'string' ? assetPath.trim() : '';
@@ -2376,8 +2388,24 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
       }
 
       try {
-        const response = await customerApi.get(`/public/businesses/by-slug/${encodeURIComponent(lookupKey)}`);
-        setBusiness(response.data);
+        let response;
+        try {
+          response = await customerApi.get(`/public/businesses/by-slug/${encodeURIComponent(lookupKey)}`);
+        } catch (primaryError) {
+          const primaryStatus = primaryError?.response?.status;
+          if (primaryStatus === 404) {
+            response = await customerApi.get(`/public/businesses/slug/${encodeURIComponent(lookupKey)}`);
+          } else {
+            throw primaryError;
+          }
+        }
+
+        const normalizedBusiness = normalizePublicBusinessPayload(response.data);
+        if (!normalizedBusiness) {
+          throw new Error('Invalid public business payload');
+        }
+
+        setBusiness(normalizedBusiness);
       } catch (err) {
         setError('Business not found');
       } finally {
@@ -2405,6 +2433,14 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
     return (
       <div className="page">
         <div className="alert alert-error">{error}</div>
+      </div>
+    );
+  }
+
+  if (!business || typeof business !== 'object') {
+    return (
+      <div className="page">
+        <div className="alert alert-error">Business not found</div>
       </div>
     );
   }
