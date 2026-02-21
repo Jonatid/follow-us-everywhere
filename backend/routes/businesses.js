@@ -44,6 +44,42 @@ const documentUpload = multer({
   }
 });
 
+
+const logoUploadRootDir = path.join(__dirname, '..', 'uploads', 'business_logos');
+fs.mkdirSync(logoUploadRootDir, { recursive: true });
+
+const logoStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, logoUploadRootDir);
+  },
+  filename: (req, file, cb) => {
+    const timestamp = Date.now();
+    const extension = path.extname(file.originalname || '').toLowerCase();
+    const safeExtension = ['.jpg', '.jpeg', '.png', '.webp'].includes(extension) ? extension : '';
+    const safeBaseName = path.basename(file.originalname || 'logo', extension).replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 80) || 'logo';
+    cb(null, `${req.businessId}-${timestamp}-${safeBaseName}${safeExtension}`);
+  }
+});
+
+const logoUpload = multer({
+  storage: logoStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) {
+      return cb(new Error('Unsupported logo file type'));
+    }
+    cb(null, true);
+  }
+});
+
+const buildLogoPublicUrl = (req, filename) => {
+  if (!filename) {
+    return null;
+  }
+  const basePath = `/uploads/business_logos/${filename}`;
+  return basePath;
+};
+
 const handleDocumentUpload = (req, res) => {
   documentUpload.single('document')(req, res, async (uploadErr) => {
     if (uploadErr) {
@@ -195,6 +231,7 @@ router.get('/:slug', async (req, res) => {
               slug,
               tagline,
               logo,
+              logo_url,
               verification_status,
               disabled_at,
               community_support_text,
@@ -399,6 +436,11 @@ router.put(
       .trim()
       .isLength({ max: 10 })
       .withMessage('Logo must be 10 characters or less'),
+    body('logo_url')
+      .optional({ nullable: true })
+      .trim()
+      .isLength({ max: 2048 })
+      .withMessage('Logo URL must be 2048 characters or less'),
     body('mission_statement')
       .optional({ nullable: true })
       .isLength({ max: 300 })
@@ -419,7 +461,7 @@ router.put(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { name, tagline, logo, mission_statement, vision_statement, philanthropic_goals } = req.body;
+      const { name, tagline, logo, logo_url, mission_statement, vision_statement, philanthropic_goals } = req.body;
 
       const statusResult = await pool.query(
         `SELECT verification_status,
@@ -466,6 +508,12 @@ router.put(
         paramCount++;
       }
 
+      if (logo_url !== undefined) {
+        fields.push(`logo_url = $${paramCount}`);
+        values.push(logo_url === null ? null : logo_url);
+        paramCount++;
+      }
+
       if (mission_statement !== undefined) {
         fields.push(`mission_statement = $${paramCount}`);
         values.push(mission_statement === null ? null : mission_statement);
@@ -500,6 +548,7 @@ router.put(
                   slug,
                   tagline,
                   logo,
+                  logo_url,
                   email,
                   verification_status,
                   suspended_at,
@@ -532,5 +581,56 @@ router.put(
     }
   }
 );
+
+
+router.post('/logo/upload', authenticateToken, (req, res) => {
+  logoUpload.single('logo')(req, res, async (uploadErr) => {
+    if (uploadErr) {
+      if (uploadErr instanceof multer.MulterError && uploadErr.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: 'Logo exceeds 5MB limit' });
+      }
+      return res.status(400).json({ error: uploadErr.message || 'Invalid logo upload' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'Logo file is required' });
+    }
+
+    const logoUrl = buildLogoPublicUrl(req, req.file.filename);
+
+    try {
+      const result = await pool.query(
+        `UPDATE businesses
+         SET logo_url = $1,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = $2
+         RETURNING id, name, slug, logo, logo_url`,
+        [logoUrl, req.businessId]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Business not found' });
+      }
+
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[business-logo-upload]', {
+          businessId: req.businessId,
+          filename: req.file.filename,
+          logoUrl,
+          rowCount: result.rowCount,
+        });
+      }
+
+      return res.status(200).json({
+        message: 'Logo uploaded successfully',
+        logo_url: logoUrl,
+        business: result.rows[0],
+      });
+    } catch (error) {
+      console.error('Error uploading business logo:', error);
+      return res.status(500).json({ error: 'Failed to upload logo' });
+    }
+  });
+});
 
 module.exports = router;

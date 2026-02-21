@@ -53,6 +53,21 @@ const getApiErrorMessage = (error, fallback = 'Something went wrong. Please try 
   error?.message ||
   fallback;
 
+
+const toAbsoluteAssetUrl = (assetPath) => {
+  const normalized = typeof assetPath === 'string' ? assetPath.trim() : '';
+  if (!normalized) {
+    return '';
+  }
+
+  if (/^https?:\/\//i.test(normalized)) {
+    return normalized;
+  }
+
+  const apiOrigin = API_BASE_URL.replace(/\/api\/?$/, '');
+  const leadingSlashPath = normalized.startsWith('/') ? normalized : `/${normalized}`;
+  return `${apiOrigin}${leadingSlashPath}`;
+};
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,64}$/;
 const PASSWORD_HELPER =
   'Password must be at least 12 characters and include at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character.';
@@ -1487,7 +1502,6 @@ const FavoritesPage = ({ onNavigate, onLogout, customer }) => {
       setError(getApiErrorMessage(err, 'Unable to remove favorite.'));
     }
   };
-
   return (
     <div className="dashboard">
       <div className="dashboard-container">
@@ -1576,7 +1590,6 @@ const CustomerProfilePage = ({ onNavigate, onLogout, customer, onCustomerUpdated
       setLoading(false);
     }
   };
-
   return (
     <div className="dashboard">
       <div className="dashboard-container">
@@ -2069,7 +2082,6 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
       setSupportSaving(false);
     }
   };
-
   return (
     <div className="dashboard">
       <div className="dashboard-container">
@@ -2307,6 +2319,10 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
   };
 
   useEffect(() => {
+    setLogoLoadError(false);
+  }, [business?.logo_url]);
+
+  useEffect(() => {
     const fetchBusiness = async () => {
       try {
         const response = await api.get(`/businesses/${slug}`);
@@ -2370,7 +2386,7 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() || '')
     .join('') || '?';
-  const logoUrl = typeof business.logo_url === 'string' ? business.logo_url.trim() : '';
+  const logoUrl = toAbsoluteAssetUrl(business.logo_url);
   const showLogoImage = Boolean(logoUrl) && !logoLoadError;
   const badges = Array.isArray(business.badges) ? business.badges : [];
   const missionStatement = business.mission_statement || '';
@@ -2490,10 +2506,11 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
   const [formData, setFormData] = useState({
     name: business?.name || '',
     tagline: business?.tagline || '',
-    logo: business?.logo || '',
+    logo: business?.logo_url || '',
     laraNumber: '',
   });
-  const [logoPreview, setLogoPreview] = useState(business?.logo || '');
+  const [logoPreview, setLogoPreview] = useState(toAbsoluteAssetUrl(business?.logo_url));
+  const [logoPreviewError, setLogoPreviewError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [saveError, setSaveError] = useState('');
@@ -2512,10 +2529,11 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
     setFormData({
       name: business?.name || '',
       tagline: business?.tagline || '',
-      logo: business?.logo || '',
+      logo: business?.logo_url || '',
       laraNumber: '',
     });
-    setLogoPreview(business?.logo || '');
+    setLogoPreview(toAbsoluteAssetUrl(business?.logo_url));
+    setLogoPreviewError(false);
   }, [business]);
 
 
@@ -2598,17 +2616,43 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (field === 'logo') {
-      setLogoPreview(value);
+      setLogoPreview(toAbsoluteAssetUrl(value));
+      setLogoPreviewError(false);
     }
   };
 
-  const handleLogoFileChange = (event) => {
+  const handleLogoFileChange = async (event) => {
     const file = event.target.files?.[0];
     if (!file) {
       return;
     }
-    const objectUrl = URL.createObjectURL(file);
-    setLogoPreview(objectUrl);
+
+    setUploadLoading(true);
+    setSaveError('');
+    setSaveMessage('');
+
+    try {
+      const form = new FormData();
+      form.append('logo', file);
+      const response = await api.post('/business/logo/upload', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const uploadedLogoUrl = response.data?.logo_url || '';
+      const absoluteUploadedLogoUrl = toAbsoluteAssetUrl(uploadedLogoUrl);
+      setFormData((prev) => ({ ...prev, logo: uploadedLogoUrl }));
+      setLogoPreview(absoluteUploadedLogoUrl);
+      setLogoPreviewError(false);
+      onBusinessUpdated((prev) => ({
+        ...prev,
+        logo_url: uploadedLogoUrl,
+      }));
+      setSaveMessage('Logo uploaded successfully.');
+    } catch (err) {
+      setSaveError(getApiErrorMessage(err, 'Unable to upload logo.'));
+    } finally {
+      setUploadLoading(false);
+      event.target.value = '';
+    }
   };
 
 
@@ -2646,13 +2690,13 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
       const response = await api.put('/businesses/profile/update', {
         name: formData.name,
         tagline: formData.tagline,
-        logo: formData.logo,
+        logo_url: formData.logo,
       });
       onBusinessUpdated((prev) => ({
         ...prev,
         name: response.data?.business?.name ?? formData.name,
         tagline: response.data?.business?.tagline ?? formData.tagline,
-        logo: response.data?.business?.logo ?? formData.logo,
+        logo_url: response.data?.business?.logo_url ?? formData.logo,
       }));
       setSaveMessage('Profile saved. LARA number saved once verification is enabled.');
     } catch (err) {
@@ -2665,6 +2709,14 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
       setSaving(false);
     }
   };
+
+  const profileBusinessName = (formData.name || business?.name || '').trim();
+  const profileInitials = profileBusinessName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || '')
+    .join('') || '?';
 
   return (
     <div className="dashboard">
@@ -2690,7 +2742,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
                 <input className="input" type="text" value={formData.tagline} onChange={(e) => handleChange('tagline', e.target.value)} />
               </div>
               <div className="field">
-                <label className="label">Logo URL (optional)</label>
+                <label className="label">Logo URL</label>
                 <input
                   className="input"
                   type="url"
@@ -2700,15 +2752,22 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
                 />
               </div>
               <div className="field">
-                <label className="label">Or upload a logo preview (optional)</label>
+                <label className="label">Upload logo image</label>
                 <input className="input" type="file" accept="image/*" onChange={handleLogoFileChange} />
               </div>
-              {logoPreview ? (
-                <div style={{ marginTop: '12px' }}>
-                  <p className="muted-text" style={{ marginBottom: '8px' }}>Logo preview</p>
-                  <img src={logoPreview} alt="Logo preview" style={{ maxWidth: '140px', maxHeight: '140px', borderRadius: '10px', border: '1px solid var(--border)' }} />
-                </div>
-              ) : null}
+              <div style={{ marginTop: '12px' }}>
+                <p className="muted-text" style={{ marginBottom: '8px' }}>Logo preview</p>
+                {logoPreview && !logoPreviewError ? (
+                  <img
+                    src={logoPreview}
+                    alt="Logo preview"
+                    onError={() => setLogoPreviewError(true)}
+                    style={{ maxWidth: '140px', maxHeight: '140px', borderRadius: '10px', border: '1px solid var(--border)' }}
+                  />
+                ) : (
+                  <div className="avatar" style={{ width: '72px', height: '72px', fontSize: '1.1rem' }}>{profileInitials}</div>
+                )}
+              </div>
               <div className="field" style={{ marginTop: '14px' }}>
                 <label className="label">LARA / Articles of Incorporation Number</label>
                 <input className="input" type="text" value={formData.laraNumber} onChange={(e) => handleChange('laraNumber', e.target.value)} />
