@@ -2726,7 +2726,9 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
             <h1 className="heading-lg">Business Profile</h1>
             <BusinessAccountMenu businessName={business?.name || 'Business'} onNavigate={onNavigate} onLogout={onLogout} />
           </div>
-          <BackLink fallbackPath="/business" onFallbackNavigate={() => onNavigate('dashboard')} />
+          <button type="button" className="link-button" onClick={() => onNavigate('dashboard', null, '/business')}>
+            ← Back
+          </button>
           {saveMessage && <div className="alert alert-success">{saveMessage}</div>}
           {saveError && <div className="alert alert-error">{saveError}</div>}
 
