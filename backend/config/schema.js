@@ -294,6 +294,7 @@ const ensureSchema = async () => {
         stored_file_name VARCHAR(255) NOT NULL,
         storage_provider VARCHAR(50) NOT NULL DEFAULT 'local',
         storage_path TEXT NOT NULL,
+        document_number TEXT,
         mime_type VARCHAR(255) NOT NULL,
         file_size BIGINT NOT NULL,
         status VARCHAR(20) NOT NULL DEFAULT 'Pending' CHECK (status IN ('Pending', 'Verified', 'Rejected')),
@@ -303,6 +304,11 @@ const ensureSchema = async () => {
         rejection_reason TEXT,
         notes TEXT
       );
+    `);
+
+    await pool.query(`
+      ALTER TABLE business_documents
+        ADD COLUMN IF NOT EXISTS document_number TEXT;
     `);
 
     await pool.query('CREATE INDEX IF NOT EXISTS idx_business_documents_business_id ON business_documents(business_id);');
