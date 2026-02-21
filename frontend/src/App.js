@@ -77,6 +77,17 @@ const getApiErrorMessage = (error, fallback = 'Something went wrong. Please try 
   error?.message ||
   fallback;
 
+const normalizePublicBusinessPayload = (payload) => {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return null;
+  }
+
+  return {
+    ...payload,
+    socials: Array.isArray(payload.socials) ? payload.socials : [],
+    badges: Array.isArray(payload.badges) ? payload.badges : [],
+  };
+};
 
 const toAbsoluteAssetUrl = (assetPath) => {
   const normalized = typeof assetPath === 'string' ? assetPath.trim() : '';
@@ -2425,6 +2436,14 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
     return (
       <div className="page">
         <div className="alert alert-error">{error}</div>
+      </div>
+    );
+  }
+
+  if (!business || typeof business !== 'object') {
+    return (
+      <div className="page">
+        <div className="alert alert-error">Business not found</div>
       </div>
     );
   }
