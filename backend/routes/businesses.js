@@ -370,6 +370,11 @@ router.put(
       .trim()
       .isLength({ max: 2048 })
       .withMessage('Logo URL must be 2048 characters or less'),
+    body('lara_number')
+      .optional({ nullable: true })
+      .trim()
+      .isLength({ max: 255 })
+      .withMessage('LARA number must be 255 characters or less'),
     body('mission_statement')
       .optional({ nullable: true })
       .isLength({ max: 300 })
@@ -390,7 +395,7 @@ router.put(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { name, tagline, logo, logo_url, mission_statement, vision_statement, philanthropic_goals } = req.body;
+      const { name, tagline, logo, logo_url, lara_number, mission_statement, vision_statement, philanthropic_goals } = req.body;
 
       const statusResult = await pool.query(
         `SELECT verification_status,
@@ -443,6 +448,12 @@ router.put(
         paramCount++;
       }
 
+      if (lara_number !== undefined) {
+        fields.push(`lara_number = $${paramCount}`);
+        values.push(lara_number === null ? null : lara_number);
+        paramCount++;
+      }
+
       if (mission_statement !== undefined) {
         fields.push(`mission_statement = $${paramCount}`);
         values.push(mission_statement === null ? null : mission_statement);
@@ -478,6 +489,7 @@ router.put(
                   tagline,
                   logo,
                   logo_url,
+                  lara_number,
                   email,
                   verification_status,
                   suspended_at,
