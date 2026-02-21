@@ -44,8 +44,7 @@ const documentUpload = multer({
   }
 });
 
-// Upload a business verification document
-router.post('/documents', authenticateToken, (req, res) => {
+const handleDocumentUpload = (req, res) => {
   documentUpload.single('document')(req, res, async (uploadErr) => {
     if (uploadErr) {
       if (uploadErr instanceof multer.MulterError && uploadErr.code === 'LIMIT_FILE_SIZE') {
@@ -114,7 +113,11 @@ router.post('/documents', authenticateToken, (req, res) => {
       res.status(500).json({ error: 'Failed to upload document' });
     }
   });
-});
+};
+
+// Upload a business verification document
+router.post('/documents', authenticateToken, handleDocumentUpload);
+router.post('/documents/upload', authenticateToken, handleDocumentUpload);
 
 // List documents for authenticated business
 router.get('/documents', authenticateToken, async (req, res) => {
@@ -148,6 +151,38 @@ router.get('/documents', authenticateToken, async (req, res) => {
   }
 });
 
+router.get('/documents/:id/download', authenticateToken, async (req, res) => {
+  try {
+    const documentId = Number(req.params.id);
+    if (!Number.isInteger(documentId) || documentId <= 0) {
+      return res.status(400).json({ error: 'Invalid document id' });
+    }
+
+    const result = await pool.query(
+      `SELECT id, business_id AS "businessId", original_file_name AS "originalFileName", storage_path AS "storagePath", mime_type AS "mimeType"
+       FROM business_documents
+       WHERE id = $1 AND business_id = $2`,
+      [documentId, req.businessId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    const document = result.rows[0];
+    const absolutePath = path.join(__dirname, '..', document.storagePath);
+
+    if (!fs.existsSync(absolutePath)) {
+      return res.status(404).json({ error: 'Stored file not found' });
+    }
+
+    res.download(absolutePath, document.originalFileName);
+  } catch (error) {
+    console.error('Error downloading business document:', error);
+    res.status(500).json({ error: 'Failed to download document' });
+  }
+});
+
 
 // Get public business profile by slug
 router.get('/:slug', async (req, res) => {
@@ -163,7 +198,10 @@ router.get('/:slug', async (req, res) => {
               verification_status,
               disabled_at,
               community_support_text,
-              community_support_links
+              community_support_links,
+              mission_statement,
+              vision_statement,
+              philanthropic_goals
        FROM businesses
        WHERE slug = $1`,
       [slug]
@@ -361,6 +399,21 @@ router.put(
       .trim()
       .isLength({ max: 10 })
       .withMessage('Logo must be 10 characters or less'),
+    body('mission_statement')
+      .optional({ nullable: true })
+      .trim()
+      .isLength({ max: 2000 })
+      .withMessage('Mission statement must be 2000 characters or less'),
+    body('vision_statement')
+      .optional({ nullable: true })
+      .trim()
+      .isLength({ max: 2000 })
+      .withMessage('Vision statement must be 2000 characters or less'),
+    body('philanthropic_goals')
+      .optional({ nullable: true })
+      .trim()
+      .isLength({ max: 2000 })
+      .withMessage('Philanthropic goals must be 2000 characters or less'),
   ],
   async (req, res) => {
     try {
@@ -369,7 +422,7 @@ router.put(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { name, tagline, logo } = req.body;
+      const { name, tagline, logo, mission_statement, vision_statement, philanthropic_goals } = req.body;
 
       const statusResult = await pool.query(
         `SELECT verification_status,
@@ -416,6 +469,24 @@ router.put(
         paramCount++;
       }
 
+      if (mission_statement !== undefined) {
+        fields.push(`mission_statement = $${paramCount}`);
+        values.push(mission_statement === null ? null : mission_statement);
+        paramCount++;
+      }
+
+      if (vision_statement !== undefined) {
+        fields.push(`vision_statement = $${paramCount}`);
+        values.push(vision_statement === null ? null : vision_statement);
+        paramCount++;
+      }
+
+      if (philanthropic_goals !== undefined) {
+        fields.push(`philanthropic_goals = $${paramCount}`);
+        values.push(philanthropic_goals === null ? null : philanthropic_goals);
+        paramCount++;
+      }
+
       if (fields.length === 0) {
         return res.status(400).json({ error: 'No fields to update' });
       }
@@ -442,6 +513,9 @@ router.put(
                   policy_violation_text,
                   community_support_text,
                   community_support_links,
+                  mission_statement,
+                  vision_statement,
+                  philanthropic_goals,
                   created_at,
                   updated_at
       `;

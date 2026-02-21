@@ -89,7 +89,10 @@ router.post(
                    policy_violation_code,
                    policy_violation_text,
                    community_support_text,
-                   community_support_links`,
+                   community_support_links,
+                   mission_statement,
+                   vision_statement,
+                   philanthropic_goals`,
         [name, slug, tagline || '', logo, email, passwordHash]
       );
 
@@ -205,7 +208,10 @@ router.post(
                 policy_violation_code,
                 policy_violation_text,
                 community_support_text,
-                community_support_links
+                community_support_links,
+                mission_statement,
+                vision_statement,
+                philanthropic_goals
          FROM businesses
          WHERE email = $1`,
         [email]
@@ -383,7 +389,10 @@ router.get('/me', authenticateToken, async (req, res) => {
               policy_violation_code,
               policy_violation_text,
               community_support_text,
-              community_support_links
+              community_support_links,
+              mission_statement,
+              vision_statement,
+              philanthropic_goals
        FROM businesses
        WHERE id = $1`,
       [req.businessId]

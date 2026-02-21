@@ -29,6 +29,9 @@ CREATE TABLE IF NOT EXISTS businesses (
     policy_violation_text TEXT,
     community_support_text TEXT,
     community_support_links JSONB,
+    mission_statement TEXT,
+    vision_statement TEXT,
+    philanthropic_goals TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
