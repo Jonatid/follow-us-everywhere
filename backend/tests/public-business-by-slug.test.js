@@ -9,6 +9,25 @@ function createDbMock() {
         return { rows: [{ '?column?': 1 }] };
       }
 
+      if (sql.includes('FROM information_schema.columns') && sql.includes("table_name = 'businesses'") && sql.includes("column_name IN")) {
+        return {
+          rows: [
+            { column_name: 'logo_url' },
+            { column_name: 'verification_status' },
+            { column_name: 'disabled_at' },
+            { column_name: 'community_support_text' },
+            { column_name: 'community_support_links' },
+            { column_name: 'mission_statement' },
+            { column_name: 'vision_statement' },
+            { column_name: 'philanthropic_goals' },
+          ]
+        };
+      }
+
+      if (sql.includes('FROM information_schema.tables') && sql.includes("table_name IN ('business_badges', 'badges')")) {
+        return { rows: [{ table_name: 'business_badges' }, { table_name: 'badges' }] };
+      }
+
       if (sql.includes('FROM businesses') && sql.includes('LOWER(slug) = LOWER($1) OR LOWER(COALESCE(username')) {
         const key = String(params[0]).toLowerCase();
         if (key === 'acme-co' || key === 'acmeuser') {
