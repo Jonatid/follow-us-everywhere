@@ -2864,7 +2864,11 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
                 )}
               </div>
               <div className="field" style={{ marginTop: '14px' }}>
-                <label className="label">LARA / Articles of Incorporation Number</label>
+                <label className="label">
+                  <a href="https://mibusinessregistry.lara.state.mi.us/search/business" target="_blank" rel="noopener noreferrer">
+                    LARA / Articles of Incorporation Number
+                  </a>
+                </label>
                 <input className="input" type="text" value={formData.laraNumber} onChange={(e) => handleChange('laraNumber', e.target.value)} />
                 <p className="helper-text">Used for verification review</p>
                 <p className="muted-text">Saved once verification is enabled.</p>
