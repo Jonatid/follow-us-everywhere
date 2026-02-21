@@ -613,18 +613,24 @@ body {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.public-business-page {
+  display: block;
+  padding: 0 0 24px;
 }
 
 .public-business-hero {
-  width: 100%;
+  width: 100vw;
+  margin: 0 calc(50% - 50vw);
   min-height: 280px;
-  border-radius: 24px;
-  overflow: hidden;
+  border-radius: 0;
   background-color: #0b2f95;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  box-shadow: 0 20px 45px rgba(2, 8, 32, 0.28);
 }
 
 .public-business-hero__overlay {
@@ -644,6 +650,12 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 12px;
+}
+
+.public-business-hero__inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .public-business-hero__logo,
@@ -742,11 +754,11 @@ body {
 
   .public-business-shell {
     gap: 16px;
+    padding: 16px;
   }
 
   .public-business-hero {
     min-height: 240px;
-    border-radius: 20px;
   }
 
   .public-business-hero__overlay {

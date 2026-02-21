@@ -2383,10 +2383,10 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
   ].filter((card) => card.value && card.value.trim().length > 0);
 
   return (
-    <div className="page page--gradient">
-      <div className="public-business-shell">
-        <header className="public-business-hero" style={{ backgroundImage: `url(${heroBg})` }}>
-          <div className="public-business-hero__overlay">
+    <div className="page page--gradient public-business-page">
+      <header className="public-business-hero" style={{ backgroundImage: `url(${heroBg})` }}>
+        <div className="public-business-hero__overlay">
+          <div className="public-business-hero__inner">
             <div className="public-business-hero__content text-center">
               {showLogoImage ? (
                 <img
@@ -2402,8 +2402,10 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
               <p className="subtitle public-business-hero__subtitle">Follow this business everywhere.</p>
             </div>
           </div>
-        </header>
+        </div>
+      </header>
 
+      <div className="public-business-shell">
         <div className="public-business-layout">
           <section className="card public-business-column" aria-label="Follow links">
             <p className="public-follow-helper">Tap a link to follow</p>
