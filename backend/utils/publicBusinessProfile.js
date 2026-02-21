@@ -7,6 +7,8 @@ let hasCheckedBusinessColumns = false;
 let businessColumns = new Set();
 let hasCheckedBadgeTables = false;
 let hasBadgeTables = false;
+let hasCheckedBusinessBadgeStatusColumn = false;
+let hasBusinessBadgeStatusColumn = false;
 
 const checkUsernameColumn = async () => {
   if (hasCheckedUsernameColumn) {
@@ -68,6 +70,25 @@ const checkBadgeTables = async () => {
   hasBadgeTables = availableTables.has('business_badges') && availableTables.has('badges');
   hasCheckedBadgeTables = true;
   return hasBadgeTables;
+};
+
+const checkBusinessBadgeStatusColumn = async () => {
+  if (hasCheckedBusinessBadgeStatusColumn) {
+    return hasBusinessBadgeStatusColumn;
+  }
+
+  const result = await pool.query(
+    `SELECT 1
+     FROM information_schema.columns
+     WHERE table_schema = 'public'
+       AND table_name = 'business_badges'
+       AND column_name = 'status'
+     LIMIT 1`
+  );
+
+  hasBusinessBadgeStatusColumn = result.rows.length > 0;
+  hasCheckedBusinessBadgeStatusColumn = true;
+  return hasBusinessBadgeStatusColumn;
 };
 
 const getPublicBusinessBySlug = async (slug) => {
@@ -163,6 +184,7 @@ const getPublicBusinessBySlug = async (slug) => {
   }
 
   if (canLoadBadges) {
+    const hasBadgeStatusColumn = await checkBusinessBadgeStatusColumn();
     const badgesResult = await pool.query(
       `SELECT bb.id,
               bb.awarded_at,
@@ -176,7 +198,7 @@ const getPublicBusinessBySlug = async (slug) => {
        FROM business_badges bb
          JOIN badges b ON b.id = bb.badge_id
        WHERE bb.business_id = $1
-         AND bb.status = 'active'
+         ${hasBadgeStatusColumn ? "AND bb.status = 'active'" : ''}
        ORDER BY bb.awarded_at DESC`,
       [business.id]
     );
