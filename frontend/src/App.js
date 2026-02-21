@@ -1855,6 +1855,7 @@ const BusinessAccountMenu = ({ businessName, onNavigate, onLogout }) => {
 };
 
 const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
+  const PHILANTHROPIC_MAX_LENGTH = 300;
   const [socials, setSocials] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
   const [tempUrl, setTempUrl] = useState('');
@@ -2043,16 +2044,25 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
     if (!canEditPhilanthropic) {
       return;
     }
+    const selectedValue = philanthropicValues[philanthropicContentType] || '';
+    if (selectedValue.length > PHILANTHROPIC_MAX_LENGTH) {
+      setActionError('Content must be 300 characters or fewer.');
+      return;
+    }
     setSupportSaving(true);
     setActionError('');
     try {
       const payload = {
-        [philanthropicContentType]: philanthropicValues[philanthropicContentType] || ''
+        [philanthropicContentType]: selectedValue,
       };
       await api.put('/businesses/profile/update', payload);
       alert('Philanthropic content updated successfully!');
       onRefresh();
     } catch (err) {
+      if (err?.response?.status === 400) {
+        setActionError('Content must be 300 characters or fewer.');
+        return;
+      }
       setActionError(getApiErrorMessage(err, 'Failed to update philanthropic content. Please try again.'));
     } finally {
       setSupportSaving(false);
@@ -2248,15 +2258,18 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
                 id="philanthropic-content-text"
                 className="input textarea"
                 value={philanthropicValues[philanthropicContentType] || ''}
-                onChange={(event) =>
+                onChange={(event) => {
+                  const nextValue = event.target.value.slice(0, PHILANTHROPIC_MAX_LENGTH);
                   setPhilanthropicValues((prev) => ({
                     ...prev,
-                    [philanthropicContentType]: event.target.value,
-                  }))
-                }
+                    [philanthropicContentType]: nextValue,
+                  }));
+                }}
+                maxLength={PHILANTHROPIC_MAX_LENGTH}
                 placeholder="Enter content"
                 disabled={!canEditPhilanthropic}
               />
+              <p className="muted-text">{(philanthropicValues[philanthropicContentType] || '').length} / {PHILANTHROPIC_MAX_LENGTH}</p>
             </div>
             <button
               type="button"
@@ -2355,111 +2368,107 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
   }
 
   const activeSocials = business.socials.filter((s) => s.url);
-  const supportLinks = Array.isArray(business.community_support_links) ? business.community_support_links : [];
   const badges = Array.isArray(business.badges) ? business.badges : [];
   const missionStatement = business.mission_statement || '';
   const visionStatement = business.vision_statement || '';
   const philanthropicGoals = business.philanthropic_goals || '';
+  const statementCards = [
+    { title: 'Mission Statement', value: missionStatement },
+    { title: 'Vision Statement', value: visionStatement },
+    { title: 'Philanthropic Goals', value: philanthropicGoals },
+  ].filter((card) => card.value && card.value.trim().length > 0);
 
   return (
     <div className="page page--gradient">
       <div className="card card--medium">
         <BackLink fallbackPath={publicFallbackPath} onFallbackNavigate={handlePublicFallback} />
-        <div className="stack-md text-center">
-          <div className="avatar">{business.logo}</div>
-          <div>
-            <h1 className="heading-xl">{business.name}</h1>
-            <p className="subtitle">{business.tagline}</p>
-            <p className="muted-text">Follow this business everywhere in two taps.</p>
-          </div>
-        </div>
-        {activeSocials.length === 0 ? (
-          <div className="empty-state">This business hasn't added their social links yet.</div>
-        ) : (
-          <>
-            <div className="stack-sm">
-              {business.socials.map((social, index) =>
-                social.url ? (
-                  <button
-                    key={social.id || index}
-                    type="button"
-                    onClick={() => handlePlatformClick(social.platform, social.url)}
-                    className="button button-muted button-full button-justify"
-                  >
-                    <span className="row">
-                      <span className="social-icon">{social.icon}</span>
-                      <span>
-                        {social.platform === 'YouTube'
-                          ? 'Subscribe on'
-                          : social.platform === 'Facebook'
-                          ? 'Like on'
-                          : social.platform === 'LinkedIn'
-                          ? 'Connect on'
-                          : social.platform === 'Website'
-                          ? 'Visit'
-                          : 'Follow on'}{' '}
-                        {social.platform}
-                      </span>
-                    </span>
-                    <span className="muted-text">→</span>
-                  </button>
-                ) : null
-              )}
+        <div className="public-business-layout">
+          <div className="public-business-left">
+            <div className="stack-md text-center">
+              <div className="avatar">{business.logo}</div>
+              <div>
+                <h1 className="heading-xl">{business.name}</h1>
+                <p className="subtitle">{business.tagline}</p>
+                <p className="muted-text">Follow this business everywhere in two taps.</p>
+              </div>
             </div>
-            {activeSocials.length > 1 && (
+            {activeSocials.length === 0 ? (
+              <div className="empty-state">This business hasn't added their social links yet.</div>
+            ) : (
               <>
-                <button type="button" onClick={handleFollowEverywhere} className="button button-primary button-full">
-                  Tap a link to follow
-                </button>
-                <p className="public-follow-subtitle">Connect with us across the web</p>
+                <div className="stack-sm">
+                  {business.socials.map((social, index) =>
+                    social.url ? (
+                      <button
+                        key={social.id || index}
+                        type="button"
+                        onClick={() => handlePlatformClick(social.platform, social.url)}
+                        className="button button-muted button-full button-justify"
+                      >
+                        <span className="row">
+                          <span className="social-icon">{social.icon}</span>
+                          <span>
+                            {social.platform === 'YouTube'
+                              ? 'Subscribe on'
+                              : social.platform === 'Facebook'
+                              ? 'Like on'
+                              : social.platform === 'LinkedIn'
+                              ? 'Connect on'
+                              : social.platform === 'Website'
+                              ? 'Visit'
+                              : 'Follow on'}{' '}
+                            {social.platform}
+                          </span>
+                        </span>
+                        <span className="muted-text">→</span>
+                      </button>
+                    ) : null
+                  )}
+                </div>
+                {activeSocials.length > 1 && (
+                  <>
+                    <button type="button" onClick={handleFollowEverywhere} className="button button-primary button-full">
+                      Tap a link to follow
+                    </button>
+                    <p className="public-follow-subtitle">Connect with us across the web</p>
+                  </>
+                )}
               </>
             )}
-          </>
-        )}
-        {(missionStatement || visionStatement || philanthropicGoals || business.community_support_text || supportLinks.length > 0) && (
-          <div className="public-section">
-            <h2 className="heading-md">Submitted by business</h2>
-            {missionStatement && <p className="muted-text"><strong>Mission Statement:</strong> {missionStatement}</p>}
-            {visionStatement && <p className="muted-text"><strong>Vision Statement:</strong> {visionStatement}</p>}
-            {philanthropicGoals && <p className="muted-text"><strong>Philanthropic Goals:</strong> {philanthropicGoals}</p>}
-            {business.community_support_text && (
-              <p className="muted-text">{business.community_support_text}</p>
+            {badges.length > 0 && (
+              <div className="public-section">
+                <h2 className="heading-md">Community Impact (Verified)</h2>
+                <div className="badge-grid">
+                  {badges.map((badge) => (
+                    <div key={badge.id} className="badge-card">
+                      <div className="badge-header">
+                        {badge.icon && <span className="badge-icon">{badge.icon}</span>}
+                        <div>
+                          <p className="text-strong">{badge.name}</p>
+                          <p className="muted-text">{badge.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
-            {supportLinks.length > 0 && (
-              <div className="support-links">
-                {supportLinks.map((link, index) => (
-                  <a
-                    key={`${link.url}-${index}`}
-                    href={link.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="support-link"
-                  >
-                    {link.label}
-                  </a>
+          </div>
+          <div className="public-business-right">
+            {statementCards.length === 0 ? (
+              <div className="statement-card statement-card--placeholder">No statements provided yet.</div>
+            ) : (
+              <div className={`statement-cards statement-cards--${statementCards.length === 1 ? 'single' : 'stacked'}`}>
+                {statementCards.map((card) => (
+                  <article key={card.title} className="statement-card">
+                    <h2 className="heading-md">{card.title}</h2>
+                    <p className="muted-text">{card.value}</p>
+                  </article>
                 ))}
               </div>
             )}
           </div>
-        )}
-        {badges.length > 0 && (
-          <div className="public-section">
-            <h2 className="heading-md">Community Impact (Verified)</h2>
-            <div className="badge-grid">
-              {badges.map((badge) => (
-                <div key={badge.id} className="badge-card">
-                  <div className="badge-header">
-                    {badge.icon && <span className="badge-icon">{badge.icon}</span>}
-                    <div>
-                      <p className="text-strong">{badge.name}</p>
-                      <p className="muted-text">{badge.description}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

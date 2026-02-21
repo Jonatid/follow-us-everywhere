@@ -401,19 +401,16 @@ router.put(
       .withMessage('Logo must be 10 characters or less'),
     body('mission_statement')
       .optional({ nullable: true })
-      .trim()
-      .isLength({ max: 2000 })
-      .withMessage('Mission statement must be 2000 characters or less'),
+      .isLength({ max: 300 })
+      .withMessage('Mission statement must be 300 characters or less'),
     body('vision_statement')
       .optional({ nullable: true })
-      .trim()
-      .isLength({ max: 2000 })
-      .withMessage('Vision statement must be 2000 characters or less'),
+      .isLength({ max: 300 })
+      .withMessage('Vision statement must be 300 characters or less'),
     body('philanthropic_goals')
       .optional({ nullable: true })
-      .trim()
-      .isLength({ max: 2000 })
-      .withMessage('Philanthropic goals must be 2000 characters or less'),
+      .isLength({ max: 300 })
+      .withMessage('Philanthropic goals must be 300 characters or less'),
   ],
   async (req, res) => {
     try {
