@@ -75,19 +75,15 @@ const getPublicBusinessBySlug = async (slug) => {
   const availableBusinessColumns = await checkBusinessColumns();
   const canLoadBadges = await checkBadgeTables();
   const slugValue = typeof slug === 'string' ? slug.trim() : '';
-  const fieldMatchSql = usesUsername
-    ? "(LOWER(slug) = LOWER($1) OR LOWER(COALESCE(username, '')) = LOWER($1))"
-    : 'LOWER(slug) = LOWER($1)';
 
   if (process.env.NODE_ENV !== 'production') {
     console.log('[public-business-slug-lookup] request', {
       slug: slugValue,
-      field: usesUsername ? 'slug|username' : 'slug'
+      field: usesUsername ? 'slug-then-username' : 'slug'
     });
   }
 
-  const result = await pool.query(
-    `SELECT id,
+  const businessSelectSql = `SELECT id,
             name,
             slug,
             tagline,
@@ -110,6 +106,16 @@ const getPublicBusinessBySlug = async (slug) => {
      LIMIT 1`,
     [slugValue]
   );
+
+  if (result.rows.length === 0 && usesUsername) {
+    result = await pool.query(
+      `${businessSelectSql}
+       WHERE LOWER(COALESCE(username, '')) = LOWER($1)
+       ORDER BY id ASC
+       LIMIT 1`,
+      [slugValue]
+    );
+  }
 
   if (process.env.NODE_ENV !== 'production') {
     console.log('[public-business-slug-lookup] result', {

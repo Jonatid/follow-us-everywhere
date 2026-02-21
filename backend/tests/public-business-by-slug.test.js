@@ -28,9 +28,35 @@ function createDbMock() {
         return { rows: [{ table_name: 'business_badges' }, { table_name: 'badges' }] };
       }
 
-      if (sql.includes('FROM businesses') && sql.includes('LOWER(slug) = LOWER($1) OR LOWER(COALESCE(username')) {
+      if (sql.includes('FROM businesses') && sql.includes('WHERE LOWER(slug) = LOWER($1)')) {
         const key = String(params[0]).toLowerCase();
-        if (key === 'acme-co' || key === 'acmeuser') {
+        if (key === 'acme-co') {
+          return {
+            rows: [{
+              id: 42,
+              name: 'Acme Co',
+              slug: 'acme-co',
+              username: 'acmeuser',
+              tagline: 'Hello',
+              logo: 'AC',
+              logo_url: null,
+              verification_status: 'active',
+              disabled_at: null,
+              community_support_text: null,
+              community_support_links: null,
+              mission_statement: null,
+              vision_statement: null,
+              philanthropic_goals: null,
+            }]
+          };
+        }
+
+        return { rows: [] };
+      }
+
+      if (sql.includes('FROM businesses') && sql.includes("WHERE LOWER(COALESCE(username, '')) = LOWER($1)")) {
+        const key = String(params[0]).toLowerCase();
+        if (key === 'acmeuser') {
           return {
             rows: [{
               id: 42,
