@@ -107,13 +107,12 @@ const getPublicBusinessBySlug = async (slug) => {
           bb.evidence_url,
           bb.notes,
           b.category,
-          bb.expires_at,
           b.name,
           b.description,
           b.icon,
           b.slug
    FROM business_badges bb
-   JOIN badges b ON b.id = bb.badge_id
+     JOIN badges b ON b.id = bb.badge_id
    WHERE bb.business_id = $1
      AND bb.status = 'active'
    ORDER BY bb.awarded_at DESC`,
