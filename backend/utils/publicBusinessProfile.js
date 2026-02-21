@@ -1,7 +1,41 @@
 const pool = require('../config/db');
 const { resolveVerificationStatus } = require('./verification');
 
+let hasCheckedUsernameColumn = false;
+let hasUsernameColumn = false;
+
+const checkUsernameColumn = async () => {
+  if (hasCheckedUsernameColumn) {
+    return hasUsernameColumn;
+  }
+
+  const result = await pool.query(
+    `SELECT 1
+     FROM information_schema.columns
+     WHERE table_name = 'businesses'
+       AND column_name = 'username'
+     LIMIT 1`
+  );
+
+  hasUsernameColumn = result.rows.length > 0;
+  hasCheckedUsernameColumn = true;
+  return hasUsernameColumn;
+};
+
 const getPublicBusinessBySlug = async (slug) => {
+  const usesUsername = await checkUsernameColumn();
+  const slugValue = typeof slug === 'string' ? slug.trim() : '';
+  const fieldMatchSql = usesUsername
+    ? '(LOWER(slug) = LOWER($1) OR LOWER(COALESCE(username, \''\')) = LOWER($1))'
+    : 'LOWER(slug) = LOWER($1)';
+
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[public-business-slug-lookup] request', {
+      slug: slugValue,
+      field: usesUsername ? 'slug|username' : 'slug'
+    });
+  }
+
   const result = await pool.query(
     `SELECT id,
             name,
@@ -17,9 +51,16 @@ const getPublicBusinessBySlug = async (slug) => {
             vision_statement,
             philanthropic_goals
      FROM businesses
-     WHERE slug = $1`,
-    [slug]
+     WHERE ${fieldMatchSql}`,
+    [slugValue]
   );
+
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[public-business-slug-lookup] result', {
+      slug: slugValue,
+      found: result.rows.length > 0
+    });
+  }
 
   if (result.rows.length === 0) {
     return null;

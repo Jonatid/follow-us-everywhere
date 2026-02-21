@@ -5,8 +5,12 @@ const express = require('express');
 function createDbMock() {
   return {
     async query(sql, params = []) {
-      if (sql.includes('FROM businesses') && sql.includes('WHERE slug = $1')) {
-        if (params[0] === 'acme-co') {
+      if (sql.includes('FROM information_schema.columns') && sql.includes("table_name = 'businesses'") && sql.includes("column_name = 'username'")) {
+        return { rows: [] };
+      }
+
+      if (sql.includes('FROM businesses') && sql.includes('LOWER(slug) = LOWER($1)')) {
+        if (String(params[0]).toLowerCase() === 'acme-co') {
           return {
             rows: [{
               id: 42,
@@ -85,7 +89,7 @@ async function createServer() {
 test('GET /api/public/businesses/slug/:slug returns profile payload', async () => {
   const server = await createServer();
   try {
-    const { response, body } = await server.get('/api/public/businesses/slug/acme-co');
+    const { response, body } = await server.get('/api/public/businesses/slug/Acme-Co');
     assert.equal(response.status, 200);
     assert.equal(body.slug, 'acme-co');
     assert.ok(Array.isArray(body.socials));
