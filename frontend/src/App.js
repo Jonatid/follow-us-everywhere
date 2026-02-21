@@ -2600,7 +2600,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
     name: business?.name || '',
     tagline: business?.tagline || '',
     logo: business?.logo_url || '',
-    laraNumber: '',
+    laraNumber: business?.lara_number || '',
   });
   const [logoPreview, setLogoPreview] = useState(toAbsoluteAssetUrl(business?.logo_url));
   const [logoPreviewError, setLogoPreviewError] = useState(false);
@@ -2623,7 +2623,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
       name: business?.name || '',
       tagline: business?.tagline || '',
       logo: business?.logo_url || '',
-      laraNumber: '',
+      laraNumber: business?.lara_number || '',
     });
     setLogoPreview(toAbsoluteAssetUrl(business?.logo_url));
     setLogoPreviewError(false);
@@ -2784,14 +2784,16 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
         name: formData.name,
         tagline: formData.tagline,
         logo_url: formData.logo,
+        lara_number: formData.laraNumber || null,
       });
       onBusinessUpdated((prev) => ({
         ...prev,
         name: response.data?.business?.name ?? formData.name,
         tagline: response.data?.business?.tagline ?? formData.tagline,
         logo_url: response.data?.business?.logo_url ?? formData.logo,
+        lara_number: response.data?.business?.lara_number ?? (formData.laraNumber || null),
       }));
-      setSaveMessage('Profile saved. LARA number saved once verification is enabled.');
+      setSaveMessage('Profile saved successfully.');
     } catch (err) {
       if (err?.response?.status === 404) {
         setSaveMessage('Profile saving is not enabled yet.');
@@ -2871,7 +2873,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
                 </label>
                 <input className="input" type="text" value={formData.laraNumber} onChange={(e) => handleChange('laraNumber', e.target.value)} />
                 <p className="helper-text">Used for verification review</p>
-                <p className="muted-text">Saved once verification is enabled.</p>
+                <p className="muted-text">Stored on your business profile for verification review.</p>
               </div>
               <button type="button" className="button button-primary" onClick={handleSave} disabled={saving}>
                 {saving ? 'Saving...' : 'Save profile'}

@@ -48,6 +48,7 @@ const ensureSchema = async () => {
         tagline VARCHAR(255) DEFAULT '',
         logo VARCHAR(10) DEFAULT '',
         logo_url TEXT,
+        lara_number TEXT,
         email VARCHAR(255) UNIQUE NOT NULL,
         password_hash VARCHAR(255) NOT NULL,
         is_verified BOOLEAN DEFAULT false,
@@ -85,7 +86,8 @@ const ensureSchema = async () => {
         ADD COLUMN IF NOT EXISTS mission_statement TEXT,
         ADD COLUMN IF NOT EXISTS vision_statement TEXT,
         ADD COLUMN IF NOT EXISTS philanthropic_goals TEXT,
-        ADD COLUMN IF NOT EXISTS logo_url TEXT;
+        ADD COLUMN IF NOT EXISTS logo_url TEXT,
+        ADD COLUMN IF NOT EXISTS lara_number TEXT;
     `);
 
     await pool.query(`
