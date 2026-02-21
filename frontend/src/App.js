@@ -5,6 +5,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
 import verifiedIcon from './assets/md-verified.svg';
+import heroBg from './assets/vector-network.png';
 
 // API base URL (override with VITE_API_BASE_URL at build time if needed).
 const API_BASE_URL =
@@ -2294,6 +2295,7 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
   const [business, setBusiness] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [logoLoadError, setLogoLoadError] = useState(false);
   const hasBusinessToken = Boolean(localStorage.getItem('token'));
   const publicFallbackPath = hasBusinessToken ? '/business' : '/discover';
   const handlePublicFallback = () => {
@@ -2361,6 +2363,15 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
   }
 
   const activeSocials = business.socials.filter((s) => s.url);
+  const businessName = (business.name || '').trim();
+  const initials = businessName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || '')
+    .join('') || '?';
+  const logoUrl = typeof business.logo_url === 'string' ? business.logo_url.trim() : '';
+  const showLogoImage = Boolean(logoUrl) && !logoLoadError;
   const badges = Array.isArray(business.badges) ? business.badges : [];
   const missionStatement = business.mission_statement || '';
   const visionStatement = business.vision_statement || '';
@@ -2374,10 +2385,23 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
   return (
     <div className="page page--gradient">
       <div className="public-business-shell">
-        <header className="card public-business-hero text-center">
-          <div className="avatar">{business.logo}</div>
-          <h1 className="heading-xl">{business.name}</h1>
-          <p className="subtitle">Follow this business everywhere.</p>
+        <header className="public-business-hero" style={{ backgroundImage: `url(${heroBg})` }}>
+          <div className="public-business-hero__overlay">
+            <div className="public-business-hero__content text-center">
+              {showLogoImage ? (
+                <img
+                  src={logoUrl}
+                  alt={`${businessName || 'Business'} logo`}
+                  className="public-business-hero__logo"
+                  onError={() => setLogoLoadError(true)}
+                />
+              ) : (
+                <div className="avatar public-business-hero__avatar">{initials}</div>
+              )}
+              <h1 className="heading-xl public-business-hero__title">{business.name}</h1>
+              <p className="subtitle public-business-hero__subtitle">Follow this business everywhere.</p>
+            </div>
+          </div>
         </header>
 
         <div className="public-business-layout">
