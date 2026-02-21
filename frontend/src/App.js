@@ -1844,6 +1844,18 @@ const BusinessAccountMenu = ({ businessName, onNavigate, onLogout }) => {
             role="menuitem"
             onClick={() => {
               setIsOpen(false);
+              onNavigate('dashboard', null, '/business');
+            }}
+            style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px' }}
+          >
+            Dashboard
+          </button>
+          <button
+            type="button"
+            className="link-button"
+            role="menuitem"
+            onClick={() => {
+              setIsOpen(false);
               onNavigate('business-profile', null, '/business/profile');
             }}
             style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px' }}
@@ -3056,7 +3068,7 @@ export default function App() {
     if (pathname === '/') return 'marketing-landing';
     if (pathname === '/about') return 'about';
     if (pathname === '/faq') return 'faq';
-    if (pathname === '/business') return 'landing';
+    if (pathname === '/business') return 'dashboard';
     if (pathname === '/business/profile') return 'business-profile';
     if (pathname === '/reset-password') return 'reset';
     if (pathname === '/customer' || pathname === '/customer/login') return 'customer-login';
