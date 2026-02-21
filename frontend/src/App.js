@@ -19,7 +19,13 @@ const configuredPublicWebUrl =
 
 const publicBase = (configuredPublicWebUrl || window.location.origin).replace(/\/$/, '');
 
-const buildPublicBusinessUrl = (slug) => `${publicBase}/b/${slug}`;
+const normalizePublicBusinessKey = (value) =>
+  typeof value === 'string' ? value.trim().toLowerCase() : '';
+
+const resolvePublicBusinessKey = (business) =>
+  normalizePublicBusinessKey(business?.slug) || normalizePublicBusinessKey(business?.username);
+
+const buildPublicBusinessUrl = (key) => `${publicBase}/b/${encodeURIComponent(normalizePublicBusinessKey(key))}`;
 
 // =============================================================================
 // API SERVICE
@@ -1961,8 +1967,15 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
     });
   }, [business]);
 
+  const publicBusinessKey = resolvePublicBusinessKey(business);
+
   const handleCopyLink = () => {
-    const link = buildPublicBusinessUrl(business.slug);
+    if (!publicBusinessKey) {
+      alert('Public link is unavailable until your slug or username is set.');
+      return;
+    }
+
+    const link = buildPublicBusinessUrl(publicBusinessKey);
     navigator.clipboard
       .writeText(link)
       .then(() => {
@@ -1974,7 +1987,12 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
   };
 
   const handlePreviewPublicPage = () => {
-    const publicUrl = buildPublicBusinessUrl(business.slug);
+    if (!publicBusinessKey) {
+      alert('Public link is unavailable until your slug or username is set.');
+      return;
+    }
+
+    const publicUrl = buildPublicBusinessUrl(publicBusinessKey);
     window.open(publicUrl, '_blank', 'noopener,noreferrer');
   };
 
@@ -2180,7 +2198,7 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
             <p className="subtitle">Your Follow Us Everywhere link:</p>
             <div className="row row-wrap">
               <code className="code-block">
-                {buildPublicBusinessUrl(business.slug)}
+                {publicBusinessKey ? buildPublicBusinessUrl(publicBusinessKey) : 'Set a slug or username to enable your public link.'}
               </code>
               <button type="button" onClick={handleCopyLink} className="button button-primary button-sm">
                 Copy Link
@@ -2350,8 +2368,15 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
 
   useEffect(() => {
     const fetchBusiness = async () => {
+      const lookupKey = normalizePublicBusinessKey(slug);
+      if (!lookupKey) {
+        setError('Business not found');
+        setLoading(false);
+        return;
+      }
+
       try {
-        const response = await customerApi.get(`/public/businesses/slug/${encodeURIComponent(slug)}`);
+        const response = await customerApi.get(`/public/businesses/by-slug/${encodeURIComponent(lookupKey)}`);
         setBusiness(response.data);
       } catch (err) {
         setError('Business not found');
@@ -3119,14 +3144,14 @@ export default function App() {
     }
 
     if (pathname.startsWith('/b/')) {
-      const slug = pathname.replace('/b/', '').trim();
+      const slug = normalizePublicBusinessKey(pathname.replace('/b/', ''));
       if (slug) {
         setPublicSlug(slug);
       }
     }
 
     if (pathname.startsWith('/business/') && pathname !== '/business/profile') {
-      const slug = pathname.replace('/business/', '').trim();
+      const slug = normalizePublicBusinessKey(pathname.replace('/business/', ''));
       if (slug) {
         setPublicSlug(slug);
       }
@@ -3228,7 +3253,8 @@ export default function App() {
       return handleNavigate(screen, null, '/customer/profile');
     }
     if (screen === 'public-route') {
-      return handleNavigate('public', data, `/b/${data}`);
+      const normalizedKey = normalizePublicBusinessKey(data);
+      return handleNavigate('public', normalizedKey, `/b/${encodeURIComponent(normalizedKey)}`);
     }
     return handleNavigate('marketing-landing', null, '/');
   };
