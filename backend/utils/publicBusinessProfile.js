@@ -96,12 +96,13 @@ const getPublicBusinessBySlug = async (slug) => {
             ${availableBusinessColumns.has('mission_statement') ? 'mission_statement' : 'NULL::text AS mission_statement'},
             ${availableBusinessColumns.has('vision_statement') ? 'vision_statement' : 'NULL::text AS vision_statement'},
             ${availableBusinessColumns.has('philanthropic_goals') ? 'philanthropic_goals' : 'NULL::text AS philanthropic_goals'}
-     FROM businesses`;
-
-  let result = await pool.query(
-    `${businessSelectSql}
-     WHERE LOWER(slug) = LOWER($1)
-     ORDER BY id ASC
+     FROM businesses
+     WHERE ${fieldMatchSql}
+     ORDER BY CASE
+       WHEN LOWER(slug) = LOWER($1) THEN 0
+       ELSE 1
+     END,
+     id ASC
      LIMIT 1`,
     [slugValue]
   );

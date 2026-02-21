@@ -187,7 +187,7 @@ test('GET /api/public/businesses/by-slug/:key prefers direct slug match when use
         return { rows: [{ table_name: 'business_badges' }, { table_name: 'badges' }] };
       }
 
-      if (sql.includes('FROM businesses') && sql.includes('WHERE LOWER(slug) = LOWER($1)')) {
+      if (sql.includes('FROM businesses') && sql.includes('ORDER BY CASE')) {
         return {
           rows: [{
             id: 100,
