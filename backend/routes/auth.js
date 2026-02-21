@@ -182,14 +182,18 @@ router.post(
 // @access  Public
 router.post(
   '/login',
-  [body('email').isEmail(), body('password').exists()],
+  [body('email').optional().isEmail(), body('password').optional().isString()],
   async (req, res) => {
-    const errorResponse = handleValidationErrors(req, res);
-    if (errorResponse) {
-      return errorResponse;
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password required' });
     }
 
-    const { email, password } = req.body;
+    const errorResponse = handleValidationErrors(req, res);
+    if (errorResponse) {
+      return res.status(400).json({ error: 'Email and password required' });
+    }
 
     try {
       // Check if business exists
@@ -197,7 +201,6 @@ router.post(
         `SELECT id,
                 name,
                 slug,
-                username,
                 tagline,
                 logo,
                 logo_url,
@@ -221,7 +224,7 @@ router.post(
       );
 
       if (result.rows.length === 0) {
-        return res.status(400).json({ message: 'Invalid credentials' });
+        return res.status(401).json({ error: 'Invalid credentials' });
       }
 
       const business = result.rows[0];
@@ -229,7 +232,7 @@ router.post(
       // Check password
       const isMatch = await bcrypt.compare(password, business.password_hash);
       if (!isMatch) {
-        return res.status(400).json({ message: 'Invalid credentials' });
+        return res.status(401).json({ error: 'Invalid credentials' });
       }
 
       // Get social links
@@ -251,8 +254,12 @@ router.post(
 
       res.json({ token, business: businessData });
     } catch (err) {
-      console.error('Login error:', err);
-      res.status(500).json({ message: 'Server error' });
+      console.error('[auth/login] error', {
+        email,
+        message: err.message,
+        stack: err.stack,
+      });
+      res.status(500).json({ error: 'Internal server error' });
     }
   }
 );
@@ -381,7 +388,6 @@ router.get('/me', authenticateToken, async (req, res) => {
       `SELECT id,
               name,
               slug,
-              username,
               tagline,
               logo,
               logo_url,
