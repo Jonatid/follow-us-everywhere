@@ -46,6 +46,7 @@ router.get('/documents', async (req, res) => {
               bd.stored_file_name AS "storedFileName",
               bd.storage_provider AS "storageProvider",
               bd.storage_path AS "storagePath",
+              bd.document_number AS "documentNumber",
               bd.mime_type AS "mimeType",
               bd.file_size AS "fileSize",
               bd.status,
@@ -98,6 +99,7 @@ router.patch('/documents/:id', async (req, res) => {
                  stored_file_name AS "storedFileName",
                  storage_provider AS "storageProvider",
                  storage_path AS "storagePath",
+                 document_number AS "documentNumber",
                  mime_type AS "mimeType",
                  file_size AS "fileSize",
                  status,
@@ -131,18 +133,20 @@ router.patch('/documents/:id', async (req, res) => {
 // @access  Private (admin)
 router.get('/dashboard/summary', async (req, res) => {
   try {
-    const [businessCountResult, adminCountResult] = await Promise.all([
+    const [businessCountResult, adminCountResult, pendingDocumentsResult] = await Promise.all([
       pool.query(
         `SELECT COUNT(*)::int AS total,
                 COUNT(*) FILTER (WHERE COALESCE(verification_status, 'active') = 'active')::int AS active,
                 COUNT(*) FILTER (WHERE COALESCE(verification_status, 'active') <> 'active')::int AS inactive
          FROM businesses`
       ),
-      pool.query('SELECT COUNT(*)::int AS total FROM admins')
+      pool.query('SELECT COUNT(*)::int AS total FROM admins'),
+      pool.query("SELECT COUNT(*)::int AS total FROM business_documents WHERE status = 'Pending'")
     ]);
 
     const counts = businessCountResult.rows[0] || { total: 0, active: 0, inactive: 0 };
     const admins = adminCountResult.rows[0] || { total: 0 };
+    const pendingDocuments = pendingDocumentsResult.rows[0] || { total: 0 };
 
     res.json({
       businesses: {
@@ -151,6 +155,7 @@ router.get('/dashboard/summary', async (req, res) => {
         inactive: Number(counts.inactive || 0),
       },
       admins: Number(admins.total || 0),
+      pendingDocuments: Number(pendingDocuments.total || 0),
     });
   } catch (err) {
     console.error('Admin dashboard summary error:', err);
