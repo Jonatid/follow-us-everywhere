@@ -93,17 +93,23 @@ app.use((err, req, res, next) => {
 });
 
 const startServer = async () => {
+  let startupInitializationOk = true;
+
   try {
     await runMigrations();
     await ensureSchema();
   } catch (error) {
+    startupInitializationOk = false;
     console.error('Startup initialization error:', error.message);
-    process.exit(1);
+    console.error('Server will continue to run, but database-backed routes may fail until connectivity is restored.');
   }
 
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    if (!startupInitializationOk) {
+      console.warn('Startup completed in degraded mode due to initialization errors.');
+    }
   });
 };
 
