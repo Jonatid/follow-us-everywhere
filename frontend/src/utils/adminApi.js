@@ -118,4 +118,14 @@ export const fetchDashboardSummary = async () => {
   return response.data;
 };
 
+export const fetchAdminDocuments = async (params) => {
+  const response = await adminApi.get('/admin/documents', { params });
+  return response.data;
+};
+
+export const reviewAdminDocument = async (documentId, payload) => {
+  const response = await adminApi.patch(`/admin/documents/${documentId}`, payload);
+  return response.data;
+};
+
 export default adminApi;

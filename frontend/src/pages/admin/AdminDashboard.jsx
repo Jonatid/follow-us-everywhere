@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { fetchDashboardSummary } from '../../utils/adminApi';
 
 const AdminDashboard = () => {
-  const [summary, setSummary] = useState({ totalBusinesses: 0, activeBusinesses: 0, inactiveBusinesses: 0, admins: 0 });
+  const [summary, setSummary] = useState({ totalBusinesses: 0, activeBusinesses: 0, inactiveBusinesses: 0, admins: 0, pendingDocuments: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -14,9 +14,10 @@ const AdminDashboard = () => {
           activeBusinesses: Number(dashboardSummary?.businesses?.active || 0),
           inactiveBusinesses: Number(dashboardSummary?.businesses?.inactive || 0),
           admins: Number(dashboardSummary?.admins || 0),
+          pendingDocuments: Number(dashboardSummary?.pendingDocuments || 0),
         });
       } catch (err) {
-        setSummary({ totalBusinesses: 0, activeBusinesses: 0, inactiveBusinesses: 0, admins: 0 });
+        setSummary({ totalBusinesses: 0, activeBusinesses: 0, inactiveBusinesses: 0, admins: 0, pendingDocuments: 0 });
       } finally {
         setLoading(false);
       }
@@ -45,6 +46,10 @@ const AdminDashboard = () => {
           <div className="admin-card" style={{ background: '#fff7ed' }}>
             <h3>Inactive Businesses</h3>
             <p style={{ fontSize: 32, margin: 0 }}>{summary.inactiveBusinesses}</p>
+          </div>
+          <div className="admin-card" style={{ background: '#fef3c7' }}>
+            <h3>Pending Documents</h3>
+            <p style={{ fontSize: 32, margin: 0 }}>{summary.pendingDocuments}</p>
           </div>
           <div className="admin-card" style={{ background: '#f8fafc' }}>
             <h3>Admin Users</h3>
