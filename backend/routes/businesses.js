@@ -242,6 +242,46 @@ router.get('/documents/:id/download', authenticateToken, async (req, res) => {
   }
 });
 
+router.delete('/documents/:id', authenticateToken, async (req, res) => {
+  try {
+    const documentId = Number(req.params.id);
+    if (!Number.isInteger(documentId) || documentId <= 0) {
+      return res.status(400).json({ error: 'Invalid document id' });
+    }
+
+    const result = await pool.query(
+      `DELETE FROM business_documents
+       WHERE id = $1 AND business_id = $2
+       RETURNING id,
+                 original_file_name AS "originalFileName",
+                 storage_path AS "storagePath"`,
+      [documentId, req.businessId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    const deletedDocument = result.rows[0];
+    const absolutePath = path.join(__dirname, '..', deletedDocument.storagePath || '');
+    if (deletedDocument.storagePath && fs.existsSync(absolutePath)) {
+      fs.unlink(absolutePath, (unlinkErr) => {
+        if (unlinkErr) {
+          console.error('Error deleting stored business document file:', unlinkErr);
+        }
+      });
+    }
+
+    return res.json({
+      message: 'Document deleted successfully',
+      documentId: deletedDocument.id,
+    });
+  } catch (error) {
+    console.error('Error deleting business document:', error);
+    return res.status(500).json({ error: 'Failed to delete document' });
+  }
+});
+
 
 // Get public business profile by slug
 router.get('/:slug', async (req, res) => {
