@@ -2913,13 +2913,13 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
               </div>
               {['lara', 'incorporation'].includes(documentType) && (
                 <div className="field">
-                  <label className="label">Identification Number / ID Number on document</label>
+                  <label className="label">Number on document</label>
                   <input
                     className="input"
                     type="text"
                     value={documentNumber}
                     onChange={(e) => setDocumentNumber(e.target.value)}
-                    placeholder="Enter the Identification Number (ID Number) exactly as printed"
+                    placeholder="Enter the LARA / incorporation number exactly as printed"
                   />
                 </div>
               )}

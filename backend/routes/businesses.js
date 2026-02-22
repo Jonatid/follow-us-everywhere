@@ -91,13 +91,7 @@ const handleDocumentUpload = (req, res) => {
     }
 
     try {
-      const {
-        document_type,
-        notes,
-        document_number,
-        identification_number,
-        id_number,
-      } = req.body;
+      const { document_type, notes, document_number } = req.body;
 
       if (!document_type || !allowedDocumentTypes.has(document_type)) {
         return res.status(400).json({ error: 'Invalid document_type' });
@@ -107,11 +101,8 @@ const handleDocumentUpload = (req, res) => {
         return res.status(400).json({ error: 'Document file is required' });
       }
 
-      const candidateDocumentNumber = [document_number, identification_number, id_number]
-        .find((value) => typeof value === 'string' && value.trim().length > 0);
-
-      const normalizedDocumentNumber = typeof candidateDocumentNumber === 'string'
-        ? candidateDocumentNumber.trim()
+      const normalizedDocumentNumber = typeof document_number === 'string'
+        ? document_number.trim()
         : '';
 
       if (normalizedDocumentNumber.length > 255) {
