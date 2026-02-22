@@ -12,6 +12,7 @@ const router = express.Router();
 
 
 const uploadRootDir = path.join(__dirname, '..', 'uploads', 'business_documents');
+fs.mkdirSync(uploadRootDir, { recursive: true });
 
 const allowedDocumentTypes = new Set(['lara', 'incorporation', 'insurance', 'other']);
 const allowedMimeTypes = new Set([
