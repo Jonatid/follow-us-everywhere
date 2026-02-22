@@ -3,6 +3,7 @@ import {
   approveBusiness,
   assignBusinessBadge,
   blockBusiness,
+  deleteAdminDocument,
   fetchAdminDocuments,
   fetchBadges,
   fetchBusiness,
@@ -32,6 +33,7 @@ const BusinessDetail = ({ businessId, onBack }) => {
   const [badgeSaving, setBadgeSaving] = useState(false);
   const [businessDocuments, setBusinessDocuments] = useState([]);
   const [documentSavingId, setDocumentSavingId] = useState(null);
+  const [documentDeletingId, setDocumentDeletingId] = useState(null);
   const [rejectionReasons, setRejectionReasons] = useState({});
 
   const loadBusiness = async () => {
@@ -127,6 +129,20 @@ const BusinessDetail = ({ businessId, onBack }) => {
       setError(err.response?.data?.message || 'Failed to remove badge.');
     } finally {
       setBadgeSaving(false);
+    }
+  };
+
+
+  const handleDeleteDocument = async (documentId) => {
+    setDocumentDeletingId(documentId);
+    setError('');
+    try {
+      await deleteAdminDocument(documentId);
+      await loadBusinessDocuments();
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to delete document.');
+    } finally {
+      setDocumentDeletingId(null);
     }
   };
 
@@ -248,9 +264,18 @@ const BusinessDetail = ({ businessId, onBack }) => {
                       ) : null}
                       <button
                         type="button"
+                        className="admin-button secondary"
+                        onClick={() => handleDeleteDocument(doc.id)}
+                        disabled={documentDeletingId === doc.id || documentSavingId === doc.id}
+                        aria-label={`Delete ${doc.originalFileName}`}
+                      >
+                        {documentDeletingId === doc.id ? 'Deleting...' : '× Delete'}
+                      </button>
+                      <button
+                        type="button"
                         className="admin-button primary"
                         onClick={() => handleReviewDocument(doc.id, 'Verified')}
-                        disabled={documentSavingId === doc.id || doc.status === 'Verified'}
+                        disabled={documentSavingId === doc.id || documentDeletingId === doc.id || doc.status === 'Verified'}
                       >
                         {documentSavingId === doc.id ? 'Saving...' : 'Approve'}
                       </button>
@@ -270,7 +295,7 @@ const BusinessDetail = ({ businessId, onBack }) => {
                         type="button"
                         className="admin-button danger"
                         onClick={() => handleReviewDocument(doc.id, 'Rejected')}
-                        disabled={documentSavingId === doc.id || doc.status === 'Rejected'}
+                        disabled={documentSavingId === doc.id || documentDeletingId === doc.id || doc.status === 'Rejected'}
                       >
                         {documentSavingId === doc.id ? 'Saving...' : 'Reject'}
                       </button>

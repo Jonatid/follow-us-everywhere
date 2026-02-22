@@ -1,4 +1,6 @@
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
 const bcrypt = require('bcryptjs');
 const { body, validationResult } = require('express-validator');
 const pool = require('../config/db');
@@ -15,7 +17,7 @@ router.use(authenticateAdminToken);
 // @access  Private (admin)
 router.get('/documents', async (req, res) => {
   const { status, business_id } = req.query;
-  const allowedStatuses = new Set(['Pending', 'Verified', 'Rejected']);
+  const allowedStatuses = new Set(['Pending', 'Verified', 'Approved', 'Rejected']);
 
   try {
     const filters = [];
@@ -25,8 +27,14 @@ router.get('/documents', async (req, res) => {
       if (!allowedStatuses.has(status)) {
         return res.status(400).json({ message: 'Invalid status filter' });
       }
-      filters.push(`bd.status = $${values.length + 1}`);
-      values.push(status);
+
+      if (status === 'Verified' || status === 'Approved') {
+        filters.push(`bd.status = ANY($${values.length + 1})`);
+        values.push(['Verified', 'Approved']);
+      } else {
+        filters.push(`bd.status = $${values.length + 1}`);
+        values.push(status);
+      }
     }
 
     if (business_id) {
@@ -49,7 +57,7 @@ router.get('/documents', async (req, res) => {
               bd.document_number AS "documentNumber",
               bd.mime_type AS "mimeType",
               bd.file_size AS "fileSize",
-              bd.status,
+              CASE WHEN bd.status = 'Approved' THEN 'Verified' ELSE bd.status END AS status,
               bd.submitted_at AS "submittedAt",
               bd.reviewed_at AS "reviewedAt",
               bd.reviewed_by_admin_id AS "reviewedByAdminId",
@@ -74,18 +82,19 @@ router.get('/documents', async (req, res) => {
 // @access  Private (admin)
 router.patch('/documents/:id', async (req, res) => {
   const { status, rejection_reason } = req.body;
-  const allowedStatuses = new Set(['Verified', 'Rejected']);
+  const allowedStatuses = new Set(['Verified', 'Approved', 'Rejected']);
+  const normalizedStatus = status === 'Approved' ? 'Verified' : status;
 
-  if (!status || !allowedStatuses.has(status)) {
+  if (!normalizedStatus || !allowedStatuses.has(status)) {
     return res.status(400).json({ message: 'Invalid status' });
   }
 
-  if (status === 'Rejected' && (!rejection_reason || !String(rejection_reason).trim())) {
+  if (normalizedStatus === 'Rejected' && (!rejection_reason || !String(rejection_reason).trim())) {
     return res.status(400).json({ message: 'rejection_reason is required for Rejected status' });
   }
 
-  try {
-    const result = await pool.query(
+  const updateDocument = async (statusValue) =>
+    pool.query(
       `UPDATE business_documents
        SET status = $1,
            reviewed_at = CURRENT_TIMESTAMP,
@@ -102,19 +111,33 @@ router.patch('/documents/:id', async (req, res) => {
                  document_number AS "documentNumber",
                  mime_type AS "mimeType",
                  file_size AS "fileSize",
-                 status,
+                 CASE WHEN status = 'Approved' THEN 'Verified' ELSE status END AS status,
                  submitted_at AS "submittedAt",
                  reviewed_at AS "reviewedAt",
                  reviewed_by_admin_id AS "reviewedByAdminId",
                  rejection_reason AS "rejectionReason",
                  notes`,
       [
-        status,
+        statusValue,
         req.adminId,
-        status === 'Rejected' ? String(rejection_reason).trim() : null,
+        normalizedStatus === 'Rejected' ? String(rejection_reason).trim() : null,
         req.params.id
       ]
     );
+
+  try {
+    let result;
+
+    try {
+      result = await updateDocument(normalizedStatus);
+    } catch (err) {
+      const isConstraintError = err?.code === '23514' && normalizedStatus === 'Verified';
+      if (!isConstraintError) {
+        throw err;
+      }
+
+      result = await updateDocument('Approved');
+    }
 
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Document not found' });
@@ -123,6 +146,50 @@ router.patch('/documents/:id', async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     console.error('Admin review business document error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
+// @route   DELETE /api/admin/documents/:id
+// @desc    Delete a business document as admin
+// @access  Private (admin)
+router.delete('/documents/:id', async (req, res) => {
+  try {
+    const documentId = Number(req.params.id);
+    if (!Number.isInteger(documentId) || documentId <= 0) {
+      return res.status(400).json({ message: 'Invalid document id' });
+    }
+
+    const result = await pool.query(
+      `DELETE FROM business_documents
+       WHERE id = $1
+       RETURNING id,
+                 storage_path AS "storagePath",
+                 original_file_name AS "originalFileName"`,
+      [documentId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Document not found' });
+    }
+
+    const deletedDocument = result.rows[0];
+    const absolutePath = path.join(__dirname, '..', deletedDocument.storagePath || '');
+    if (deletedDocument.storagePath && fs.existsSync(absolutePath)) {
+      fs.unlink(absolutePath, (unlinkErr) => {
+        if (unlinkErr) {
+          console.error('Admin delete stored business document file error:', unlinkErr);
+        }
+      });
+    }
+
+    res.json({
+      message: 'Document deleted successfully',
+      documentId: deletedDocument.id,
+    });
+  } catch (err) {
+    console.error('Admin delete business document error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });
