@@ -3,11 +3,19 @@ import {
   approveBusiness,
   assignBusinessBadge,
   blockBusiness,
+  fetchAdminDocuments,
   fetchBadges,
   fetchBusiness,
   fetchBusinessBadges,
   removeBusinessBadge,
+  reviewAdminDocument,
 } from '../../utils/adminApi';
+
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || 'https://followuseverywhere-api.onrender.com/api';
+
+const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '');
 
 const statusLabelMap = {
   active: 'Active',
@@ -26,6 +34,9 @@ const BusinessDetail = ({ businessId, onBack }) => {
   const [evidenceUrl, setEvidenceUrl] = useState('');
   const [notes, setNotes] = useState('');
   const [badgeSaving, setBadgeSaving] = useState(false);
+  const [businessDocuments, setBusinessDocuments] = useState([]);
+  const [documentSavingId, setDocumentSavingId] = useState(null);
+  const [rejectionReasons, setRejectionReasons] = useState({});
 
   const loadBusiness = async () => {
     try {
@@ -51,10 +62,20 @@ const BusinessDetail = ({ businessId, onBack }) => {
     }
   };
 
+  const loadBusinessDocuments = async () => {
+    try {
+      const data = await fetchAdminDocuments({ business_id: Number(businessId) });
+      setBusinessDocuments(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError('Unable to load uploaded documents for this business.');
+    }
+  };
+
   useEffect(() => {
     if (businessId) {
       loadBusiness();
       loadBadges();
+      loadBusinessDocuments();
     }
   }, [businessId]);
 
@@ -113,6 +134,28 @@ const BusinessDetail = ({ businessId, onBack }) => {
     }
   };
 
+  const handleReviewDocument = async (documentId, status) => {
+    const rejectionReason = (rejectionReasons[documentId] || '').trim();
+    if (status === 'Rejected' && !rejectionReason) {
+      setError('Please provide a rejection reason before rejecting a document.');
+      return;
+    }
+
+    setDocumentSavingId(documentId);
+    setError('');
+    try {
+      await reviewAdminDocument(documentId, {
+        status,
+        rejection_reason: status === 'Rejected' ? rejectionReason : undefined,
+      });
+      await loadBusinessDocuments();
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to update document status.');
+    } finally {
+      setDocumentSavingId(null);
+    }
+  };
+
   const assignedBadgeIds = new Set(assignedBadges.map((badge) => badge.badgeId));
   const availableBadges = badges.filter((badge) => !assignedBadgeIds.has(badge.id));
 
@@ -162,6 +205,86 @@ const BusinessDetail = ({ businessId, onBack }) => {
         <button type="button" className="admin-button danger" onClick={handleBlock}>
           Block
         </button>
+      </div>
+
+      <div className="admin-section" style={{ marginTop: 20 }}>
+        <h2>Business Verification Documents</h2>
+        <p className="admin-muted">This business's uploaded verification files. Review each document in-place.</p>
+        {businessDocuments.length === 0 ? (
+          <p className="admin-muted">No documents uploaded yet for this business.</p>
+        ) : (
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Document</th>
+                <th>Number</th>
+                <th>Status</th>
+                <th>Submitted</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {businessDocuments.map((doc) => (
+                <tr key={doc.id}>
+                  <td>
+                    <div>{doc.documentType}</div>
+                    <div className="admin-muted">{doc.originalFileName}</div>
+                  </td>
+                  <td>{doc.documentNumber || <span className="admin-muted">—</span>}</td>
+                  <td>
+                    <span className="admin-pill">{doc.status}</span>
+                    {doc.rejectionReason ? (
+                      <div className="admin-muted">Reason: {doc.rejectionReason}</div>
+                    ) : null}
+                  </td>
+                  <td>{doc.submittedAt ? new Date(doc.submittedAt).toLocaleString() : '—'}</td>
+                  <td>
+                    <div className="admin-actions" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+                      {doc.storagePath ? (
+                        <a
+                          className="admin-button secondary"
+                          href={`${API_ORIGIN}${doc.storagePath.startsWith('/') ? doc.storagePath : `/${doc.storagePath}`}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Open file
+                        </a>
+                      ) : null}
+                      <button
+                        type="button"
+                        className="admin-button primary"
+                        onClick={() => handleReviewDocument(doc.id, 'Verified')}
+                        disabled={documentSavingId === doc.id || doc.status === 'Verified'}
+                      >
+                        {documentSavingId === doc.id ? 'Saving...' : 'Approve'}
+                      </button>
+                      <input
+                        type="text"
+                        className="admin-input"
+                        placeholder="Rejection reason"
+                        value={rejectionReasons[doc.id] || ''}
+                        onChange={(event) =>
+                          setRejectionReasons((prev) => ({
+                            ...prev,
+                            [doc.id]: event.target.value,
+                          }))
+                        }
+                      />
+                      <button
+                        type="button"
+                        className="admin-button danger"
+                        onClick={() => handleReviewDocument(doc.id, 'Rejected')}
+                        disabled={documentSavingId === doc.id || doc.status === 'Rejected'}
+                      >
+                        {documentSavingId === doc.id ? 'Saving...' : 'Reject'}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
       <div className="admin-divider" />
       <div className="admin-section">
