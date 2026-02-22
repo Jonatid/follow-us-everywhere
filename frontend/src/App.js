@@ -2136,7 +2136,7 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
       const payload = {
         [philanthropicContentType]: selectedValue,
       };
-      await api.put('/businesses/profile/update', payload);
+      await api.put('/business/profile/update', payload);
       alert('Philanthropic content updated successfully!');
       onRefresh();
     } catch (err) {
@@ -2713,10 +2713,35 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
       window.URL.revokeObjectURL(blobUrl);
     } catch (err) {
       if (err?.response?.status === 404) {
+        const documentRecord = businessDocuments.find((doc) => doc.id === documentId);
+        const storagePath = documentRecord?.storagePath ? String(documentRecord.storagePath).replace(/^\/+/, '') : '';
+
+        if (storagePath) {
+          const staticCandidates = [`/${storagePath}`, `/api/${storagePath}`];
+
+          for (const url of staticCandidates) {
+            try {
+              const fallbackResponse = await api.get(url, { responseType: 'blob' });
+              const fallbackBlobUrl = window.URL.createObjectURL(new Blob([fallbackResponse.data]));
+              const fallbackLink = document.createElement('a');
+              fallbackLink.href = fallbackBlobUrl;
+              fallbackLink.setAttribute('download', fileName || documentRecord?.originalFileName || `document-${documentId}`);
+              document.body.appendChild(fallbackLink);
+              fallbackLink.click();
+              fallbackLink.remove();
+              window.URL.revokeObjectURL(fallbackBlobUrl);
+              return;
+            } catch {
+              // Try the next static candidate URL.
+            }
+          }
+        }
+
         setSaveError('Document record or file was not found. Please re-upload this document and try downloading again.');
-      } else {
-        setSaveError(getApiErrorMessage(err, 'Unable to download document.'));
+        return;
       }
+
+      setSaveError(getApiErrorMessage(err, 'Unable to download document.'));
     }
   };
 
@@ -2795,7 +2820,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
     setSaveMessage('');
     setSaveError('');
     try {
-      const response = await api.put('/businesses/profile/update', {
+      const response = await api.put('/business/profile/update', {
         name: formData.name,
         tagline: formData.tagline,
         logo_url: formData.logo,
