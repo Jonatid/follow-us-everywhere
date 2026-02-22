@@ -9,7 +9,9 @@ CREATE TABLE IF NOT EXISTS badge_requests (
   business_notes TEXT,
   admin_notes TEXT,
   rejection_reason TEXT,
-  linked_document_id INTEGER REFERENCES business_documents(id) ON DELETE SET NULL
+  linked_document_id INTEGER REFERENCES business_documents(id) ON DELETE SET NULL,
+  evidence_url TEXT,
+  evidence_explanation VARCHAR(500)
 );
 
 CREATE INDEX IF NOT EXISTS idx_badge_requests_business_id ON badge_requests(business_id);

@@ -113,6 +113,17 @@ export const removeBusinessBadge = async (businessId, badgeId) => {
   return response.data;
 };
 
+
+export const fetchBadgeRequests = async (params) => {
+  const response = await adminApi.get('/admin/badge-requests', { params });
+  return response.data;
+};
+
+export const reviewBadgeRequest = async (requestId, payload) => {
+  const response = await adminApi.patch(`/admin/badge-requests/${requestId}/review`, payload);
+  return response.data;
+};
+
 export const fetchDashboardSummary = async () => {
   const response = await adminApi.get('/admin/dashboard/summary');
   return response.data;

@@ -4,7 +4,9 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
-import verifiedIcon from './assets/md-verified.svg';
+import businessVerifiedIcon from './assets/business-verified.svg';
+import impactVerifiedIcon from './assets/impact-verified.svg';
+import communityImpactIcon from './assets/community-impact.svg';
 import heroBg from './assets/vector-network.png';
 
 // API base URL resolution order:
@@ -194,7 +196,7 @@ const RoleChooserModal = ({ mode, onClose, onChoose }) => {
           </button>
         </div>
       </div>
-    </div>
+          </div>
   );
 };
 
@@ -1365,6 +1367,7 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
                   const statusValue = (business.status || 'active').toLowerCase();
                   const isActive = statusValue === 'active';
                   const isVerified = business.verified === true || business.verification === 'verified';
+                  const hasApprovedImpactBadges = Array.isArray(business.badges) && business.badges.length > 0;
                   return (
                     <div key={business.id} className="card discover-result-card" style={{ border: '1px solid var(--border)', boxShadow: 'none', padding: '20px' }}>
                       <div className="row space-between row-wrap" style={{ alignItems: 'flex-start' }}>
@@ -1375,8 +1378,14 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
                             {isActive ? <span className="badge badge--active">Active</span> : null}
                             {isVerified ? (
                               <span className="badge badge--verified">
-                                <img src={verifiedIcon} alt="" className="badge__icon" aria-hidden="true" />
+                                <img src={businessVerifiedIcon} alt="" className="badge__icon" aria-hidden="true" />
                                 Verified
+                              </span>
+                            ) : null}
+                            {hasApprovedImpactBadges ? (
+                              <span className="badge badge--verified">
+                                <img src={impactVerifiedIcon} alt="" className="badge__icon" aria-hidden="true" />
+                                Impact Verified
                               </span>
                             ) : null}
                           </div>
@@ -1396,13 +1405,18 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
                           >
                             View Profile
                           </button>
-                          <button
-                            type="button"
-                            className="button button-secondary button-sm"
-                            onClick={() => openImpactModal(business)}
-                          >
-                            View Community Impact
-                          </button>
+                          {hasApprovedImpactBadges ? (
+                            <button
+                              type="button"
+                              className="button button-secondary button-sm"
+                              onClick={() => openImpactModal(business)}
+                            >
+                              <span className="row" style={{ gap: '6px', alignItems: 'center' }}>
+                                <img src={communityImpactIcon} alt="" className="badge__icon" aria-hidden="true" />
+                                View Community Impact
+                              </span>
+                            </button>
+                          ) : null}
                           <button
                             type="button"
                             className={`button button-sm ${isFavorited ? 'button-secondary' : 'button-primary'}`}
@@ -1432,7 +1446,7 @@ const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
                       <div className="stack-sm" style={{ marginTop: '10px' }}>
                         <p className="text-strong">Community Impact: {impactModal.data?.verified_count || 0} Verified Actions</p>
                         {(impactModal.data?.verified_badges || []).length === 0 ? (
-                          <p className="muted-text">No verified badges have been published yet.</p>
+                          <p className="muted-text">No approved community impact badges yet.</p>
                         ) : (
                           (impactModal.data?.verified_badges || []).map((item) => (
                             <div key={item.id} className="card" style={{ border: '1px solid var(--border)', boxShadow: 'none' }}>
@@ -2375,6 +2389,7 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [logoLoadError, setLogoLoadError] = useState(false);
+  const [impactOpen, setImpactOpen] = useState(false);
   const hasBusinessToken = Boolean(localStorage.getItem('token'));
   const publicFallbackPath = hasBusinessToken ? '/business' : '/discover';
   const handlePublicFallback = () => {
@@ -2482,6 +2497,8 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
   const logoUrl = toAbsoluteAssetUrl(business.logo_url);
   const showLogoImage = Boolean(logoUrl) && !logoLoadError;
   const badges = Array.isArray(business.badges) ? business.badges : [];
+  const hasApprovedImpactBadges = badges.length > 0;
+  const isBusinessVerified = (String(business.verification_status || '').toLowerCase() === 'verified') || business.verified === true || business.verification === 'verified';
   const missionStatement = business.mission_statement || '';
   const visionStatement = business.vision_statement || '';
   const philanthropicGoals = business.philanthropic_goals || '';
@@ -2509,6 +2526,20 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
               )}
               <h1 className="heading-xl public-business-hero__title">{business.name}</h1>
               <p className="subtitle public-business-hero__subtitle">Follow this business everywhere.</p>
+              <div className="row row-wrap" style={{ justifyContent: 'center', gap: '8px', marginTop: '10px' }}>
+                {isBusinessVerified ? (
+                  <span className="badge badge--verified">
+                    <img src={businessVerifiedIcon} alt="" className="badge__icon" aria-hidden="true" />
+                    Verified
+                  </span>
+                ) : null}
+                {hasApprovedImpactBadges ? (
+                  <span className="badge badge--verified">
+                    <img src={impactVerifiedIcon} alt="" className="badge__icon" aria-hidden="true" />
+                    Impact Verified
+                  </span>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>
@@ -2554,24 +2585,20 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
                 {activeSocials.length > 1 && <p className="public-follow-subtitle">Connect with us across the web</p>}
               </>
             )}
-            {badges.length > 0 && (
+            {hasApprovedImpactBadges ? (
               <div className="public-section">
-                <h2 className="heading-md">Community Impact (Verified)</h2>
-                <div className="badge-grid">
-                  {badges.map((badge) => (
-                    <div key={badge.id} className="badge-card">
-                      <div className="badge-header">
-                        {badge.icon && <span className="badge-icon">{badge.icon}</span>}
-                        <div>
-                          <p className="text-strong">{badge.name}</p>
-                          <p className="muted-text">{badge.description}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <button
+                  type="button"
+                  className="button button-secondary button-full"
+                  onClick={() => setImpactOpen(true)}
+                >
+                  <span className="row" style={{ gap: '8px', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                    <img src={communityImpactIcon} alt="" className="badge__icon" aria-hidden="true" />
+                    Community Impact
+                  </span>
+                </button>
               </div>
-            )}
+            ) : null}
           </section>
 
           <section className="card public-business-column public-business-right" aria-label="Statements">
@@ -2590,6 +2617,30 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
           </section>
         </div>
       </div>
+      {impactOpen && hasApprovedImpactBadges ? (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200, padding: '16px' }}>
+          <div className="card" style={{ width: '100%', maxWidth: '760px', maxHeight: '80vh', overflow: 'auto' }}>
+            <div className="row space-between" style={{ alignItems: 'center' }}>
+              <h2 className="heading-md" style={{ margin: 0 }}>Community Impact</h2>
+              <button type="button" className="button button-muted button-sm" onClick={() => setImpactOpen(false)}>Close</button>
+            </div>
+            <p className="subtitle" style={{ marginTop: '6px' }}>{business.name}</p>
+            <div className="badge-grid" style={{ marginTop: '12px' }}>
+              {badges.map((badge) => (
+                <div key={badge.id} className="badge-card">
+                  <div className="badge-header">
+                    {badge.icon && <span className="badge-icon">{badge.icon}</span>}
+                    <div>
+                      <p className="text-strong">{badge.name}</p>
+                      <p className="muted-text">{badge.description}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };
@@ -2610,7 +2661,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
   const [badgeCatalog, setBadgeCatalog] = useState([]);
   const [businessDocuments, setBusinessDocuments] = useState([]);
   const [requestHistory, setRequestHistory] = useState([]);
-  const [requestForm, setRequestForm] = useState({ badge_id: '', business_notes: '', linked_document_id: '' });
+  const [requestForm, setRequestForm] = useState({ badge_id: '', business_notes: '', linked_document_id: '', evidence_url: '', evidence_explanation: '' });
   const [selectedBadgeCategory, setSelectedBadgeCategory] = useState('');
   const [documentType, setDocumentType] = useState('incorporation');
   const [documentFile, setDocumentFile] = useState(null);
@@ -2811,6 +2862,29 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
       return;
     }
 
+    if (!requestForm.business_notes || !requestForm.business_notes.trim()) {
+      setSaveError('Please explain your action and why it matters to the community.');
+      return;
+    }
+
+    if (!requestForm.linked_document_id) {
+      setSaveError('Please select a supporting document.');
+      return;
+    }
+
+    const trimmedEvidenceUrl = (requestForm.evidence_url || '').trim();
+    const trimmedEvidenceExplanation = (requestForm.evidence_explanation || '').trim();
+
+    if (trimmedEvidenceUrl && !trimmedEvidenceExplanation) {
+      setSaveError('Please explain how the evidence URL proves this badge request.');
+      return;
+    }
+
+    if (trimmedEvidenceExplanation.length > 500) {
+      setSaveError('Evidence URL explanation must be 500 characters or less.');
+      return;
+    }
+
     setRequestLoading(true);
     setSaveError('');
     setSaveMessage('');
@@ -2818,11 +2892,13 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
     try {
       await api.post('/business/badges/request', {
         badge_id: Number(requestForm.badge_id),
-        business_notes: requestForm.business_notes || null,
-        linked_document_id: requestForm.linked_document_id ? Number(requestForm.linked_document_id) : null
+        business_notes: requestForm.business_notes.trim(),
+        linked_document_id: Number(requestForm.linked_document_id),
+        evidence_url: trimmedEvidenceUrl || null,
+        evidence_explanation: trimmedEvidenceUrl ? trimmedEvidenceExplanation : null,
       });
       setSaveMessage('Badge request submitted. Submitted by business, pending admin verification.');
-      setRequestForm({ badge_id: '', business_notes: '', linked_document_id: '' });
+      setRequestForm({ badge_id: '', business_notes: '', linked_document_id: '', evidence_url: '', evidence_explanation: '' });
       await loadBadgeData();
     } catch (err) {
       setSaveError(getApiErrorMessage(err, 'Unable to submit badge request.'));
@@ -3036,27 +3112,49 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
                 </select>
               </div>
               <div className="field">
-                <label className="label">Impact notes (optional)</label>
+                <label className="label">Impact notes</label>
                 <textarea
                   className="input"
                   rows="3"
                   value={requestForm.business_notes}
                   onChange={(e) => setRequestForm((prev) => ({ ...prev, business_notes: e.target.value }))}
-                  placeholder="Share your action and why it matters to the community."
+                  placeholder="Share your action and why it matters to the community." required
                 />
               </div>
               <div className="field">
-                <label className="label">Supporting document</label>
+                <label className="label">Supporting document (required)</label>
                 <select
                   className="input"
                   value={requestForm.linked_document_id}
                   onChange={(e) => setRequestForm((prev) => ({ ...prev, linked_document_id: e.target.value }))}
                 >
-                  <option value="">No supporting document</option>
+                  <option value="">Choose a supporting document</option>
                   {businessDocuments.map((doc) => (
                     <option key={doc.id} value={doc.id}>{doc.documentType} — {doc.originalFileName} ({doc.status})</option>
                   ))}
                 </select>
+              </div>
+              <div className="field">
+                <label className="label">Evidence URL (optional)</label>
+                <input
+                  className="input"
+                  type="url"
+                  value={requestForm.evidence_url}
+                  onChange={(e) => setRequestForm((prev) => ({ ...prev, evidence_url: e.target.value }))}
+                  placeholder="https://example.com/proof"
+                />
+              </div>
+              <div className="field">
+                <label className="label">How this URL proves your request {requestForm.evidence_url.trim() ? '(required)' : '(optional)'}</label>
+                <textarea
+                  className="input"
+                  rows="2"
+                  maxLength={500}
+                  value={requestForm.evidence_explanation}
+                  onChange={(e) => setRequestForm((prev) => ({ ...prev, evidence_explanation: e.target.value }))}
+                  placeholder="Explain how the URL supports this badge request (500 characters max)."
+                />
+                <p className="helper-text">{requestForm.evidence_explanation.length}/500 characters</p>
               </div>
               <button type="button" className="button button-secondary" onClick={handleSubmitBadgeRequest} disabled={requestLoading}>
                 {requestLoading ? 'Submitting...' : 'Submit badge request'}
@@ -3076,6 +3174,8 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
                         {item.status === 'Approved' ? <p className="muted-text">Granted ✅</p> : null}
                         {item.businessNotes ? <p className="muted-text">Business notes: {item.businessNotes}</p> : null}
                         {item.adminNotes ? <p className="muted-text">Admin notes: {item.adminNotes}</p> : null}
+                        {item.evidenceUrl ? <p className="muted-text">Evidence URL: <a href={item.evidenceUrl} target="_blank" rel="noreferrer">{item.evidenceUrl}</a></p> : null}
+                        {item.evidenceExplanation ? <p className="muted-text">Evidence explanation: {item.evidenceExplanation}</p> : null}
                         {item.rejectionReason ? <p className="muted-text">Rejection reason: {item.rejectionReason}</p> : null}
                       </div>
                     ))}

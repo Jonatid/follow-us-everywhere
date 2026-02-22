@@ -259,6 +259,12 @@ const ensureSchema = async () => {
     `);
 
     await pool.query(`
+      ALTER TABLE badge_requests
+      ADD COLUMN IF NOT EXISTS evidence_url TEXT,
+      ADD COLUMN IF NOT EXISTS evidence_explanation VARCHAR(500);
+    `);
+
+    await pool.query(`
       ALTER TABLE business_badges
       ADD COLUMN IF NOT EXISTS source_badge_request_id INTEGER REFERENCES badge_requests(id) ON DELETE SET NULL;
     `);
