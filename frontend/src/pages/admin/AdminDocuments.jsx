@@ -1,13 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { fetchAdminDocuments, reviewAdminDocument } from '../../utils/adminApi';
+import { toAdminDocumentUrl } from '../../utils/documentUrl';
 
 const STATUS_FILTERS = ['Pending', 'Verified', 'Rejected'];
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'https://followuseverywhere-api.onrender.com/api';
-
-const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '');
-
 
 const AdminDocuments = () => {
   const [statusFilter, setStatusFilter] = useState('Pending');
@@ -130,10 +125,10 @@ const AdminDocuments = () => {
                 <td>{doc.submittedAt ? new Date(doc.submittedAt).toLocaleString() : '—'}</td>
                 <td>
                   <div className="admin-actions" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
-                    {doc.storagePath ? (
+                    {toAdminDocumentUrl(doc.storagePath) ? (
                       <a
                         className="admin-button secondary"
-                        href={`${API_ORIGIN}${doc.storagePath.startsWith('/') ? doc.storagePath : `/${doc.storagePath}`}`}
+                        href={toAdminDocumentUrl(doc.storagePath)}
                         target="_blank"
                         rel="noreferrer"
                       >
