@@ -91,7 +91,13 @@ const handleDocumentUpload = (req, res) => {
     }
 
     try {
-      const { document_type, notes } = req.body;
+      const {
+        document_type,
+        notes,
+        document_number,
+        identification_number,
+        id_number,
+      } = req.body;
 
       if (!document_type || !allowedDocumentTypes.has(document_type)) {
         return res.status(400).json({ error: 'Invalid document_type' });
@@ -99,6 +105,17 @@ const handleDocumentUpload = (req, res) => {
 
       if (!req.file) {
         return res.status(400).json({ error: 'Document file is required' });
+      }
+
+      const candidateDocumentNumber = [document_number, identification_number, id_number]
+        .find((value) => typeof value === 'string' && value.trim().length > 0);
+
+      const normalizedDocumentNumber = typeof candidateDocumentNumber === 'string'
+        ? candidateDocumentNumber.trim()
+        : '';
+
+      if (normalizedDocumentNumber.length > 255) {
+        return res.status(400).json({ error: 'Document number must be 255 characters or less' });
       }
 
       const storagePath = path.relative(path.join(__dirname, '..'), req.file.path).replace(/\\/g, '/');
@@ -111,12 +128,13 @@ const handleDocumentUpload = (req, res) => {
            stored_file_name,
            storage_provider,
            storage_path,
+           document_number,
            mime_type,
            file_size,
            status,
            notes
          )
-         VALUES ($1, $2, $3, $4, 'local', $5, $6, $7, 'Pending', $8)
+         VALUES ($1, $2, $3, $4, 'local', $5, $6, $7, $8, 'Pending', $9)
          RETURNING id,
                    business_id AS "businessId",
                    document_type AS "documentType",
@@ -124,6 +142,7 @@ const handleDocumentUpload = (req, res) => {
                    stored_file_name AS "storedFileName",
                    storage_provider AS "storageProvider",
                    storage_path AS "storagePath",
+                   document_number AS "documentNumber",
                    mime_type AS "mimeType",
                    file_size AS "fileSize",
                    status,
@@ -138,11 +157,22 @@ const handleDocumentUpload = (req, res) => {
           req.file.originalname,
           req.file.filename,
           storagePath,
+          normalizedDocumentNumber || null,
           req.file.mimetype,
           req.file.size,
           notes || null
         ]
       );
+
+      if (['lara', 'incorporation'].includes(document_type) && normalizedDocumentNumber) {
+        await pool.query(
+          `UPDATE businesses
+           SET lara_number = $1,
+               updated_at = CURRENT_TIMESTAMP
+           WHERE id = $2`,
+          [normalizedDocumentNumber, req.businessId]
+        );
+      }
 
       res.status(201).json(result.rows[0]);
     } catch (error) {
@@ -167,6 +197,7 @@ router.get('/documents', authenticateToken, async (req, res) => {
               stored_file_name AS "storedFileName",
               storage_provider AS "storageProvider",
               storage_path AS "storagePath",
+              document_number AS "documentNumber",
               mime_type AS "mimeType",
               file_size AS "fileSize",
               status,

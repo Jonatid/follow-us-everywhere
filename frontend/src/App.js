@@ -2613,6 +2613,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
   const [requestForm, setRequestForm] = useState({ badge_id: '', business_notes: '', linked_document_id: '' });
   const [selectedBadgeCategory, setSelectedBadgeCategory] = useState('');
   const [documentType, setDocumentType] = useState('incorporation');
+  const [documentNumber, setDocumentNumber] = useState('');
   const [documentFile, setDocumentFile] = useState(null);
   const [uploadLoading, setUploadLoading] = useState(false);
   const [requestLoading, setRequestLoading] = useState(false);
@@ -2670,12 +2671,22 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
     try {
       const form = new FormData();
       form.append('document_type', documentType);
+      form.append('document_number', documentNumber.trim());
       form.append('document', documentFile);
-      await api.post('/business/documents/upload', form, {
+      const response = await api.post('/business/documents/upload', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setSaveMessage('Document uploaded successfully.');
       setDocumentFile(null);
+      setDocumentNumber('');
+      if (['lara', 'incorporation'].includes(documentType) && response?.data?.documentNumber) {
+        const nextNumber = response.data.documentNumber;
+        setFormData((prev) => ({ ...prev, laraNumber: nextNumber }));
+        onBusinessUpdated((prev) => ({
+          ...prev,
+          lara_number: nextNumber,
+        }));
+      }
       if (documentFileInputRef.current) {
         documentFileInputRef.current.value = '';
       }
@@ -2871,9 +2882,9 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
                     LARA / Articles of Incorporation Number
                   </a>
                 </label>
-                <input className="input" type="text" value={formData.laraNumber} onChange={(e) => handleChange('laraNumber', e.target.value)} />
-                <p className="helper-text">Used for verification review</p>
-                <p className="muted-text">Stored on your business profile for verification review.</p>
+                <input className="input" type="text" value={formData.laraNumber} readOnly />
+                <p className="helper-text">Auto-filled from uploaded LARA/Incorporation documents.</p>
+                <p className="muted-text">Upload a verification document below and enter the number exactly as shown on the document.</p>
               </div>
               <button type="button" className="button button-primary" onClick={handleSave} disabled={saving}>
                 {saving ? 'Saving...' : 'Save profile'}
@@ -2900,6 +2911,18 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
                   onChange={(e) => setDocumentFile(e.target.files?.[0] || null)}
                 />
               </div>
+              {['lara', 'incorporation'].includes(documentType) && (
+                <div className="field">
+                  <label className="label">Identification Number / ID Number on document</label>
+                  <input
+                    className="input"
+                    type="text"
+                    value={documentNumber}
+                    onChange={(e) => setDocumentNumber(e.target.value)}
+                    placeholder="Enter the Identification Number (ID Number) exactly as printed"
+                  />
+                </div>
+              )}
               <button type="button" className="button button-primary" onClick={handleUploadDocument} disabled={uploadLoading}>
                 {uploadLoading ? 'Uploading...' : 'Upload document'}
               </button>
@@ -2914,6 +2937,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
                       <div key={doc.id} className="card" style={{ border: '1px solid var(--border)', boxShadow: 'none' }}>
                         <p className="muted-text">Type: {doc.documentType}</p>
                         <p className="muted-text">Filename: {doc.originalFileName}</p>
+                        {doc.documentNumber && <p className="muted-text">Document number: {doc.documentNumber}</p>}
                         <p className="muted-text">Status: {doc.status}</p>
                         <p className="muted-text">Submitted: {doc.submittedAt ? new Date(doc.submittedAt).toLocaleString() : '—'}</p>
                         <button
