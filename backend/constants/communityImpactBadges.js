@@ -37,7 +37,8 @@ const COMMUNITY_IMPACT_BADGES = [
   { slug: 'environmental-justice-partner', category: 'Additional Impact Badges', name: 'Environmental Justice Partner', description: 'Engages in environmental initiatives benefiting underserved areas.' },
   { slug: 'fair-chance-contracting-partner', category: 'Additional Impact Badges', name: 'Fair Chance Contracting Partner', description: 'Contracts with businesses owned by returning citizens.' },
   { slug: 'apprenticeship-program-provider', category: 'Additional Impact Badges', name: 'Apprenticeship Program Provider', description: 'Offers structured apprenticeship pathways.' },
-  { slug: 'community-investment-champion', category: 'Additional Impact Badges', name: 'Community Investment Champion', description: 'Demonstrates sustained financial investment into local community development.' }
+  { slug: 'community-investment-champion', category: 'Additional Impact Badges', name: 'Community Investment Champion', description: 'Demonstrates sustained financial investment into local community development.' },
+  { slug: 'social-entrepreneur-certified', category: 'Additional Impact Badges', name: 'Social Entrepreneur Certified', description: 'Operates a revenue-generating business model intentionally designed to solve measurable social or community challenges, with documented impact reporting.' }
 ];
 
 module.exports = { COMMUNITY_IMPACT_BADGES };
