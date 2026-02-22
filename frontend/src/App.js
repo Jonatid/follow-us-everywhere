@@ -2882,9 +2882,15 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
                     LARA / Articles of Incorporation Number
                   </a>
                 </label>
-                <input className="input" type="text" value={formData.laraNumber} readOnly />
-                <p className="helper-text">Auto-filled from uploaded LARA/Incorporation documents.</p>
-                <p className="muted-text">Upload a verification document below and enter the number exactly as shown on the document.</p>
+                <input
+                  className="input"
+                  type="text"
+                  value={formData.laraNumber}
+                  onChange={(e) => handleChange('laraNumber', e.target.value)}
+                  placeholder="Enter your LARA / incorporation number"
+                />
+                <p className="helper-text">You can type this manually or auto-fill it from an uploaded LARA/Incorporation document.</p>
+                <p className="muted-text">Use the exact number shown in Michigan records or on your incorporation document, then click Save profile.</p>
               </div>
               <button type="button" className="button button-primary" onClick={handleSave} disabled={saving}>
                 {saving ? 'Saving...' : 'Save profile'}
