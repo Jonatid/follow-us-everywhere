@@ -2712,7 +2712,11 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
       link.remove();
       window.URL.revokeObjectURL(blobUrl);
     } catch (err) {
-      setSaveError(getApiErrorMessage(err, 'Unable to download document.'));
+      if (err?.response?.status === 404) {
+        setSaveError('Document record or file was not found. Please re-upload this document and try downloading again.');
+      } else {
+        setSaveError(getApiErrorMessage(err, 'Unable to download document.'));
+      }
     }
   };
 
@@ -2806,11 +2810,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
       }));
       setSaveMessage('Profile saved successfully.');
     } catch (err) {
-      if (err?.response?.status === 404) {
-        setSaveMessage('Profile saving is not enabled yet.');
-      } else {
-        setSaveError(getApiErrorMessage(err, 'Unable to save profile right now.'));
-      }
+      setSaveError(getApiErrorMessage(err, 'Unable to save profile right now.'));
     } finally {
       setSaving(false);
     }
