@@ -1,4 +1,5 @@
 const pool = require('./db');
+const { COMMUNITY_IMPACT_BADGES } = require('../constants/communityImpactBadges');
 
 const REQUIRED_TABLES = [
   'businesses',
@@ -224,6 +225,19 @@ const ensureSchema = async () => {
         END IF;
       END $$;
     `);
+
+    for (const badge of COMMUNITY_IMPACT_BADGES) {
+      await pool.query(
+        `INSERT INTO badges (slug, name, description, category, is_active)
+         VALUES ($1, $2, $3, $4, true)
+         ON CONFLICT (slug)
+         DO UPDATE SET name = EXCLUDED.name,
+                       description = EXCLUDED.description,
+                       category = EXCLUDED.category,
+                       is_active = true`,
+        [badge.slug, badge.name, badge.description, badge.category]
+      );
+    }
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS business_badges (

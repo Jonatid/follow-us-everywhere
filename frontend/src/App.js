@@ -2701,12 +2701,18 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
   }, []);
 
   const badgeCategories = useMemo(() => (
-    [...new Set(badgeCatalog.map((badge) => badge.category).filter(Boolean))]
+    [...new Set(badgeCatalog.map((badge) => badge.category).filter(Boolean))].sort((a, b) => a.localeCompare(b))
   ), [badgeCatalog]);
 
   const filteredBadges = useMemo(() => (
-    badgeCatalog.filter((badge) => !selectedBadgeCategory || badge.category === selectedBadgeCategory)
+    selectedBadgeCategory
+      ? badgeCatalog.filter((badge) => badge.category === selectedBadgeCategory)
+      : []
   ), [badgeCatalog, selectedBadgeCategory]);
+
+  const selectedBadgeDetails = useMemo(() => (
+    filteredBadges.find((badge) => String(badge.id) === String(requestForm.badge_id)) || null
+  ), [filteredBadges, requestForm.badge_id]);
 
   const handleUploadDocument = async () => {
     if (!documentFile) {
@@ -3096,6 +3102,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
                     <option key={category} value={category}>{category}</option>
                   ))}
                 </select>
+                {badgeCategories.length === 0 ? <p className="helper-text">No badge categories are available yet.</p> : null}
               </div>
               <div className="field">
                 <label className="label">Badge</label>
@@ -3110,6 +3117,8 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
                     <option key={badgeItem.id} value={badgeItem.id}>{badgeItem.name}</option>
                   ))}
                 </select>
+                {!selectedBadgeCategory ? <p className="helper-text">Choose a category first to load matching badges.</p> : null}
+                {selectedBadgeDetails ? <p className="helper-text">{selectedBadgeDetails.description}</p> : null}
               </div>
               <div className="field">
                 <label className="label">Impact notes</label>
