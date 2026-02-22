@@ -37,20 +37,38 @@ router.post(
   authenticateToken,
   [
     body('badge_id').isInt({ gt: 0 }),
-    body('business_notes').optional({ nullable: true }).isLength({ max: 2000 }),
-    body('linked_document_id').optional({ nullable: true }).isInt({ gt: 0 })
+    body('business_notes').trim().isLength({ min: 1, max: 2000 }),
+    body('linked_document_id').isInt({ gt: 0 }),
+    body('evidence_url').optional({ nullable: true }).isURL({ protocols: ['http', 'https'], require_protocol: true }),
+    body('evidence_explanation').optional({ nullable: true }).isLength({ max: 500 })
   ],
   async (req, res) => {
     if (!handleValidation(req, res)) {
       return;
     }
 
-    const { badge_id, business_notes, linked_document_id } = req.body;
+    const { badge_id, business_notes, linked_document_id, evidence_url, evidence_explanation } = req.body;
 
     try {
       const badgeResult = await pool.query('SELECT id, name, slug, description, category FROM badges WHERE id = $1 AND is_active = true', [badge_id]);
       if (badgeResult.rows.length === 0) {
         return res.status(404).json({ message: 'Badge not found' });
+      }
+
+
+      const trimmedEvidenceUrl = typeof evidence_url === 'string' ? evidence_url.trim() : '';
+      const trimmedEvidenceExplanation = typeof evidence_explanation === 'string' ? evidence_explanation.trim() : '';
+
+      if (!business_notes || !String(business_notes).trim()) {
+        return res.status(400).json({ message: 'business_notes is required' });
+      }
+
+      if (!linked_document_id) {
+        return res.status(400).json({ message: 'linked_document_id is required' });
+      }
+
+      if (trimmedEvidenceUrl && !trimmedEvidenceExplanation) {
+        return res.status(400).json({ message: 'evidence_explanation is required when evidence_url is provided' });
       }
 
       if (linked_document_id) {
@@ -89,9 +107,9 @@ router.post(
 
       const inserted = await pool.query(
         `INSERT INTO badge_requests (
-           business_id, badge_id, request_type, status, business_notes, linked_document_id
+           business_id, badge_id, request_type, status, business_notes, linked_document_id, evidence_url, evidence_explanation
          )
-         VALUES ($1, $2, 'badge', 'Pending', $3, $4)
+         VALUES ($1, $2, 'badge', 'Pending', $3, $4, $5, $6)
          RETURNING id,
                    business_id AS "businessId",
                    badge_id AS "badgeId",
@@ -103,8 +121,10 @@ router.post(
                    business_notes AS "businessNotes",
                    admin_notes AS "adminNotes",
                    rejection_reason AS "rejectionReason",
-                   linked_document_id AS "linkedDocumentId"`,
-        [req.businessId, badge_id, business_notes || null, linked_document_id || null]
+                   linked_document_id AS "linkedDocumentId",
+                   evidence_url AS "evidenceUrl",
+                   evidence_explanation AS "evidenceExplanation"`,
+        [req.businessId, badge_id, String(business_notes).trim(), linked_document_id, trimmedEvidenceUrl || null, trimmedEvidenceExplanation || null]
       );
 
       res.status(201).json({
@@ -137,6 +157,8 @@ router.get('/business/badge-requests', authenticateToken, async (req, res) => {
               br.admin_notes AS "adminNotes",
               br.rejection_reason AS "rejectionReason",
               br.linked_document_id AS "linkedDocumentId",
+              br.evidence_url AS "evidenceUrl",
+              br.evidence_explanation AS "evidenceExplanation",
               b.slug AS "badgeSlug",
               b.name AS "badgeName",
               b.description AS "badgeDescription",
@@ -144,6 +166,7 @@ router.get('/business/badge-requests', authenticateToken, async (req, res) => {
               bd.document_type AS "linkedDocumentType",
               bd.original_file_name AS "linkedDocumentOriginalFileName",
               bd.status AS "linkedDocumentStatus",
+              bd.storage_path AS "linkedDocumentStoragePath",
               bd.submitted_at AS "linkedDocumentSubmittedAt"
        FROM badge_requests br
        JOIN badges b ON b.id = br.badge_id
@@ -200,9 +223,12 @@ router.get(
                 br.admin_notes AS "adminNotes",
                 br.rejection_reason AS "rejectionReason",
                 br.linked_document_id AS "linkedDocumentId",
+                br.evidence_url AS "evidenceUrl",
+                br.evidence_explanation AS "evidenceExplanation",
                 bd.document_type AS "linkedDocumentType",
                 bd.original_file_name AS "linkedDocumentOriginalFileName",
                 bd.status AS "linkedDocumentStatus",
+                bd.storage_path AS "linkedDocumentStoragePath",
                 bd.submitted_at AS "linkedDocumentSubmittedAt"
          FROM badge_requests br
          JOIN businesses biz ON biz.id = br.business_id
@@ -246,7 +272,9 @@ router.patch(
       await client.query('BEGIN');
 
       const requestResult = await client.query(
-        `SELECT id, business_id AS "businessId", badge_id AS "badgeId", status
+        `SELECT id, business_id AS "businessId", badge_id AS "badgeId", status,
+                evidence_url AS "evidenceUrl", evidence_explanation AS "evidenceExplanation",
+                business_notes AS "businessNotes"
          FROM badge_requests
          WHERE id = $1
          FOR UPDATE`,
@@ -279,7 +307,9 @@ router.patch(
                    business_notes AS "businessNotes",
                    admin_notes AS "adminNotes",
                    rejection_reason AS "rejectionReason",
-                   linked_document_id AS "linkedDocumentId"`,
+                   linked_document_id AS "linkedDocumentId",
+                   evidence_url AS "evidenceUrl",
+                   evidence_explanation AS "evidenceExplanation"`,
         [
           status,
           req.adminId,
@@ -294,18 +324,22 @@ router.patch(
           `INSERT INTO business_badges (
              business_id,
              badge_id,
+             evidence_url,
+             notes,
              awarded_by_admin_id,
              granted_by_admin_id,
              source_badge_request_id
            )
-           VALUES ($1, $2, $3, $3, $4)
+           VALUES ($1, $2, $3, $4, $5, $5, $6)
            ON CONFLICT (business_id, badge_id)
-           DO UPDATE SET awarded_by_admin_id = EXCLUDED.awarded_by_admin_id,
+           DO UPDATE SET evidence_url = EXCLUDED.evidence_url,
+                         notes = EXCLUDED.notes,
+                         awarded_by_admin_id = EXCLUDED.awarded_by_admin_id,
                          granted_by_admin_id = EXCLUDED.granted_by_admin_id,
                          granted_at = CURRENT_TIMESTAMP,
                          awarded_at = CURRENT_TIMESTAMP,
                          source_badge_request_id = EXCLUDED.source_badge_request_id`,
-          [requestRow.businessId, requestRow.badgeId, req.adminId, req.params.id]
+          [requestRow.businessId, requestRow.badgeId, requestRow.evidenceUrl || null, requestRow.businessNotes || null, req.adminId, req.params.id]
         );
       }
 

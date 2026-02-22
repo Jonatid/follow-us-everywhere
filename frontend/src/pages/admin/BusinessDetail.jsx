@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import {
   approveBusiness,
-  assignBusinessBadge,
   blockBusiness,
   deleteAdminDocument,
   fetchAdminDocuments,
-  fetchBadges,
   fetchBusiness,
-  fetchBusinessBadges,
-  removeBusinessBadge,
+  fetchBadgeRequests,
+  reviewBadgeRequest,
   reviewAdminDocument,
 } from '../../utils/adminApi';
 import { toAdminDocumentUrl } from '../../utils/documentUrl';
@@ -25,12 +23,9 @@ const BusinessDetail = ({ businessId, onBack }) => {
   const [business, setBusiness] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [badges, setBadges] = useState([]);
-  const [assignedBadges, setAssignedBadges] = useState([]);
-  const [selectedBadge, setSelectedBadge] = useState('');
-  const [evidenceUrl, setEvidenceUrl] = useState('');
-  const [notes, setNotes] = useState('');
+  const [badgeRequests, setBadgeRequests] = useState([]);
   const [badgeSaving, setBadgeSaving] = useState(false);
+  const [badgeRejectionReasons, setBadgeRejectionReasons] = useState({});
   const [businessDocuments, setBusinessDocuments] = useState([]);
   const [documentSavingId, setDocumentSavingId] = useState(null);
   const [documentDeletingId, setDocumentDeletingId] = useState(null);
@@ -47,16 +42,13 @@ const BusinessDetail = ({ businessId, onBack }) => {
     }
   };
 
-  const loadBadges = async () => {
+  const loadBadgeRequests = async () => {
     try {
-      const [badgeList, assignedList] = await Promise.all([
-        fetchBadges(),
-        fetchBusinessBadges(businessId),
-      ]);
-      setBadges(Array.isArray(badgeList) ? badgeList : []);
-      setAssignedBadges(Array.isArray(assignedList) ? assignedList : []);
+      const requests = await fetchBadgeRequests();
+      const normalized = Array.isArray(requests) ? requests.filter((item) => Number(item.businessId) === Number(businessId)) : [];
+      setBadgeRequests(normalized);
     } catch (err) {
-      setError('Unable to load badges.');
+      setError('Unable to load badge requests.');
     }
   };
 
@@ -72,7 +64,7 @@ const BusinessDetail = ({ businessId, onBack }) => {
   useEffect(() => {
     if (businessId) {
       loadBusiness();
-      loadBadges();
+      loadBadgeRequests();
       loadBusinessDocuments();
     }
   }, [businessId]);
@@ -95,42 +87,30 @@ const BusinessDetail = ({ businessId, onBack }) => {
     }
   };
 
-  const handleAssignBadge = async () => {
-    if (!selectedBadge) {
-      setError('Select a badge to assign.');
+
+
+  const handleReviewBadgeRequest = async (requestId, status) => {
+    const rejectionReason = (badgeRejectionReasons[requestId] || '').trim();
+    if (status === 'Rejected' && !rejectionReason) {
+      setError('Please provide a rejection reason before rejecting a badge request.');
       return;
     }
+
     setBadgeSaving(true);
     setError('');
     try {
-      await assignBusinessBadge(businessId, {
-        badgeId: Number(selectedBadge),
-        evidenceUrl: evidenceUrl || null,
-        notes: notes || null,
+      await reviewBadgeRequest(requestId, {
+        status,
+        rejection_reason: status === 'Rejected' ? rejectionReason : undefined,
       });
-      setSelectedBadge('');
-      setEvidenceUrl('');
-      setNotes('');
-      await loadBadges();
+      await loadBadgeRequests();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to assign badge.');
+      setError(err.response?.data?.message || 'Failed to review badge request.');
     } finally {
       setBadgeSaving(false);
     }
   };
 
-  const handleRemoveBadge = async (badgeId) => {
-    setBadgeSaving(true);
-    setError('');
-    try {
-      await removeBusinessBadge(businessId, badgeId);
-      await loadBadges();
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to remove badge.');
-    } finally {
-      setBadgeSaving(false);
-    }
-  };
 
 
   const handleDeleteDocument = async (documentId) => {
@@ -167,9 +147,6 @@ const BusinessDetail = ({ businessId, onBack }) => {
       setDocumentSavingId(null);
     }
   };
-
-  const assignedBadgeIds = new Set(assignedBadges.map((badge) => badge.badgeId));
-  const availableBadges = badges.filter((badge) => !assignedBadgeIds.has(badge.id));
 
   if (loading) {
     return (
@@ -309,71 +286,66 @@ const BusinessDetail = ({ businessId, onBack }) => {
       </div>
       <div className="admin-divider" />
       <div className="admin-section">
-        <h2>Community Impact Badges</h2>
-        <p className="admin-muted">Verified recognition shown on the public profile.</p>
-        <div className="admin-form">
-          <label>
-            Assign a badge
-            <select
-              className="admin-input"
-              value={selectedBadge}
-              onChange={(event) => setSelectedBadge(event.target.value)}
-            >
-              <option value="">Select a badge</option>
-              {availableBadges.map((badge) => (
-                <option key={badge.id} value={badge.id}>
-                  {badge.icon ? `${badge.icon} ` : ''}{badge.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Evidence URL (optional)
-            <input
-              type="url"
-              className="admin-input"
-              value={evidenceUrl}
-              onChange={(event) => setEvidenceUrl(event.target.value)}
-              placeholder="https://example.com/proof"
-            />
-          </label>
-          <label>
-            Notes (optional)
-            <input
-              type="text"
-              className="admin-input"
-              value={notes}
-              onChange={(event) => setNotes(event.target.value)}
-              placeholder="Added after confirming community event."
-            />
-          </label>
-          <button
-            type="button"
-            className="admin-button primary"
-            onClick={handleAssignBadge}
-            disabled={badgeSaving}
-          >
-            {badgeSaving ? 'Saving...' : 'Assign Badge'}
-          </button>
-        </div>
-        {assignedBadges.length === 0 ? (
-          <p className="admin-muted">No verified badges assigned yet.</p>
+        <h2>Community Impact Badge Requests</h2>
+        <p className="admin-muted">Approve requested badges or reject with a required reason.</p>
+        {badgeRequests.length === 0 ? (
+          <p className="admin-muted">No badge requests submitted yet.</p>
         ) : (
           <div className="admin-badge-list">
-            {assignedBadges.map((badge) => (
-              <div key={badge.id} className="admin-badge-item">
-                <div>
-                  <p className="text-strong">{badge.icon ? `${badge.icon} ` : ''}{badge.name}</p>
-                  <p className="admin-muted">{badge.description}</p>
+            {badgeRequests.map((request) => (
+              <div key={request.id} className="admin-badge-item">
+                <div className="admin-badge-fields">
+                  <p className="text-strong">{request.badgeName}</p>
+                  <p className="admin-muted">Category: {request.badgeCategory || '—'}</p>
+                  <p className="admin-muted">Status: {request.status}</p>
+                  {request.businessNotes ? <p className="admin-muted">Business notes: {request.businessNotes}</p> : null}
+                  {request.evidenceUrl ? (
+                    <p className="admin-muted">
+                      Evidence URL: <a href={request.evidenceUrl} target="_blank" rel="noreferrer">{request.evidenceUrl}</a>
+                    </p>
+                  ) : null}
+                  {request.evidenceExplanation ? <p className="admin-muted">URL proof explanation: {request.evidenceExplanation}</p> : null}
+                  {request.linkedDocumentOriginalFileName ? (
+                    <p className="admin-muted">
+                      Supporting document: {toAdminDocumentUrl(request.linkedDocumentStoragePath) ? (
+                        <a href={toAdminDocumentUrl(request.linkedDocumentStoragePath)} target="_blank" rel="noreferrer">
+                          {request.linkedDocumentOriginalFileName}
+                        </a>
+                      ) : request.linkedDocumentOriginalFileName}
+                    </p>
+                  ) : null}
+                  {request.rejectionReason ? <p className="admin-muted">Rejection reason: {request.rejectionReason}</p> : null}
                 </div>
-                <button
-                  type="button"
-                  className="admin-button danger"
-                  onClick={() => handleRemoveBadge(badge.badgeId)}
-                  disabled={badgeSaving}
-                >
-                  Remove
-                </button>
+                <div className="admin-actions" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+                  <button
+                    type="button"
+                    className="admin-button primary"
+                    onClick={() => handleReviewBadgeRequest(request.id, 'Approved')}
+                    disabled={badgeSaving || request.status === 'Approved'}
+                  >
+                    {badgeSaving ? 'Saving...' : 'Approve Badge'}
+                  </button>
+                  <input
+                    type="text"
+                    className="admin-input"
+                    placeholder="Rejection reason"
+                    value={badgeRejectionReasons[request.id] || ''}
+                    onChange={(event) =>
+                      setBadgeRejectionReasons((prev) => ({
+                        ...prev,
+                        [request.id]: event.target.value,
+                      }))
+                    }
+                  />
+                  <button
+                    type="button"
+                    className="admin-button danger"
+                    onClick={() => handleReviewBadgeRequest(request.id, 'Rejected')}
+                    disabled={badgeSaving || request.status === 'Rejected'}
+                  >
+                    {badgeSaving ? 'Saving...' : 'Reject Badge'}
+                  </button>
+                </div>
               </div>
             ))}
           </div>
