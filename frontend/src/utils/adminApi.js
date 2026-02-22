@@ -128,4 +128,9 @@ export const reviewAdminDocument = async (documentId, payload) => {
   return response.data;
 };
 
+export const deleteAdminDocument = async (documentId) => {
+  const response = await adminApi.delete(`/admin/documents/${documentId}`);
+  return response.data;
+};
+
 export default adminApi;

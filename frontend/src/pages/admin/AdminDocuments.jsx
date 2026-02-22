@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { fetchAdminDocuments, reviewAdminDocument } from '../../utils/adminApi';
+import { deleteAdminDocument, fetchAdminDocuments, reviewAdminDocument } from '../../utils/adminApi';
 import { toAdminDocumentUrl } from '../../utils/documentUrl';
 
 const STATUS_FILTERS = ['Pending', 'Verified', 'Rejected'];
@@ -10,6 +10,7 @@ const AdminDocuments = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [savingId, setSavingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
   const [rejectionReasons, setRejectionReasons] = useState({});
 
   const loadDocuments = async () => {
@@ -33,6 +34,20 @@ const AdminDocuments = () => {
     () => documents.filter((doc) => doc.status === 'Pending').length,
     [documents]
   );
+
+
+  const handleDelete = async (documentId) => {
+    setDeletingId(documentId);
+    setError('');
+    try {
+      await deleteAdminDocument(documentId);
+      await loadDocuments();
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Unable to delete document.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const handleReview = async (documentId, status) => {
     const rejectionReason = (rejectionReasons[documentId] || '').trim();
@@ -137,9 +152,18 @@ const AdminDocuments = () => {
                     ) : null}
                     <button
                       type="button"
+                      className="admin-button secondary"
+                      onClick={() => handleDelete(doc.id)}
+                      disabled={deletingId === doc.id || savingId === doc.id}
+                      aria-label={`Delete ${doc.originalFileName}`}
+                    >
+                      {deletingId === doc.id ? 'Deleting...' : '× Delete'}
+                    </button>
+                    <button
+                      type="button"
                       className="admin-button primary"
                       onClick={() => handleReview(doc.id, 'Verified')}
-                      disabled={savingId === doc.id || doc.status === 'Verified'}
+                      disabled={savingId === doc.id || deletingId === doc.id || doc.status === 'Verified'}
                     >
                       {savingId === doc.id ? 'Saving...' : 'Approve'}
                     </button>
@@ -159,7 +183,7 @@ const AdminDocuments = () => {
                       type="button"
                       className="admin-button danger"
                       onClick={() => handleReview(doc.id, 'Rejected')}
-                      disabled={savingId === doc.id || doc.status === 'Rejected'}
+                      disabled={savingId === doc.id || deletingId === doc.id || doc.status === 'Rejected'}
                     >
                       {savingId === doc.id ? 'Saving...' : 'Reject'}
                     </button>

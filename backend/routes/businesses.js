@@ -102,6 +102,30 @@ const handleDocumentUpload = (req, res) => {
         return res.status(400).json({ error: 'Document file is required' });
       }
 
+      const existingDocument = await pool.query(
+        `SELECT id,
+                document_type AS "documentType",
+                original_file_name AS "originalFileName",
+                submitted_at AS "submittedAt"
+         FROM business_documents
+         WHERE business_id = $1
+           AND LOWER(original_file_name) = LOWER($2)
+         ORDER BY submitted_at DESC
+         LIMIT 1`,
+        [req.businessId, req.file.originalname]
+      );
+
+      if (existingDocument.rows.length > 0) {
+        if (fs.existsSync(req.file.path)) {
+          fs.unlink(req.file.path, () => {});
+        }
+
+        return res.status(409).json({
+          error: 'This file has already been received. No duplicate upload was created.',
+          existingDocument: existingDocument.rows[0],
+        });
+      }
+
       const normalizedDocumentNumber = typeof document_number === 'string'
         ? document_number.trim()
         : '';
@@ -168,6 +192,9 @@ const handleDocumentUpload = (req, res) => {
 
       res.status(201).json(result.rows[0]);
     } catch (error) {
+      if (req.file?.path && fs.existsSync(req.file.path)) {
+        fs.unlink(req.file.path, () => {});
+      }
       console.error('Error uploading business document:', error);
       res.status(500).json({ error: 'Failed to upload document' });
     }

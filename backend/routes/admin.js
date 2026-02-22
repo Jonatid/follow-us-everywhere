@@ -1,4 +1,6 @@
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
 const bcrypt = require('bcryptjs');
 const { body, validationResult } = require('express-validator');
 const pool = require('../config/db');
@@ -144,6 +146,50 @@ router.patch('/documents/:id', async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     console.error('Admin review business document error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
+// @route   DELETE /api/admin/documents/:id
+// @desc    Delete a business document as admin
+// @access  Private (admin)
+router.delete('/documents/:id', async (req, res) => {
+  try {
+    const documentId = Number(req.params.id);
+    if (!Number.isInteger(documentId) || documentId <= 0) {
+      return res.status(400).json({ message: 'Invalid document id' });
+    }
+
+    const result = await pool.query(
+      `DELETE FROM business_documents
+       WHERE id = $1
+       RETURNING id,
+                 storage_path AS "storagePath",
+                 original_file_name AS "originalFileName"`,
+      [documentId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Document not found' });
+    }
+
+    const deletedDocument = result.rows[0];
+    const absolutePath = path.join(__dirname, '..', deletedDocument.storagePath || '');
+    if (deletedDocument.storagePath && fs.existsSync(absolutePath)) {
+      fs.unlink(absolutePath, (unlinkErr) => {
+        if (unlinkErr) {
+          console.error('Admin delete stored business document file error:', unlinkErr);
+        }
+      });
+    }
+
+    res.json({
+      message: 'Document deleted successfully',
+      documentId: deletedDocument.id,
+    });
+  } catch (err) {
+    console.error('Admin delete business document error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });
