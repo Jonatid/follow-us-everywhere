@@ -2613,7 +2613,6 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
   const [requestForm, setRequestForm] = useState({ badge_id: '', business_notes: '', linked_document_id: '' });
   const [selectedBadgeCategory, setSelectedBadgeCategory] = useState('');
   const [documentType, setDocumentType] = useState('incorporation');
-  const [documentNumber, setDocumentNumber] = useState('');
   const [documentFile, setDocumentFile] = useState(null);
   const [uploadLoading, setUploadLoading] = useState(false);
   const [requestLoading, setRequestLoading] = useState(false);
@@ -2671,14 +2670,13 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
     try {
       const form = new FormData();
       form.append('document_type', documentType);
-      form.append('document_number', documentNumber.trim());
+      form.append('document_number', formData.laraNumber.trim());
       form.append('document', documentFile);
       const response = await api.post('/business/documents/upload', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setSaveMessage('Document uploaded successfully.');
       setDocumentFile(null);
-      setDocumentNumber('');
       if (['lara', 'incorporation'].includes(documentType) && response?.data?.documentNumber) {
         const nextNumber = response.data.documentNumber;
         setFormData((prev) => ({ ...prev, laraNumber: nextNumber }));
@@ -2742,6 +2740,24 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
       }
 
       setSaveError(getApiErrorMessage(err, 'Unable to download document.'));
+    }
+  };
+
+  const handleDeleteDocument = async (documentId) => {
+    try {
+      await api.delete(`/business/documents/${documentId}`);
+      setSaveMessage('Document deleted successfully.');
+      setBusinessDocuments((prev) => prev.filter((doc) => doc.id !== documentId));
+      setRequestForm((prev) => {
+        if (!prev.linked_document_id) {
+          return prev;
+        }
+        return String(prev.linked_document_id) === String(documentId)
+          ? { ...prev, linked_document_id: '' }
+          : prev;
+      });
+    } catch (err) {
+      setSaveError(getApiErrorMessage(err, 'Unable to delete document.'));
     }
   };
 
@@ -2901,22 +2917,6 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
                   <div className="avatar" style={{ width: '72px', height: '72px', fontSize: '1.1rem' }}>{profileInitials}</div>
                 )}
               </div>
-              <div className="field" style={{ marginTop: '14px' }}>
-                <label className="label">
-                  <a href="https://mibusinessregistry.lara.state.mi.us/search/business" target="_blank" rel="noopener noreferrer">
-                    LARA / Articles of Incorporation Number
-                  </a>
-                </label>
-                <input
-                  className="input"
-                  type="text"
-                  value={formData.laraNumber}
-                  onChange={(e) => handleChange('laraNumber', e.target.value)}
-                  placeholder="Enter your LARA / incorporation number"
-                />
-                <p className="helper-text">You can type this manually or auto-fill it from an uploaded LARA/Incorporation document.</p>
-                <p className="muted-text">Use the exact number shown in Michigan records or on your incorporation document, then click Save profile.</p>
-              </div>
               <button type="button" className="button button-primary" onClick={handleSave} disabled={saving}>
                 {saving ? 'Saving...' : 'Save profile'}
               </button>
@@ -2942,18 +2942,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
                   onChange={(e) => setDocumentFile(e.target.files?.[0] || null)}
                 />
               </div>
-              {['lara', 'incorporation'].includes(documentType) && (
-                <div className="field">
-                  <label className="label">Number on document</label>
-                  <input
-                    className="input"
-                    type="text"
-                    value={documentNumber}
-                    onChange={(e) => setDocumentNumber(e.target.value)}
-                    placeholder="Enter the LARA / incorporation number exactly as printed"
-                  />
-                </div>
-              )}
+              {['lara', 'incorporation'].includes(documentType) && <p className="helper-text">Enter the LARA / incorporation number exactly as printed field.</p>}
               <button type="button" className="button button-primary" onClick={handleUploadDocument} disabled={uploadLoading}>
                 {uploadLoading ? 'Uploading...' : 'Upload document'}
               </button>
@@ -2966,9 +2955,19 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
                   <div className="stack-sm">
                     {businessDocuments.map((doc) => (
                       <div key={doc.id} className="card" style={{ border: '1px solid var(--border)', boxShadow: 'none' }}>
-                        <p className="muted-text">Type: {doc.documentType}</p>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: '8px' }}>
+                          <p className="muted-text">Type: {doc.documentType}</p>
+                          <button
+                            type="button"
+                            className="button button-ghost"
+                            aria-label={`Delete ${doc.originalFileName}`}
+                            onClick={() => handleDeleteDocument(doc.id)}
+                            style={{ minWidth: 'auto', padding: '2px 8px', fontSize: '1rem', lineHeight: 1 }}
+                          >
+                            ×
+                          </button>
+                        </div>
                         <p className="muted-text">Filename: {doc.originalFileName}</p>
-                        {doc.documentNumber && <p className="muted-text">Document number: {doc.documentNumber}</p>}
                         <p className="muted-text">Status: {doc.status}</p>
                         <p className="muted-text">Submitted: {doc.submittedAt ? new Date(doc.submittedAt).toLocaleString() : '—'}</p>
                         <button
@@ -2982,6 +2981,21 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
                     ))}
                   </div>
                 )}
+              </div>
+              <div className="field" style={{ marginTop: '14px' }}>
+                <label className="label">
+                  <a href="https://mibusinessregistry.lara.state.mi.us/search/business" target="_blank" rel="noopener noreferrer">
+                    LARA / Articles of Incorporation Number
+                  </a>
+                </label>
+                <input
+                  className="input"
+                  type="text"
+                  value={formData.laraNumber}
+                  onChange={(e) => handleChange('laraNumber', e.target.value)}
+                  placeholder="Enter your LARA / incorporation number"
+                />
+                <p className="helper-text">You can type this manually or auto-fill it from an uploaded LARA/Incorporation document.</p>
               </div>
             </div>
 

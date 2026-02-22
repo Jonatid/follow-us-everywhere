@@ -13,6 +13,16 @@ export const toAdminDocumentUrl = (storagePath) => {
     return null;
   }
 
-  return `${API_BASE_URL.replace(/\/+$/, '')}/uploads/${withoutUploadsPrefix}`;
-};
+  const baseUrl = String(API_BASE_URL || '').trim();
 
+  if (!baseUrl) {
+    return `/api/uploads/${withoutUploadsPrefix}`;
+  }
+
+  try {
+    const parsed = new URL(baseUrl);
+    return `${parsed.origin}/api/uploads/${withoutUploadsPrefix}`;
+  } catch {
+    return `${baseUrl.replace(/\/+$/, '').replace(/\/api$/, '')}/api/uploads/${withoutUploadsPrefix}`;
+  }
+};
