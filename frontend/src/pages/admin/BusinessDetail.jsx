@@ -30,6 +30,9 @@ const BusinessDetail = ({ businessId, onBack }) => {
   const [documentSavingId, setDocumentSavingId] = useState(null);
   const [documentDeletingId, setDocumentDeletingId] = useState(null);
   const [rejectionReasons, setRejectionReasons] = useState({});
+  const [adminActionError, setAdminActionError] = useState('');
+  const [badgeActionErrors, setBadgeActionErrors] = useState({});
+  const [documentActionErrors, setDocumentActionErrors] = useState({});
 
   const loadBusiness = async () => {
     try {
@@ -70,20 +73,22 @@ const BusinessDetail = ({ businessId, onBack }) => {
   }, [businessId]);
 
   const handleApprove = async () => {
+    setAdminActionError('');
     try {
       await approveBusiness(businessId);
       await loadBusiness();
     } catch (err) {
-      setError('Failed to approve business.');
+      setAdminActionError('Failed to approve business.');
     }
   };
 
   const handleBlock = async () => {
+    setAdminActionError('');
     try {
       await blockBusiness(businessId);
       await loadBusiness();
     } catch (err) {
-      setError('Failed to block business.');
+      setAdminActionError('Failed to block business.');
     }
   };
 
@@ -92,12 +97,15 @@ const BusinessDetail = ({ businessId, onBack }) => {
   const handleReviewBadgeRequest = async (requestId, status) => {
     const rejectionReason = (badgeRejectionReasons[requestId] || '').trim();
     if (status === 'Rejected' && !rejectionReason) {
-      setError('Please provide a rejection reason before rejecting a badge request.');
+      setBadgeActionErrors((prev) => ({
+        ...prev,
+        [requestId]: 'Please provide a rejection reason before rejecting a badge request.',
+      }));
       return;
     }
 
     setBadgeSaving(true);
-    setError('');
+    setBadgeActionErrors((prev) => ({ ...prev, [requestId]: '' }));
     try {
       await reviewBadgeRequest(requestId, {
         status,
@@ -105,7 +113,10 @@ const BusinessDetail = ({ businessId, onBack }) => {
       });
       await loadBadgeRequests();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to review badge request.');
+      setBadgeActionErrors((prev) => ({
+        ...prev,
+        [requestId]: err.response?.data?.message || 'Failed to review badge request.',
+      }));
     } finally {
       setBadgeSaving(false);
     }
@@ -115,12 +126,15 @@ const BusinessDetail = ({ businessId, onBack }) => {
 
   const handleDeleteDocument = async (documentId) => {
     setDocumentDeletingId(documentId);
-    setError('');
+    setDocumentActionErrors((prev) => ({ ...prev, [documentId]: '' }));
     try {
       await deleteAdminDocument(documentId);
       await loadBusinessDocuments();
     } catch (err) {
-      setError(err?.response?.data?.message || 'Failed to delete document.');
+      setDocumentActionErrors((prev) => ({
+        ...prev,
+        [documentId]: err?.response?.data?.message || 'Failed to delete document.',
+      }));
     } finally {
       setDocumentDeletingId(null);
     }
@@ -129,12 +143,15 @@ const BusinessDetail = ({ businessId, onBack }) => {
   const handleReviewDocument = async (documentId, status) => {
     const rejectionReason = (rejectionReasons[documentId] || '').trim();
     if (status === 'Rejected' && !rejectionReason) {
-      setError('Please provide a rejection reason before rejecting a document.');
+      setDocumentActionErrors((prev) => ({
+        ...prev,
+        [documentId]: 'Please provide a rejection reason before rejecting a document.',
+      }));
       return;
     }
 
     setDocumentSavingId(documentId);
-    setError('');
+    setDocumentActionErrors((prev) => ({ ...prev, [documentId]: '' }));
     try {
       await reviewAdminDocument(documentId, {
         status,
@@ -142,7 +159,10 @@ const BusinessDetail = ({ businessId, onBack }) => {
       });
       await loadBusinessDocuments();
     } catch (err) {
-      setError(err?.response?.data?.message || 'Failed to update document status.');
+      setDocumentActionErrors((prev) => ({
+        ...prev,
+        [documentId]: err?.response?.data?.message || 'Failed to update document status.',
+      }));
     } finally {
       setDocumentSavingId(null);
     }
@@ -195,6 +215,7 @@ const BusinessDetail = ({ businessId, onBack }) => {
           Block
         </button>
       </div>
+      {adminActionError ? <div className="admin-alert" style={{ marginTop: 12 }}>{adminActionError}</div> : null}
 
       <div className="admin-section" style={{ marginTop: 20 }}>
         <h2>Business Verification Documents</h2>
@@ -276,6 +297,11 @@ const BusinessDetail = ({ businessId, onBack }) => {
                       >
                         {documentSavingId === doc.id ? 'Saving...' : 'Reject'}
                       </button>
+                      {documentActionErrors[doc.id] ? (
+                        <div className="admin-alert" style={{ marginTop: 8 }}>
+                          {documentActionErrors[doc.id]}
+                        </div>
+                      ) : null}
                     </div>
                   </td>
                 </tr>
@@ -345,6 +371,11 @@ const BusinessDetail = ({ businessId, onBack }) => {
                   >
                     {badgeSaving ? 'Saving...' : 'Reject Badge'}
                   </button>
+                  {badgeActionErrors[request.id] ? (
+                    <div className="admin-alert" style={{ marginTop: 8 }}>
+                      {badgeActionErrors[request.id]}
+                    </div>
+                  ) : null}
                 </div>
               </div>
             ))}
