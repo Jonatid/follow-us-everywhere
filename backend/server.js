@@ -36,7 +36,7 @@ const corsOptions = {
     'https://www.fuse101.com',
     process.env.FRONTEND_URL
   ].filter(Boolean),
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Authorization', 'Content-Type']
 };
 
