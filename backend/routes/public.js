@@ -60,8 +60,16 @@ router.get('/businesses', async (req, res) => {
     const whereConditions = [];
     const params = [];
 
-    // Discoverable businesses are those with active verification status.
-    whereConditions.push("COALESCE(b.verification_status, 'active') = 'active'");
+    // Discoverable businesses are those with active verification status when that
+    // moderation column exists in the target database.
+    if (availableColumns.has('verification_status')) {
+      whereConditions.push("COALESCE(b.verification_status, 'active') = 'active'");
+    }
+
+    // Legacy schemas may not have all moderation columns yet.
+    const selectVerificationStatus = availableColumns.has('verification_status')
+      ? "COALESCE(b.verification_status, 'active') AS verification_status"
+      : "'active'::text AS verification_status";
 
     if (query) {
       params.push(`%${query}%`);
@@ -105,7 +113,7 @@ router.get('/businesses', async (req, res) => {
               b.name,
               b.slug,
               b.tagline,
-              COALESCE(b.verification_status, 'active') AS verification_status,
+              ${selectVerificationStatus},
               ${selectCommunitySupport},
               ${selectBadges}
        FROM businesses b
