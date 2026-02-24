@@ -10,6 +10,8 @@ const requiredEnvVars = [
 
 const getMissingEnvVars = () => requiredEnvVars.filter((name) => !process.env[name]);
 
+const isR2Configured = () => getMissingEnvVars().length === 0;
+
 let r2Client;
 
 const getR2Client = () => {
@@ -70,6 +72,7 @@ const uploadBuffer = async ({ key, buffer, contentType }) => putObject({ key, bo
 const getDownloadUrl = async (key, expiresInSeconds) => getSignedDownloadUrl({ key, expiresInSeconds });
 
 module.exports = {
+  isR2Configured,
   putObject,
   getSignedDownloadUrl,
   getSignedUploadUrl,
