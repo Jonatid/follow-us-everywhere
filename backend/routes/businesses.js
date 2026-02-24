@@ -7,6 +7,7 @@ const pool = require('../config/db');
 const { authenticateToken } = require('../middleware/auth');
 const { resolveVerificationStatus, buildAccountRestrictionError } = require('../utils/verification');
 const { getPublicBusinessBySlug } = require('../utils/publicBusinessProfile');
+const { uploadBuffer, isR2Configured } = require('../services/r2');
 
 const router = express.Router();
 
@@ -64,7 +65,7 @@ const logoStorage = multer.diskStorage({
 });
 
 const logoUpload = multer({
-  storage: logoStorage,
+  storage: isR2Configured() ? multer.memoryStorage() : logoStorage,
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) {
@@ -74,12 +75,25 @@ const logoUpload = multer({
   }
 });
 
-const buildLogoPublicUrl = (req, filename) => {
+const buildLogoLocalPath = (filename) => {
   if (!filename) {
     return null;
   }
-  const basePath = `/uploads/business_logos/${filename}`;
-  return basePath;
+
+  return `/uploads/business_logos/${filename}`;
+};
+
+const buildR2PublicUrlFromKey = (key) => {
+  if (!key) {
+    return null;
+  }
+
+  const publicBase = (process.env.R2_PUBLIC_BASE_URL || '').trim().replace(/\/$/, '');
+  if (!publicBase) {
+    return null;
+  }
+
+  return `${publicBase}/${key}`;
 };
 
 const handleDocumentUpload = (req, res) => {
@@ -627,7 +641,36 @@ router.post('/logo/upload', authenticateToken, (req, res) => {
       return res.status(400).json({ error: 'Logo file is required' });
     }
 
-    const logoUrl = buildLogoPublicUrl(req, req.file.filename);
+    const fileExtension = path.extname(req.file.originalname || '').toLowerCase();
+    const safeFileExtension = ['.jpg', '.jpeg', '.png', '.webp'].includes(fileExtension) ? fileExtension : '';
+    const fallbackFilename = req.file.filename || `${req.businessId}-${Date.now()}-logo${safeFileExtension}`;
+
+    let logoUrl = buildLogoLocalPath(fallbackFilename);
+    let storageProvider = 'local';
+    let r2Key = null;
+
+    if (isR2Configured()) {
+      try {
+        const extension = safeFileExtension;
+        r2Key = `business-logos/${req.businessId}/${Date.now()}${extension}`;
+
+        await uploadBuffer({
+          key: r2Key,
+          buffer: req.file.buffer,
+          contentType: req.file.mimetype,
+          cacheControl: 'public, max-age=31536000, immutable'
+        });
+
+        const publicR2Url = buildR2PublicUrlFromKey(r2Key);
+        if (publicR2Url) {
+          logoUrl = publicR2Url;
+          storageProvider = 'r2';
+        }
+      } catch (r2Error) {
+        console.error('Error uploading business logo to R2:', r2Error);
+        return res.status(502).json({ error: 'Failed to upload logo to object storage' });
+      }
+    }
 
     try {
       const result = await pool.query(
@@ -646,8 +689,10 @@ router.post('/logo/upload', authenticateToken, (req, res) => {
       if (process.env.NODE_ENV !== 'production') {
         console.log('[business-logo-upload]', {
           businessId: req.businessId,
-          filename: req.file.filename,
+          filename: req.file.filename || fallbackFilename,
           logoUrl,
+          storageProvider,
+          r2Key,
           rowCount: result.rowCount,
         });
       }
