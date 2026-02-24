@@ -33,14 +33,21 @@ const getR2Client = () => {
   return r2Client;
 };
 
-const uploadBuffer = async ({ key, buffer, contentType }) => {
-  const command = new PutObjectCommand({
+const isR2Configured = () => getMissingEnvVars().length === 0;
+
+const uploadBuffer = async ({ key, buffer, contentType, cacheControl }) => {
+  const commandConfig = {
     Bucket: process.env.R2_BUCKET,
     Key: key,
     Body: buffer,
-    ContentType: contentType,
-    ACL: 'private'
-  });
+    ContentType: contentType
+  };
+
+  if (cacheControl) {
+    commandConfig.CacheControl = cacheControl;
+  }
+
+  const command = new PutObjectCommand(commandConfig);
 
   await getR2Client().send(command);
 
@@ -57,6 +64,7 @@ const getDownloadUrl = async (key, expiresInSeconds = 60 * 10) => {
 };
 
 module.exports = {
+  isR2Configured,
   uploadBuffer,
   getDownloadUrl
 };

@@ -2498,7 +2498,8 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
   const showLogoImage = Boolean(logoUrl) && !logoLoadError;
   const badges = Array.isArray(business.badges) ? business.badges : [];
   const hasApprovedImpactBadges = badges.length > 0;
-  const isBusinessVerified = (String(business.verification_status || '').toLowerCase() === 'verified') || business.verified === true || business.verification === 'verified';
+  const verificationStatusValue = String(business.verification_status || '').toLowerCase();
+  const isBusinessVerified = ['active', 'verified'].includes(verificationStatusValue) || business.verified === true || business.verification === 'verified';
   const missionStatement = business.mission_statement || '';
   const visionStatement = business.vision_statement || '';
   const philanthropicGoals = business.philanthropic_goals || '';
