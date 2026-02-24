@@ -2,6 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const multer = require('multer');
+const { uploadBuffer, getDownloadUrl } = require('./services/r2');
 const db = require('./config/db');
 const { ensureSchema } = require('./config/schema');
 const { runMigrations } = require('./scripts/runMigrations');
@@ -64,6 +66,41 @@ app.get('/api/health', async (req, res) => {
       message: 'Database connection failed',
       error: error.message 
     });
+  }
+});
+
+
+const upload = multer({ storage: multer.memoryStorage() });
+
+app.post('/upload', upload.single('file'), async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded. Use multipart/form-data with field name "file".' });
+    }
+
+    const key = `${Date.now()}-${req.file.originalname}`;
+    await uploadBuffer({
+      key,
+      buffer: req.file.buffer,
+      contentType: req.file.mimetype
+    });
+
+    res.status(201).json({
+      message: 'File uploaded successfully',
+      key,
+      bucket: process.env.R2_BUCKET
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/files/:key', async (req, res, next) => {
+  try {
+    const downloadUrl = await getDownloadUrl(req.params.key);
+    res.json({ key: req.params.key, downloadUrl, expiresIn: 600 });
+  } catch (error) {
+    next(error);
   }
 });
 
