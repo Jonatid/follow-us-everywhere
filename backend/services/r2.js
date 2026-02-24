@@ -21,8 +21,8 @@ const getR2Client = () => {
 
   if (!r2Client) {
     r2Client = new S3Client({
-      region: 'auto',
       endpoint: process.env.R2_ENDPOINT,
+      region: 'auto',
       credentials: {
         accessKeyId: process.env.R2_ACCESS_KEY_ID,
         secretAccessKey: process.env.R2_SECRET_ACCESS_KEY
@@ -33,28 +33,20 @@ const getR2Client = () => {
   return r2Client;
 };
 
-const isR2Configured = () => getMissingEnvVars().length === 0;
-
-const uploadBuffer = async ({ key, buffer, contentType, cacheControl }) => {
-  const commandConfig = {
+const putObject = async ({ key, body, contentType }) => {
+  const command = new PutObjectCommand({
     Bucket: process.env.R2_BUCKET,
     Key: key,
-    Body: buffer,
+    Body: body,
     ContentType: contentType
-  };
-
-  if (cacheControl) {
-    commandConfig.CacheControl = cacheControl;
-  }
-
-  const command = new PutObjectCommand(commandConfig);
+  });
 
   await getR2Client().send(command);
 
   return { key, bucket: process.env.R2_BUCKET };
 };
 
-const getDownloadUrl = async (key, expiresInSeconds = 60 * 10) => {
+const getSignedDownloadUrl = async ({ key, expiresInSeconds = 60 * 10 }) => {
   const command = new GetObjectCommand({
     Bucket: process.env.R2_BUCKET,
     Key: key
@@ -63,8 +55,24 @@ const getDownloadUrl = async (key, expiresInSeconds = 60 * 10) => {
   return getSignedUrl(getR2Client(), command, { expiresIn: expiresInSeconds });
 };
 
+const getSignedUploadUrl = async ({ key, contentType, expiresInSeconds = 60 * 10 }) => {
+  const command = new PutObjectCommand({
+    Bucket: process.env.R2_BUCKET,
+    Key: key,
+    ContentType: contentType
+  });
+
+  return getSignedUrl(getR2Client(), command, { expiresIn: expiresInSeconds });
+};
+
+// Backward-compatible aliases for existing callers.
+const uploadBuffer = async ({ key, buffer, contentType }) => putObject({ key, body: buffer, contentType });
+const getDownloadUrl = async (key, expiresInSeconds) => getSignedDownloadUrl({ key, expiresInSeconds });
+
 module.exports = {
-  isR2Configured,
+  putObject,
+  getSignedDownloadUrl,
+  getSignedUploadUrl,
   uploadBuffer,
   getDownloadUrl
 };

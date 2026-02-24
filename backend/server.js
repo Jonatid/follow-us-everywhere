@@ -18,6 +18,7 @@ const customerAuthRoutes = require('./routes/customers-auth');
 const customerRoutes = require('./routes/customers');
 const publicRoutes = require('./routes/public');
 const badgesRoutes = require('./routes/badges');
+const r2Routes = require('./routes/r2Routes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -115,6 +116,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/customers/auth', customerAuthRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/public', publicRoutes);
+app.use('/api/r2', r2Routes);
 
 // 404 handler
 app.use((req, res) => {
