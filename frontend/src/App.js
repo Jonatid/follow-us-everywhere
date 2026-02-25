@@ -109,6 +109,16 @@ const toAbsoluteAssetUrl = (assetPath) => {
   const leadingSlashPath = normalized.startsWith('/') ? normalized : `/${normalized}`;
   return `${apiOrigin}${leadingSlashPath}`;
 };
+
+const normalizeLogoUrlValue = (value) => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const normalized = value.trim();
+  return normalized ? normalized : null;
+};
+
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,64}$/;
 const PASSWORD_HELPER =
   'Password must be at least 12 characters and include at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character.';
@@ -2920,17 +2930,22 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
     setSaveMessage('');
     setSaveError('');
     try {
+      const normalizedLogoUrl = normalizeLogoUrlValue(formData.logo);
       const response = await api.put('/business/profile/update', {
         name: formData.name,
         tagline: formData.tagline,
-        logo_url: formData.logo,
+        logo_url: normalizedLogoUrl,
         lara_number: formData.laraNumber || null,
       });
+      const persistedLogoUrl = response.data?.business?.logo_url ?? normalizedLogoUrl ?? '';
+      setFormData((prev) => ({ ...prev, logo: persistedLogoUrl }));
+      setLogoPreview(toAbsoluteAssetUrl(persistedLogoUrl));
+      setLogoPreviewError(false);
       onBusinessUpdated((prev) => ({
         ...prev,
         name: response.data?.business?.name ?? formData.name,
         tagline: response.data?.business?.tagline ?? formData.tagline,
-        logo_url: response.data?.business?.logo_url ?? formData.logo,
+        logo_url: persistedLogoUrl,
         lara_number: response.data?.business?.lara_number ?? (formData.laraNumber || null),
       }));
       setSaveMessage('Profile saved successfully.');
@@ -2976,13 +2991,25 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
               </div>
               <div className="field">
                 <label className="label">Logo URL</label>
-                <input
-                  className="input"
-                  type="url"
-                  value={formData.logo}
-                  onChange={(e) => handleChange('logo', e.target.value)}
-                  placeholder="https://example.com/logo.png"
-                />
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <input
+                    className="input"
+                    type="text"
+                    value={formData.logo}
+                    onChange={(e) => handleChange('logo', e.target.value)}
+                    placeholder="https://example.com/logo.png"
+                  />
+                  <button
+                    type="button"
+                    className="button button-ghost"
+                    aria-label="Clear logo URL"
+                    onClick={() => handleChange('logo', '')}
+                    disabled={!formData.logo}
+                    style={{ minWidth: 'auto', padding: '0.45rem 0.7rem', lineHeight: 1 }}
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
               <div className="field">
                 <label className="label">Upload logo image</label>
