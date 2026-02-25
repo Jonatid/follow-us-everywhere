@@ -112,27 +112,29 @@ export default function Landing({ onNavigate, onOpenRoleModal }) {
   return (
     <div className="landing-page page page--gradient">
       <section className="landing-hero landing-reveal" aria-label="Home hero section">
-        <div className="landing-hero__text">
-          <p className="landing-hero__eyebrow">Built for businesses that show up.</p>
-          <h1 className="heading-xxl">One smart public profile for your business.</h1>
-          <p className="subtitle-lg">
-            Share your links, your services, and what matters to your business — all in one trusted place.
-          </p>
-          <div className="landing-hero__actions">
-            <button type="button" className="button button-primary button-lg" onClick={() => onOpenRoleModal?.('signup')}>
-              Sign up free
-            </button>
-            <button
-              type="button"
-              className="button button-secondary button-lg"
-              onClick={() => onNavigate?.('discover', null, '/discover')}
-            >
-              Explore businesses
-            </button>
+        <div className="landing-hero__inner">
+          <div className="landing-hero__text">
+            <p className="landing-hero__eyebrow">Built for businesses that show up.</p>
+            <h1 className="heading-xxl">One smart public profile for your business.</h1>
+            <p className="subtitle-lg">
+              Share your links, your services, and what matters to your business — all in one trusted place.
+            </p>
+            <div className="landing-hero__actions">
+              <button type="button" className="button button-primary button-lg" onClick={() => onOpenRoleModal?.('signup')}>
+                Sign up free
+              </button>
+              <button
+                type="button"
+                className="button button-secondary button-lg"
+                onClick={() => onNavigate?.('discover', null, '/discover')}
+              >
+                Explore businesses
+              </button>
+            </div>
           </div>
-        </div>
-        <div className="landing-hero__media" aria-hidden="true">
-          <img src={heroImage} alt="" />
+          <div className="landing-hero__media" aria-hidden="true">
+            <img src={heroImage} alt="" />
+          </div>
         </div>
       </section>
 
