@@ -1,28 +1,45 @@
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || 'https://followuseverywhere-api.onrender.com/api';
 
-export const toAdminDocumentUrl = (storagePath) => {
+const getApiOrigin = () => {
+  const baseUrl = String(API_BASE_URL || '').trim();
+
+  if (!baseUrl) {
+    return '';
+  }
+
+  try {
+    return new URL(baseUrl).origin;
+  } catch {
+    return baseUrl.replace(/\/+$/, '').replace(/\/api$/, '');
+  }
+};
+
+export const toAdminDocumentUrl = (storagePath, options = {}) => {
   if (!storagePath) {
     return null;
   }
 
   const normalizedPath = String(storagePath).replace(/^\/+/, '');
-  const withoutUploadsPrefix = normalizedPath.replace(/^(api\/)?uploads\/+/, '');
-
-  if (!withoutUploadsPrefix) {
+  if (!normalizedPath) {
     return null;
   }
 
-  const baseUrl = String(API_BASE_URL || '').trim();
+  const storageProvider = String(options.storageProvider || '').toLowerCase();
+  const filename = options.filename ? `?filename=${encodeURIComponent(options.filename)}` : '';
 
-  if (!baseUrl) {
-    return `/api/uploads/${withoutUploadsPrefix}`;
+  const isLocalPath = /^(api\/)?uploads\//.test(normalizedPath);
+  if (storageProvider === 'local' || isLocalPath) {
+    const withoutUploadsPrefix = normalizedPath.replace(/^(api\/)?uploads\/+/, '');
+    if (!withoutUploadsPrefix) {
+      return null;
+    }
+
+    const origin = getApiOrigin();
+    return origin ? `${origin}/api/uploads/${withoutUploadsPrefix}` : `/api/uploads/${withoutUploadsPrefix}`;
   }
 
-  try {
-    const parsed = new URL(baseUrl);
-    return `${parsed.origin}/api/uploads/${withoutUploadsPrefix}`;
-  } catch {
-    return `${baseUrl.replace(/\/+$/, '').replace(/\/api$/, '')}/api/uploads/${withoutUploadsPrefix}`;
-  }
+  const origin = getApiOrigin();
+  const prefix = origin || '';
+  return `${prefix}/api/r2/download/${normalizedPath}?redirect=1${filename ? `&${filename.slice(1)}` : ''}`;
 };

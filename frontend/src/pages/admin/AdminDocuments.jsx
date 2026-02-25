@@ -140,15 +140,27 @@ const AdminDocuments = () => {
                 <td>{doc.submittedAt ? new Date(doc.submittedAt).toLocaleString() : '—'}</td>
                 <td>
                   <div className="admin-actions" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
-                    {toAdminDocumentUrl(doc.storagePath) ? (
-                      <a
-                        className="admin-button secondary"
-                        href={toAdminDocumentUrl(doc.storagePath)}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        Open file
-                      </a>
+                    {toAdminDocumentUrl(doc.storagePath, { storageProvider: doc.storageProvider }) ? (
+                      <>
+                        <a
+                          className="admin-button secondary"
+                          href={toAdminDocumentUrl(doc.storagePath, { storageProvider: doc.storageProvider })}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Open file
+                        </a>
+                        <a
+                          className="admin-button secondary"
+                          href={toAdminDocumentUrl(doc.storagePath, {
+                            storageProvider: doc.storageProvider,
+                            filename: doc.originalFileName,
+                          })}
+                          download={doc.originalFileName || undefined}
+                        >
+                          Download file
+                        </a>
+                      </>
                     ) : null}
                     <button
                       type="button"

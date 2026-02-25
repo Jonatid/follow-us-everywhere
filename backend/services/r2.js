@@ -48,10 +48,11 @@ const putObject = async ({ key, body, contentType }) => {
   return { key, bucket: process.env.R2_BUCKET };
 };
 
-const getSignedDownloadUrl = async ({ key, expiresInSeconds = 60 * 10 }) => {
+const getSignedDownloadUrl = async ({ key, expiresInSeconds = 60 * 10, responseContentDisposition }) => {
   const command = new GetObjectCommand({
     Bucket: process.env.R2_BUCKET,
-    Key: key
+    Key: key,
+    ...(responseContentDisposition ? { ResponseContentDisposition: responseContentDisposition } : {})
   });
 
   return getSignedUrl(getR2Client(), command, { expiresIn: expiresInSeconds });

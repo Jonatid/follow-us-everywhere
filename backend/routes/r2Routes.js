@@ -6,7 +6,7 @@ const router = express.Router();
 // Final mounted URLs:
 // GET  /api/r2/health
 // POST /api/r2/upload
-// GET  /api/r2/download/:key
+// GET  /api/r2/download/*
 router.get('/health', (req, res) => {
   res.json({ ok: true });
 });
@@ -28,16 +28,26 @@ router.post('/upload', async (req, res) => {
   }
 });
 
-router.get('/download/:key', async (req, res) => {
+router.get('/download/*', async (req, res) => {
   try {
-    const { key } = req.params;
+    const key = (req.params[0] || '').trim();
     const expiresInSeconds = req.query.expiresInSeconds ? Number(req.query.expiresInSeconds) : undefined;
+    const shouldRedirect = req.query.redirect === '1';
+    const filename = typeof req.query.filename === 'string' ? req.query.filename.trim() : '';
 
     if (!key) {
       return res.status(400).json({ error: 'key is required' });
     }
 
-    const downloadUrl = await getSignedDownloadUrl({ key, expiresInSeconds });
+    const responseContentDisposition = filename
+      ? `attachment; filename="${filename.replace(/["\r\n]/g, '_')}"`
+      : undefined;
+
+    const downloadUrl = await getSignedDownloadUrl({ key, expiresInSeconds, responseContentDisposition });
+
+    if (shouldRedirect) {
+      return res.redirect(downloadUrl);
+    }
 
     return res.json({ key, downloadUrl, expiresIn: expiresInSeconds || 600 });
   } catch (error) {
