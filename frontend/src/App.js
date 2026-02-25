@@ -2670,6 +2670,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [saveError, setSaveError] = useState('');
+  const [logoSaving, setLogoSaving] = useState(false);
   const [badgeCatalog, setBadgeCatalog] = useState([]);
   const [businessDocuments, setBusinessDocuments] = useState([]);
   const [requestHistory, setRequestHistory] = useState([]);
@@ -2680,6 +2681,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
   const [uploadLoading, setUploadLoading] = useState(false);
   const [requestLoading, setRequestLoading] = useState(false);
   const documentFileInputRef = useRef(null);
+  const logoAutosaveTimeoutRef = useRef(null);
 
   useEffect(() => {
     setFormData({
@@ -2690,7 +2692,19 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
     });
     setLogoPreview(toAbsoluteAssetUrl(business?.logo_url));
     setLogoPreviewError(false);
+
+    if (logoAutosaveTimeoutRef.current) {
+      clearTimeout(logoAutosaveTimeoutRef.current);
+      logoAutosaveTimeoutRef.current = null;
+    }
   }, [business]);
+
+  useEffect(() => () => {
+    if (logoAutosaveTimeoutRef.current) {
+      clearTimeout(logoAutosaveTimeoutRef.current);
+      logoAutosaveTimeoutRef.current = null;
+    }
+  }, []);
 
 
   const loadBadgeData = async () => {
@@ -2836,6 +2850,42 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
     if (field === 'logo') {
       setLogoPreview(toAbsoluteAssetUrl(value));
       setLogoPreviewError(false);
+
+      if (logoAutosaveTimeoutRef.current) {
+        clearTimeout(logoAutosaveTimeoutRef.current);
+      }
+
+      const pendingLogoUrl = normalizeLogoUrlValue(value);
+      const currentLogoUrl = normalizeLogoUrlValue(business?.logo_url || '');
+      if (pendingLogoUrl === currentLogoUrl) {
+        return;
+      }
+
+      logoAutosaveTimeoutRef.current = setTimeout(async () => {
+        setLogoSaving(true);
+        setSaveError('');
+
+        try {
+          const response = await api.put('/business/profile/update', {
+            logo_url: pendingLogoUrl,
+          });
+
+          const persistedLogoUrl = response.data?.business?.logo_url ?? pendingLogoUrl ?? '';
+          setFormData((prev) => ({ ...prev, logo: persistedLogoUrl }));
+          setLogoPreview(toAbsoluteAssetUrl(persistedLogoUrl));
+          setLogoPreviewError(false);
+          onBusinessUpdated((prev) => ({
+            ...prev,
+            logo_url: persistedLogoUrl,
+          }));
+          setSaveMessage('Logo saved.');
+        } catch (err) {
+          setSaveError(getApiErrorMessage(err, 'Unable to auto-save logo right now.'));
+        } finally {
+          setLogoSaving(false);
+          logoAutosaveTimeoutRef.current = null;
+        }
+      }, 700);
     }
   };
 
@@ -3031,6 +3081,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
               <button type="button" className="button button-primary" onClick={handleSave} disabled={saving}>
                 {saving ? 'Saving...' : 'Save profile'}
               </button>
+              {logoSaving ? <p className="helper-text">Saving logo...</p> : null}
             </div>
 
             <div className="card" style={{ border: '1px solid var(--border)', boxShadow: 'none' }}>
