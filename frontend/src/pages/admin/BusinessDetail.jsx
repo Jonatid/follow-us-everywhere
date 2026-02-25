@@ -250,15 +250,27 @@ const BusinessDetail = ({ businessId, onBack }) => {
                   <td>{doc.submittedAt ? new Date(doc.submittedAt).toLocaleString() : '—'}</td>
                   <td>
                     <div className="admin-actions" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
-                      {toAdminDocumentUrl(doc.storagePath) ? (
-                        <a
-                          className="admin-button secondary"
-                          href={toAdminDocumentUrl(doc.storagePath)}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          Open file
-                        </a>
+                      {toAdminDocumentUrl(doc.storagePath, { storageProvider: doc.storageProvider }) ? (
+                        <>
+                          <a
+                            className="admin-button secondary"
+                            href={toAdminDocumentUrl(doc.storagePath, { storageProvider: doc.storageProvider })}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            Open file
+                          </a>
+                          <a
+                            className="admin-button secondary"
+                            href={toAdminDocumentUrl(doc.storagePath, {
+                              storageProvider: doc.storageProvider,
+                              filename: doc.originalFileName,
+                            })}
+                            download={doc.originalFileName || undefined}
+                          >
+                            Download file
+                          </a>
+                        </>
                       ) : null}
                       <button
                         type="button"
@@ -333,8 +345,8 @@ const BusinessDetail = ({ businessId, onBack }) => {
                   {request.evidenceExplanation ? <p className="admin-muted">URL proof explanation: {request.evidenceExplanation}</p> : null}
                   {request.linkedDocumentOriginalFileName ? (
                     <p className="admin-muted">
-                      Supporting document: {toAdminDocumentUrl(request.linkedDocumentStoragePath) ? (
-                        <a href={toAdminDocumentUrl(request.linkedDocumentStoragePath)} target="_blank" rel="noreferrer">
+                      Supporting document: {toAdminDocumentUrl(request.linkedDocumentStoragePath, { filename: request.linkedDocumentOriginalFileName }) ? (
+                        <a href={toAdminDocumentUrl(request.linkedDocumentStoragePath, { filename: request.linkedDocumentOriginalFileName })} target="_blank" rel="noreferrer">
                           {request.linkedDocumentOriginalFileName}
                         </a>
                       ) : request.linkedDocumentOriginalFileName}
