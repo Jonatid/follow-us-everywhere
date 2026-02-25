@@ -366,7 +366,8 @@ router.get('/businesses', async (req, res) => {
               slug,
               email,
               verification_status,
-              created_at AS "createdAt"
+              created_at AS "createdAt",
+              updated_at AS "updatedAt"
        FROM businesses
        ORDER BY created_at DESC`
     );
@@ -379,12 +380,45 @@ router.get('/businesses', async (req, res) => {
       verification_status: resolveVerificationStatus(business),
       verificationStatus: resolveVerificationStatus(business),
       createdAt: business.createdAt,
+      updatedAt: business.updatedAt,
     }));
 
     res.json(businesses);
   } catch (err) {
     console.error('Admin list businesses error:', err);
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   DELETE /api/admin/businesses/:id
+// @desc    Delete a business
+// @access  Private (admin)
+router.delete('/businesses/:id', async (req, res) => {
+  try {
+    const businessId = Number(req.params.id);
+    if (!Number.isInteger(businessId) || businessId <= 0) {
+      return res.status(400).json({ message: 'Invalid business id' });
+    }
+
+    const result = await pool.query(
+      `DELETE FROM businesses
+       WHERE id = $1
+       RETURNING id, name`,
+      [businessId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Business not found' });
+    }
+
+    return res.json({
+      message: 'Business deleted successfully',
+      businessId: result.rows[0].id,
+      businessName: result.rows[0].name,
+    });
+  } catch (err) {
+    console.error('Admin delete business error:', err);
+    return res.status(500).json({ message: 'Server error' });
   }
 });
 

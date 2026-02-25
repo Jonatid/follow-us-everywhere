@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchBusinesses } from '../../utils/adminApi';
+import { deleteBusiness, fetchBusinesses } from '../../utils/adminApi';
 
 const statusLabelMap = {
   active: 'Active',
@@ -12,6 +12,7 @@ const BusinessList = ({ onSelectBusiness }) => {
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     const loadBusinesses = async () => {
@@ -26,6 +27,30 @@ const BusinessList = ({ onSelectBusiness }) => {
     };
     loadBusinesses();
   }, []);
+
+  const formatDate = (value) => {
+    if (!value) return '—';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '—';
+
+    return date.toLocaleString();
+  };
+
+  const handleDelete = async (businessId, businessName) => {
+    const shouldDelete = window.confirm(`Delete ${businessName}? This cannot be undone.`);
+    if (!shouldDelete) return;
+
+    try {
+      setDeletingId(businessId);
+      setError('');
+      await deleteBusiness(businessId);
+      setBusinesses((current) => current.filter((business) => (business.id || business._id) !== businessId));
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Unable to delete business.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   return (
     <div className="admin-card">
@@ -42,6 +67,8 @@ const BusinessList = ({ onSelectBusiness }) => {
               <th>Name</th>
               <th>Slug</th>
               <th>Status</th>
+              <th>Date Added</th>
+              <th>Date Updated</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -51,6 +78,8 @@ const BusinessList = ({ onSelectBusiness }) => {
                 <td>{business.name}</td>
                 <td>{business.slug}</td>
                 <td>{statusLabelMap[business.verificationStatus] || 'Active'}</td>
+                <td>{formatDate(business.createdAt)}</td>
+                <td>{formatDate(business.updatedAt)}</td>
                 <td>
                   <div className="admin-actions">
                     <button
@@ -59,6 +88,14 @@ const BusinessList = ({ onSelectBusiness }) => {
                       onClick={() => onSelectBusiness(business.id || business._id)}
                     >
                       View
+                    </button>
+                    <button
+                      type="button"
+                      className="admin-button danger"
+                      disabled={deletingId === (business.id || business._id)}
+                      onClick={() => handleDelete(business.id || business._id, business.name || 'this business')}
+                    >
+                      {deletingId === (business.id || business._id) ? 'Deleting...' : 'Delete'}
                     </button>
                   </div>
                 </td>
