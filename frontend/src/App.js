@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
+import Landing from './pages/Landing';
 import businessVerifiedIcon from './assets/business-verified.svg';
 import impactVerifiedIcon from './assets/impact-verified.svg';
 import communityImpactIcon from './assets/community-impact.svg';
@@ -3537,7 +3538,7 @@ export default function App() {
   const renderScreen = () => {
     switch (currentScreen) {
       case 'marketing-landing':
-        return <MarketingLandingPage onNavigate={handleNavigate} onOpenRoleModal={setRoleModalMode} />;
+        return <Landing onNavigate={handleNavigate} onOpenRoleModal={setRoleModalMode} />;
       case 'about':
         return <AboutPage onNavigate={handleNavigate} />;
       case 'faq':
@@ -3615,7 +3616,7 @@ export default function App() {
       case 'contact':
         return <ContactSupport onNavigate={handleNavigate} prefill={contactPrefill} />;
       default:
-        return <MarketingLandingPage onNavigate={handleNavigate} onOpenRoleModal={setRoleModalMode} />;
+        return <Landing onNavigate={handleNavigate} onOpenRoleModal={setRoleModalMode} />;
     }
   };
 
