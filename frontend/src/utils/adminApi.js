@@ -46,6 +46,11 @@ export const fetchBusiness = async (businessId) => {
   return response.data;
 };
 
+export const deleteBusiness = async (businessId) => {
+  const response = await adminApi.delete(`/admin/businesses/${businessId}`);
+  return response.data;
+};
+
 export const approveBusiness = async (businessId) => {
   const response = await adminApi.put(`/admin/businesses/${businessId}/approve`);
   return response.data;
