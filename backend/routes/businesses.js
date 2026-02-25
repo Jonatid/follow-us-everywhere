@@ -645,7 +645,8 @@ router.post('/logo/upload', authenticateToken, (req, res) => {
     const safeFileExtension = ['.jpg', '.jpeg', '.png', '.webp'].includes(fileExtension) ? fileExtension : '';
     const fallbackFilename = req.file.filename || `${req.businessId}-${Date.now()}-logo${safeFileExtension}`;
 
-    let logoUrl = buildLogoLocalPath(fallbackFilename);
+    let logoFilename = fallbackFilename;
+    let logoUrl = buildLogoLocalPath(logoFilename);
     let storageProvider = 'local';
     let r2Key = null;
 
@@ -668,7 +669,23 @@ router.post('/logo/upload', authenticateToken, (req, res) => {
         }
       } catch (r2Error) {
         console.error('Error uploading business logo to R2:', r2Error);
-        return res.status(502).json({ error: 'Failed to upload logo to object storage' });
+
+        // Keep uploads functional even when object storage is temporarily unavailable.
+        try {
+          const timestamp = Date.now();
+          const extension = safeFileExtension;
+          logoFilename = `${req.businessId}-${timestamp}-logo${extension}`;
+          const localPath = path.join(logoUploadRootDir, logoFilename);
+
+          fs.writeFileSync(localPath, req.file.buffer);
+
+          logoUrl = buildLogoLocalPath(logoFilename);
+          storageProvider = 'local-fallback';
+          r2Key = null;
+        } catch (localFallbackErr) {
+          console.error('Error saving business logo to local fallback storage:', localFallbackErr);
+          return res.status(502).json({ error: 'Failed to upload logo to object storage' });
+        }
       }
     }
 
@@ -689,7 +706,7 @@ router.post('/logo/upload', authenticateToken, (req, res) => {
       if (process.env.NODE_ENV !== 'production') {
         console.log('[business-logo-upload]', {
           businessId: req.businessId,
-          filename: req.file.filename || fallbackFilename,
+          filename: req.file.filename || logoFilename,
           logoUrl,
           storageProvider,
           r2Key,
