@@ -288,7 +288,7 @@ body {
 
 .subtitle-lg {
   font-size: 1.15rem;
-  color: var(--muted);
+  color: #2c2500;
 }
 
 .subtitle {
@@ -296,10 +296,18 @@ body {
 }
 
 .public-follow-subtitle {
-  margin-top: 0.5rem;
+  margin: 0.75rem auto 0;
+  width: fit-content;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid #e0c500;
+  background: #FFDF00;
   text-align: center;
-  font-style: italic;
-  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #2c2500;
+  box-shadow: var(--shadow-soft);
 }
 
 .muted-text {
