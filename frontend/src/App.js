@@ -2594,7 +2594,7 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
                     ) : null
                   )}
                 </div>
-                {activeSocials.length > 1 && <p className="public-follow-subtitle">Connect with us across the web</p>}
+                {activeSocials.length > 1 && <p className="public-follow-subtitle">Tap A Link To Follow</p>}
               </>
             )}
             {hasApprovedImpactBadges ? (
