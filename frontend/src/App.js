@@ -3579,8 +3579,24 @@ export default function App() {
 
   const handleNavigate = (screen, data = null, path = null) => {
     if (path) {
+      const parsedPath = new URL(path, window.location.origin);
+      const pathname = parsedPath.pathname;
       window.history.pushState({}, '', path);
-      setCurrentScreen(getScreenFromPath(new URL(path, window.location.origin).pathname) || screen);
+      setCurrentScreen(getScreenFromPath(pathname) || screen);
+
+      if (pathname.startsWith('/b/')) {
+        const slugFromPath = normalizePublicBusinessKey(pathname.replace('/b/', ''));
+        if (slugFromPath) {
+          setPublicSlug(slugFromPath);
+        }
+      }
+
+      if (pathname.startsWith('/business/') && pathname !== '/business/profile' && !isBusinessAuthPath(pathname)) {
+        const slugFromPath = normalizePublicBusinessKey(pathname.replace('/business/', ''));
+        if (slugFromPath) {
+          setPublicSlug(slugFromPath);
+        }
+      }
     } else {
       setCurrentScreen(screen);
     }
