@@ -19,6 +19,7 @@ const customerRoutes = require('./routes/customers');
 const publicRoutes = require('./routes/public');
 const badgesRoutes = require('./routes/badges');
 const r2Routes = require('./routes/r2Routes');
+const qrRoutes = require('./routes/qr');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -117,6 +118,7 @@ app.use('/api/customers/auth', customerAuthRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/r2', r2Routes);
+app.use('/qr', qrRoutes);
 
 // 404 handler
 app.use((req, res) => {
