@@ -2563,10 +2563,10 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
       <div className="public-business-shell">
         <div className="public-business-layout">
           <section className="card public-business-column" aria-label="Follow links">
+            <p className="public-follow-helper">Tap a link to follow</p>
             <div className="public-section" style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
               <QrCard businessName={businessName || business.name} slug={publicQrSlug || 'your-business'} size={150} compact />
             </div>
-            <p className="public-follow-helper">Tap a link to follow</p>
             {activeSocials.length === 0 ? (
               <div className="empty-state">This business hasn't added their social links yet.</div>
             ) : (
