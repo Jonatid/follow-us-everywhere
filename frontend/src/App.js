@@ -2564,9 +2564,6 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
         <div className="public-business-layout">
           <section className="card public-business-column" aria-label="Follow links">
             <p className="public-follow-helper">Tap a link to follow</p>
-            <div className="public-section" style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
-              <QrCard businessName={businessName || business.name} slug={publicQrSlug || 'your-business'} size={150} compact />
-            </div>
             {activeSocials.length === 0 ? (
               <div className="empty-state">This business hasn't added their social links yet.</div>
             ) : (
@@ -2603,6 +2600,9 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
                 {activeSocials.length > 1 && <p className="public-follow-subtitle">Tap A Link To Follow</p>}
               </>
             )}
+            <div className="public-section" style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+              <QrCard businessName={businessName || business.name} slug={publicQrSlug || 'your-business'} size={150} compact />
+            </div>
             {hasApprovedImpactBadges ? (
               <div className="public-section">
                 <button
