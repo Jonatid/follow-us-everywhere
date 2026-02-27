@@ -78,9 +78,10 @@ function QrCanvas({ value, size, fgColor, bgColor }) {
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
-    const matrix = buildQRMatrix(value);
+    const matrix = buildQRMatrix(value || 'https://fuse101.com/qr/your-business');
     const modules = matrix.length;
-    const scale = Math.floor(size / modules);
+    const safeSize = Number.isFinite(size) ? Math.max(size, modules) : 180;
+    const scale = Math.max(1, Math.floor(safeSize / modules));
     const actual = scale * modules;
     canvas.width  = actual;
     canvas.height = actual;
