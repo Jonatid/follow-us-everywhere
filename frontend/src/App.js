@@ -7,6 +7,7 @@ import axios from 'axios';
 import Landing from './pages/Landing';
 import BusinessQrPage from './pages/business/BusinessQrPage';
 import QrCard from './pages/business/components/QrCard';
+import QrDisplayModeSelector from './pages/business/components/QrDisplayModeSelector';
 import businessVerifiedIcon from './assets/business-verified.svg';
 import impactVerifiedIcon from './assets/impact-verified.svg';
 import communityImpactIcon from './assets/community-impact.svg';
@@ -2522,6 +2523,12 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
     { title: 'Philanthropic Goals', value: philanthropicGoals },
   ].filter((card) => card.value && card.value.trim().length > 0);
   const publicQrSlug = normalizePublicBusinessKey(slug) || resolvePublicBusinessKey(business);
+  const requestedQrMode = new URLSearchParams(window.location.search).get('qrMode');
+  const publicQrMode = ['minimal', 'branded', 'full', 'custom'].includes(requestedQrMode)
+    ? requestedQrMode
+    : 'branded';
+  const publicQrCardSize = publicQrMode === 'minimal' ? 120 : publicQrMode === 'full' ? 180 : 150;
+  const publicQrCompact = publicQrMode === 'minimal';
 
   return (
     <div className="page page--gradient public-business-page">
@@ -2601,7 +2608,12 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
               </>
             )}
             <div className="public-section" style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
-              <QrCard businessName={businessName || business.name} slug={publicQrSlug || 'your-business'} size={150} compact />
+              <QrCard
+                businessName={businessName || business.name}
+                slug={publicQrSlug || 'your-business'}
+                size={publicQrCardSize}
+                compact={publicQrCompact}
+              />
             </div>
             {hasApprovedImpactBadges ? (
               <div className="public-section">
@@ -2686,6 +2698,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
   const [documentFile, setDocumentFile] = useState(null);
   const [uploadLoading, setUploadLoading] = useState(false);
   const [requestLoading, setRequestLoading] = useState(false);
+  const [qrPreviewMode, setQrPreviewMode] = useState('branded');
   const documentFileInputRef = useRef(null);
   const logoAutosaveTimeoutRef = useRef(null);
 
@@ -3096,6 +3109,9 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
               <p className="subtitle">
                 Your QR code is generated automatically from your public business link.
               </p>
+              <div style={{ marginTop: '12px' }}>
+                <QrDisplayModeSelector value={qrPreviewMode} onChange={setQrPreviewMode} />
+              </div>
               <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center' }}>
                 <QrCard
                   businessName={profileBusinessName || business?.name || 'Your Business'}
@@ -3109,7 +3125,12 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
               <button
                 type="button"
                 className="button button-secondary"
-                onClick={() => onNavigate('dashboard', null, '/business')}
+                onClick={() => {
+                  const previewPath = profilePublicBusinessKey
+                    ? `/b/${encodeURIComponent(profilePublicBusinessKey)}?qrMode=${encodeURIComponent(qrPreviewMode)}`
+                    : '/business';
+                  onNavigate('dashboard', null, previewPath);
+                }}
                 style={{ marginTop: '8px' }}
               >
                 Preview Public Follow Page
@@ -3558,8 +3579,24 @@ export default function App() {
 
   const handleNavigate = (screen, data = null, path = null) => {
     if (path) {
+      const parsedPath = new URL(path, window.location.origin);
+      const pathname = parsedPath.pathname;
       window.history.pushState({}, '', path);
-      setCurrentScreen(getScreenFromPath(new URL(path, window.location.origin).pathname) || screen);
+      setCurrentScreen(getScreenFromPath(pathname) || screen);
+
+      if (pathname.startsWith('/b/')) {
+        const slugFromPath = normalizePublicBusinessKey(pathname.replace('/b/', ''));
+        if (slugFromPath) {
+          setPublicSlug(slugFromPath);
+        }
+      }
+
+      if (pathname.startsWith('/business/') && pathname !== '/business/profile' && !isBusinessAuthPath(pathname)) {
+        const slugFromPath = normalizePublicBusinessKey(pathname.replace('/business/', ''));
+        if (slugFromPath) {
+          setPublicSlug(slugFromPath);
+        }
+      }
     } else {
       setCurrentScreen(screen);
     }
