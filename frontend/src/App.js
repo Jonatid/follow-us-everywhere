@@ -6,6 +6,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
 import Landing from './pages/Landing';
 import BusinessQrPage from './pages/business/BusinessQrPage';
+import QrCard from './pages/business/components/QrCard';
 import businessVerifiedIcon from './assets/business-verified.svg';
 import impactVerifiedIcon from './assets/impact-verified.svg';
 import communityImpactIcon from './assets/community-impact.svg';
@@ -2520,6 +2521,7 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
     { title: 'Vision Statement', value: visionStatement },
     { title: 'Philanthropic Goals', value: philanthropicGoals },
   ].filter((card) => card.value && card.value.trim().length > 0);
+  const publicQrSlug = normalizePublicBusinessKey(slug) || resolvePublicBusinessKey(business);
 
   return (
     <div className="page page--gradient public-business-page">
@@ -2561,6 +2563,9 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
       <div className="public-business-shell">
         <div className="public-business-layout">
           <section className="card public-business-column" aria-label="Follow links">
+            <div className="public-section" style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+              <QrCard businessName={businessName || business.name} slug={publicQrSlug || 'your-business'} size={150} compact />
+            </div>
             <p className="public-follow-helper">Tap a link to follow</p>
             {activeSocials.length === 0 ? (
               <div className="empty-state">This business hasn't added their social links yet.</div>
@@ -3014,6 +3019,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() || '')
     .join('') || '?';
+  const profilePublicBusinessKey = resolvePublicBusinessKey(business);
 
   return (
     <div className="dashboard">
@@ -3083,6 +3089,31 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
                 {saving ? 'Saving...' : 'Save profile'}
               </button>
               {logoSaving ? <p className="helper-text">Saving logo...</p> : null}
+            </div>
+
+            <div className="card" style={{ border: '1px solid var(--border)', boxShadow: 'none' }}>
+              <h2 className="heading-md">QR Code Preview</h2>
+              <p className="subtitle">
+                Your QR code is generated automatically from your public business link.
+              </p>
+              <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center' }}>
+                <QrCard
+                  businessName={profileBusinessName || business?.name || 'Your Business'}
+                  slug={profilePublicBusinessKey || 'your-business'}
+                  size={180}
+                />
+              </div>
+              <p className="helper-text" style={{ marginTop: '12px' }}>
+                QR destination: {profilePublicBusinessKey ? buildPublicBusinessUrl(profilePublicBusinessKey) : 'Set your slug or username to activate your public QR link.'}
+              </p>
+              <button
+                type="button"
+                className="button button-secondary"
+                onClick={() => onNavigate('dashboard', null, '/business')}
+                style={{ marginTop: '8px' }}
+              >
+                Preview Public Follow Page
+              </button>
             </div>
 
             <div className="card" style={{ border: '1px solid var(--border)', boxShadow: 'none' }}>
