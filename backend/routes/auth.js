@@ -94,7 +94,8 @@ router.post(
                    community_support_links,
                    mission_statement,
                    vision_statement,
-                   philanthropic_goals`,
+                   philanthropic_goals,
+                   widget_settings`,
         [name, resolvedSlug, tagline || '', logo, email, passwordHash]
       );
 
@@ -219,7 +220,8 @@ router.post(
                 community_support_links,
                 mission_statement,
                 vision_statement,
-                philanthropic_goals
+                philanthropic_goals,
+                widget_settings
          FROM businesses
          WHERE email = $1`,
         [email]
@@ -406,7 +408,8 @@ router.get('/me', authenticateToken, async (req, res) => {
               community_support_links,
               mission_statement,
               vision_statement,
-              philanthropic_goals
+              philanthropic_goals,
+              widget_settings
        FROM businesses
        WHERE id = $1`,
       [req.businessId]

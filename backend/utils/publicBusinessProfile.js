@@ -45,7 +45,8 @@ const checkBusinessColumns = async () => {
          'community_support_links',
          'mission_statement',
          'vision_statement',
-         'philanthropic_goals'
+         'philanthropic_goals',
+         'widget_settings'
        )`
   );
 
@@ -116,7 +117,8 @@ const getPublicBusinessBySlug = async (slug) => {
             ${availableBusinessColumns.has('community_support_links') ? 'community_support_links' : 'NULL::jsonb AS community_support_links'},
             ${availableBusinessColumns.has('mission_statement') ? 'mission_statement' : 'NULL::text AS mission_statement'},
             ${availableBusinessColumns.has('vision_statement') ? 'vision_statement' : 'NULL::text AS vision_statement'},
-            ${availableBusinessColumns.has('philanthropic_goals') ? 'philanthropic_goals' : 'NULL::text AS philanthropic_goals'}
+            ${availableBusinessColumns.has('philanthropic_goals') ? 'philanthropic_goals' : 'NULL::text AS philanthropic_goals'},
+            ${availableBusinessColumns.has('widget_settings') ? 'widget_settings' : 'NULL::jsonb AS widget_settings'}
      FROM businesses`;
 
   let result = await pool.query(

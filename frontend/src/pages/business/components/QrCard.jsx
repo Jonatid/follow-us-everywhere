@@ -106,7 +106,14 @@ function QrCanvas({ value, size, fgColor, bgColor }) {
  * @param {number}  [size=180]    - QR pixel size
  * @param {boolean} [compact]     - Smaller card for public profile
  */
-export default function QrCard({ businessName, slug, size = 180, compact = false }) {
+export default function QrCard({
+  businessName,
+  slug,
+  size = 180,
+  compact = false,
+  showBranding = true,
+  showBusinessName = true,
+}) {
   const url = `https://fuse101.com/qr/${slug || 'your-business'}`;
 
   return (
@@ -125,7 +132,7 @@ export default function QrCard({ businessName, slug, size = 180, compact = false
         width: 'fit-content',
       }}
     >
-      {!compact && (
+      {!compact && showBranding && (
         <div style={{
           background: '#FDD001',
           borderRadius: 8,
@@ -147,14 +154,16 @@ export default function QrCard({ businessName, slug, size = 180, compact = false
         bgColor="#ffffff"
       />
 
-      <div style={{
-        fontSize: compact ? 9 : 10,
-        color: '#8A9DC0',
-        letterSpacing: '0.05em',
-        textAlign: 'center',
-      }}>
-        {businessName || 'Your Business'}
-      </div>
+      {showBusinessName ? (
+        <div style={{
+          fontSize: compact ? 9 : 10,
+          color: '#8A9DC0',
+          letterSpacing: '0.05em',
+          textAlign: 'center',
+        }}>
+          {businessName || 'Your Business'}
+        </div>
+      ) : null}
     </div>
   );
 }

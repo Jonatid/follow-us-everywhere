@@ -95,6 +95,7 @@ const normalizePublicBusinessPayload = (payload) => {
     ...payload,
     socials: Array.isArray(payload.socials) ? payload.socials : [],
     badges: Array.isArray(payload.badges) ? payload.badges : [],
+    widget_settings: normalizeWidgetSettings(payload.widget_settings),
   };
 };
 
@@ -120,6 +121,32 @@ const normalizeLogoUrlValue = (value) => {
 
   const normalized = value.trim();
   return normalized ? normalized : null;
+};
+
+const DEFAULT_WIDGET_SETTINGS = Object.freeze({
+  layoutMode: 'branded',
+  showBranding: true,
+  showBusinessName: true,
+  showLinks: true,
+  ctaText: 'Tap a link to follow',
+});
+
+const normalizeWidgetSettings = (settings) => {
+  const incoming = settings && typeof settings === 'object' && !Array.isArray(settings)
+    ? settings
+    : {};
+  const layoutMode = ['minimal', 'branded', 'full', 'custom'].includes(incoming.layoutMode)
+    ? incoming.layoutMode
+    : DEFAULT_WIDGET_SETTINGS.layoutMode;
+  const normalizedCta = typeof incoming.ctaText === 'string' ? incoming.ctaText.trim().slice(0, 80) : '';
+
+  return {
+    layoutMode,
+    showBranding: typeof incoming.showBranding === 'boolean' ? incoming.showBranding : DEFAULT_WIDGET_SETTINGS.showBranding,
+    showBusinessName: typeof incoming.showBusinessName === 'boolean' ? incoming.showBusinessName : DEFAULT_WIDGET_SETTINGS.showBusinessName,
+    showLinks: typeof incoming.showLinks === 'boolean' ? incoming.showLinks : DEFAULT_WIDGET_SETTINGS.showLinks,
+    ctaText: normalizedCta || DEFAULT_WIDGET_SETTINGS.ctaText,
+  };
 };
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,64}$/;
@@ -2500,7 +2527,11 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
     );
   }
 
+  const widgetSettings = normalizeWidgetSettings(business.widget_settings);
+  const publicQrMode = widgetSettings.layoutMode;
+  const shouldShowLinks = publicQrMode === 'minimal' ? false : widgetSettings.showLinks;
   const activeSocials = business.socials.filter((s) => s.url);
+  const visibleSocials = shouldShowLinks ? activeSocials : [];
   const businessName = (business.name || '').trim();
   const initials = businessName
     .split(/\s+/)
@@ -2523,10 +2554,6 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
     { title: 'Philanthropic Goals', value: philanthropicGoals },
   ].filter((card) => card.value && card.value.trim().length > 0);
   const publicQrSlug = normalizePublicBusinessKey(slug) || resolvePublicBusinessKey(business);
-  const requestedQrMode = new URLSearchParams(window.location.search).get('qrMode');
-  const publicQrMode = ['minimal', 'branded', 'full', 'custom'].includes(requestedQrMode)
-    ? requestedQrMode
-    : 'branded';
   const publicQrCardSize = publicQrMode === 'minimal' ? 120 : publicQrMode === 'full' ? 180 : 150;
   const publicQrCompact = publicQrMode === 'minimal';
 
@@ -2570,13 +2597,13 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
       <div className="public-business-shell">
         <div className="public-business-layout">
           <section className="card public-business-column" aria-label="Follow links">
-            <p className="public-follow-helper">Tap a link to follow</p>
-            {activeSocials.length === 0 ? (
+            <p className="public-follow-helper">{widgetSettings.ctaText}</p>
+            {visibleSocials.length === 0 ? (
               <div className="empty-state">This business hasn't added their social links yet.</div>
             ) : (
               <>
                 <div className="stack-sm">
-                  {business.socials.map((social, index) =>
+                  {visibleSocials.map((social, index) =>
                     social.url ? (
                       <button
                         key={social.id || index}
@@ -2604,7 +2631,7 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
                     ) : null
                   )}
                 </div>
-                {activeSocials.length > 1 && <p className="public-follow-subtitle">Tap A Link To Follow</p>}
+                {visibleSocials.length > 1 && <p className="public-follow-subtitle">{widgetSettings.ctaText}</p>}
               </>
             )}
             <div className="public-section" style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
@@ -2613,6 +2640,8 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
                 slug={publicQrSlug || 'your-business'}
                 size={publicQrCardSize}
                 compact={publicQrCompact}
+                showBranding={widgetSettings.showBranding}
+                showBusinessName={widgetSettings.showBusinessName}
               />
             </div>
             {hasApprovedImpactBadges ? (
@@ -2698,7 +2727,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
   const [documentFile, setDocumentFile] = useState(null);
   const [uploadLoading, setUploadLoading] = useState(false);
   const [requestLoading, setRequestLoading] = useState(false);
-  const [qrPreviewMode, setQrPreviewMode] = useState('branded');
+  const [widgetSettings, setWidgetSettings] = useState(() => normalizeWidgetSettings(business?.widget_settings));
   const documentFileInputRef = useRef(null);
   const logoAutosaveTimeoutRef = useRef(null);
 
@@ -2709,6 +2738,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
       logo: business?.logo_url || '',
       laraNumber: business?.lara_number || '',
     });
+    setWidgetSettings(normalizeWidgetSettings(business?.widget_settings));
     setLogoPreview(toAbsoluteAssetUrl(business?.logo_url));
     setLogoPreviewError(false);
 
@@ -3005,9 +3035,12 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
         tagline: formData.tagline,
         logo_url: normalizedLogoUrl,
         lara_number: formData.laraNumber || null,
+        widget_settings: widgetSettings,
       });
       const persistedLogoUrl = response.data?.business?.logo_url ?? normalizedLogoUrl ?? '';
+      const persistedWidgetSettings = normalizeWidgetSettings(response.data?.business?.widget_settings ?? widgetSettings);
       setFormData((prev) => ({ ...prev, logo: persistedLogoUrl }));
+      setWidgetSettings(persistedWidgetSettings);
       setLogoPreview(toAbsoluteAssetUrl(persistedLogoUrl));
       setLogoPreviewError(false);
       onBusinessUpdated((prev) => ({
@@ -3016,6 +3049,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
         tagline: response.data?.business?.tagline ?? formData.tagline,
         logo_url: persistedLogoUrl,
         lara_number: response.data?.business?.lara_number ?? (formData.laraNumber || null),
+        widget_settings: persistedWidgetSettings,
       }));
       setSaveMessage('Profile saved successfully.');
     } catch (err) {
@@ -3105,18 +3139,61 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
             </div>
 
             <div className="card" style={{ border: '1px solid var(--border)', boxShadow: 'none' }}>
-              <h2 className="heading-md">QR Code Preview</h2>
+              <h2 className="heading-md">QR / Widget Customization</h2>
               <p className="subtitle">
-                Your QR code is generated automatically from your public business link.
+                Choose how your public page and QR card should render.
               </p>
               <div style={{ marginTop: '12px' }}>
-                <QrDisplayModeSelector value={qrPreviewMode} onChange={setQrPreviewMode} />
+                <QrDisplayModeSelector
+                  value={widgetSettings.layoutMode}
+                  onChange={(nextMode) => setWidgetSettings((prev) => normalizeWidgetSettings({ ...prev, layoutMode: nextMode }))}
+                />
+              </div>
+              <div className="field" style={{ marginTop: '12px' }}>
+                <label className="label">Button / helper CTA text</label>
+                <input
+                  className="input"
+                  type="text"
+                  maxLength={80}
+                  value={widgetSettings.ctaText}
+                  onChange={(e) => setWidgetSettings((prev) => normalizeWidgetSettings({ ...prev, ctaText: e.target.value }))}
+                />
+              </div>
+              <div className="row row-wrap" style={{ gap: '12px', marginTop: '12px' }}>
+                <label className="row" style={{ gap: '8px' }}>
+                  <input
+                    type="checkbox"
+                    checked={widgetSettings.showBranding}
+                    onChange={(e) => setWidgetSettings((prev) => normalizeWidgetSettings({ ...prev, showBranding: e.target.checked }))}
+                  />
+                  Show branding
+                </label>
+                <label className="row" style={{ gap: '8px' }}>
+                  <input
+                    type="checkbox"
+                    checked={widgetSettings.showBusinessName}
+                    onChange={(e) => setWidgetSettings((prev) => normalizeWidgetSettings({ ...prev, showBusinessName: e.target.checked }))}
+                  />
+                  Show business name
+                </label>
+                <label className="row" style={{ gap: '8px' }}>
+                  <input
+                    type="checkbox"
+                    checked={widgetSettings.showLinks}
+                    onChange={(e) => setWidgetSettings((prev) => normalizeWidgetSettings({ ...prev, showLinks: e.target.checked }))}
+                    disabled={widgetSettings.layoutMode === 'minimal'}
+                  />
+                  Show social links
+                </label>
               </div>
               <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center' }}>
                 <QrCard
                   businessName={profileBusinessName || business?.name || 'Your Business'}
                   slug={profilePublicBusinessKey || 'your-business'}
-                  size={180}
+                  size={widgetSettings.layoutMode === 'minimal' ? 120 : widgetSettings.layoutMode === 'full' ? 180 : 150}
+                  compact={widgetSettings.layoutMode === 'minimal'}
+                  showBranding={widgetSettings.showBranding}
+                  showBusinessName={widgetSettings.showBusinessName}
                 />
               </div>
               <p className="helper-text" style={{ marginTop: '12px' }}>
@@ -3127,7 +3204,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
                 className="button button-secondary"
                 onClick={() => {
                   const previewPath = profilePublicBusinessKey
-                    ? `/b/${encodeURIComponent(profilePublicBusinessKey)}?qrMode=${encodeURIComponent(qrPreviewMode)}`
+                    ? `/b/${encodeURIComponent(profilePublicBusinessKey)}`
                     : '/business';
                   onNavigate('dashboard', null, previewPath);
                 }}

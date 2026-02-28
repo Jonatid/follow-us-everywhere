@@ -491,6 +491,10 @@ router.put(
       .optional({ nullable: true })
       .isLength({ max: 300 })
       .withMessage('Philanthropic goals must be 300 characters or less'),
+    body('widget_settings')
+      .optional({ nullable: true })
+      .custom((value) => value === null || (value && typeof value === 'object' && !Array.isArray(value)))
+      .withMessage('Widget settings must be an object'),
   ],
   async (req, res) => {
     try {
@@ -499,7 +503,17 @@ router.put(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { name, tagline, logo, logo_url, lara_number, mission_statement, vision_statement, philanthropic_goals } = req.body;
+      const {
+        name,
+        tagline,
+        logo,
+        logo_url,
+        lara_number,
+        mission_statement,
+        vision_statement,
+        philanthropic_goals,
+        widget_settings,
+      } = req.body;
 
       const statusResult = await pool.query(
         `SELECT verification_status,
@@ -576,6 +590,12 @@ router.put(
         paramCount++;
       }
 
+      if (widget_settings !== undefined) {
+        fields.push(`widget_settings = $${paramCount}`);
+        values.push(widget_settings === null ? null : widget_settings);
+        paramCount++;
+      }
+
       if (fields.length === 0) {
         return res.status(400).json({ error: 'No fields to update' });
       }
@@ -607,6 +627,7 @@ router.put(
                   mission_statement,
                   vision_statement,
                   philanthropic_goals,
+                  widget_settings,
                   created_at,
                   updated_at
       `;
