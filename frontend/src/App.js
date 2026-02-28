@@ -3143,75 +3143,81 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
               <p className="subtitle">
                 Choose how your public page and QR card should render.
               </p>
-              <div style={{ marginTop: '12px' }}>
-                <QrDisplayModeSelector
-                  value={widgetSettings.layoutMode}
-                  onChange={(nextMode) => setWidgetSettings((prev) => normalizeWidgetSettings({ ...prev, layoutMode: nextMode }))}
-                />
-              </div>
-              <div className="field" style={{ marginTop: '12px' }}>
-                <label className="label">Button / helper CTA text</label>
-                <input
-                  className="input"
-                  type="text"
-                  maxLength={80}
-                  value={widgetSettings.ctaText}
-                  onChange={(e) => setWidgetSettings((prev) => normalizeWidgetSettings({ ...prev, ctaText: e.target.value }))}
-                />
-              </div>
-              <div className="row row-wrap" style={{ gap: '12px', marginTop: '12px' }}>
-                <label className="row" style={{ gap: '8px' }}>
-                  <input
-                    type="checkbox"
-                    checked={widgetSettings.showBranding}
-                    onChange={(e) => setWidgetSettings((prev) => normalizeWidgetSettings({ ...prev, showBranding: e.target.checked }))}
+              <div style={{ marginTop: '12px', display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-start' }}>
+                <div style={{ flex: '1 1 320px', minWidth: '280px' }}>
+                  <QrDisplayModeSelector
+                    value={widgetSettings.layoutMode}
+                    onChange={(nextMode) => setWidgetSettings((prev) => normalizeWidgetSettings({ ...prev, layoutMode: nextMode }))}
                   />
-                  Show branding
-                </label>
-                <label className="row" style={{ gap: '8px' }}>
-                  <input
-                    type="checkbox"
-                    checked={widgetSettings.showBusinessName}
-                    onChange={(e) => setWidgetSettings((prev) => normalizeWidgetSettings({ ...prev, showBusinessName: e.target.checked }))}
+                  <div className="field" style={{ marginTop: '12px' }}>
+                    <label className="label">Button / helper CTA text</label>
+                    <input
+                      className="input"
+                      type="text"
+                      maxLength={80}
+                      value={widgetSettings.ctaText}
+                      onChange={(e) => setWidgetSettings((prev) => normalizeWidgetSettings({ ...prev, ctaText: e.target.value }))}
+                    />
+                  </div>
+                  <div className="row row-wrap" style={{ gap: '12px', marginTop: '12px' }}>
+                    <label className="row" style={{ gap: '8px' }}>
+                      <input
+                        type="checkbox"
+                        checked={widgetSettings.showBranding}
+                        onChange={(e) => setWidgetSettings((prev) => normalizeWidgetSettings({ ...prev, showBranding: e.target.checked }))}
+                      />
+                      Show branding
+                    </label>
+                    <label className="row" style={{ gap: '8px' }}>
+                      <input
+                        type="checkbox"
+                        checked={widgetSettings.showBusinessName}
+                        onChange={(e) => setWidgetSettings((prev) => normalizeWidgetSettings({ ...prev, showBusinessName: e.target.checked }))}
+                      />
+                      Show business name
+                    </label>
+                    <label className="row" style={{ gap: '8px' }}>
+                      <input
+                        type="checkbox"
+                        checked={widgetSettings.showLinks}
+                        onChange={(e) => setWidgetSettings((prev) => normalizeWidgetSettings({ ...prev, showLinks: e.target.checked }))}
+                        disabled={widgetSettings.layoutMode === 'minimal'}
+                      />
+                      Show social links
+                    </label>
+                  </div>
+                </div>
+                <div style={{ flex: '0 0 auto', marginInline: 'auto' }}>
+                  <QrCard
+                    businessName={profileBusinessName || business?.name || 'Your Business'}
+                    slug={profilePublicBusinessKey || 'your-business'}
+                    size={widgetSettings.layoutMode === 'minimal' ? 120 : widgetSettings.layoutMode === 'full' ? 180 : 150}
+                    compact={widgetSettings.layoutMode === 'minimal'}
+                    showBranding={widgetSettings.showBranding}
+                    showBusinessName={widgetSettings.showBusinessName}
                   />
-                  Show business name
-                </label>
-                <label className="row" style={{ gap: '8px' }}>
-                  <input
-                    type="checkbox"
-                    checked={widgetSettings.showLinks}
-                    onChange={(e) => setWidgetSettings((prev) => normalizeWidgetSettings({ ...prev, showLinks: e.target.checked }))}
-                    disabled={widgetSettings.layoutMode === 'minimal'}
-                  />
-                  Show social links
-                </label>
-              </div>
-              <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center' }}>
-                <QrCard
-                  businessName={profileBusinessName || business?.name || 'Your Business'}
-                  slug={profilePublicBusinessKey || 'your-business'}
-                  size={widgetSettings.layoutMode === 'minimal' ? 120 : widgetSettings.layoutMode === 'full' ? 180 : 150}
-                  compact={widgetSettings.layoutMode === 'minimal'}
-                  showBranding={widgetSettings.showBranding}
-                  showBusinessName={widgetSettings.showBusinessName}
-                />
+                </div>
               </div>
               <p className="helper-text" style={{ marginTop: '12px' }}>
                 QR destination: {profilePublicBusinessKey ? buildPublicBusinessUrl(profilePublicBusinessKey) : 'Set your slug or username to activate your public QR link.'}
               </p>
-              <button
-                type="button"
-                className="button button-secondary"
-                onClick={() => {
-                  const previewPath = profilePublicBusinessKey
-                    ? `/b/${encodeURIComponent(profilePublicBusinessKey)}`
-                    : '/business';
-                  onNavigate('dashboard', null, previewPath);
-                }}
-                style={{ marginTop: '8px' }}
-              >
-                Preview Public Follow Page
-              </button>
+              <div className="row row-wrap" style={{ gap: '10px', marginTop: '8px' }}>
+                <button type="button" className="button button-primary" onClick={handleSave} disabled={saving}>
+                  {saving ? 'Saving...' : 'Save changes'}
+                </button>
+                <button
+                  type="button"
+                  className="button button-secondary"
+                  onClick={() => {
+                    const previewPath = profilePublicBusinessKey
+                      ? `/b/${encodeURIComponent(profilePublicBusinessKey)}`
+                      : '/business';
+                    onNavigate('dashboard', null, previewPath);
+                  }}
+                >
+                  Preview Public Follow Page
+                </button>
+              </div>
             </div>
 
             <div className="card" style={{ border: '1px solid var(--border)', boxShadow: 'none' }}>
