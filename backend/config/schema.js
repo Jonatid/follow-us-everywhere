@@ -67,6 +67,7 @@ const ensureSchema = async () => {
         mission_statement TEXT,
         vision_statement TEXT,
         philanthropic_goals TEXT,
+        widget_settings JSONB,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
@@ -87,6 +88,7 @@ const ensureSchema = async () => {
         ADD COLUMN IF NOT EXISTS mission_statement TEXT,
         ADD COLUMN IF NOT EXISTS vision_statement TEXT,
         ADD COLUMN IF NOT EXISTS philanthropic_goals TEXT,
+        ADD COLUMN IF NOT EXISTS widget_settings JSONB,
         ADD COLUMN IF NOT EXISTS logo_url TEXT,
         ADD COLUMN IF NOT EXISTS lara_number TEXT;
     `);

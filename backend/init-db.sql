@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS businesses (
     mission_statement TEXT,
     vision_statement TEXT,
     philanthropic_goals TEXT,
+    widget_settings JSONB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
