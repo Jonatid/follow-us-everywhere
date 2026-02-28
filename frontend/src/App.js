@@ -487,24 +487,41 @@ const AboutPage = ({ onNavigate }) => (
   </div>
 );
 
+const faqPageItems = [
+  {
+    question: 'What is Fuse101?',
+    answer: 'Fuse101 gives you one public page to organize links for your audience.',
+  },
+  {
+    question: 'How do I get started?',
+    answer: 'Choose Customer or Business from Sign up free and follow the existing onboarding flow.',
+  },
+  {
+    question: 'Can I still access business tools?',
+    answer: 'Yes. Business access remains available at /business with no backend changes.',
+  },
+  {
+    question: 'Can I update my profile anytime?',
+    answer: 'Yes. You can edit your links, messaging, and profile details whenever your business needs change.',
+  },
+  {
+    question: 'Where should I send people?',
+    answer: 'Use your single Fuse101 profile link across social media, email signatures, QR cards, and campaigns.',
+  },
+];
+
 const FAQPage = ({ onNavigate }) => (
-  <div className="page page--gradient">
-    <div className="card card--wide" style={{ maxWidth: '900px' }}>
+  <div className="page page--gradient faq-page">
+    <div className="card card--wide faq-page__card" style={{ maxWidth: '980px' }}>
       <BackLink fallbackPath="/" onFallbackNavigate={() => onNavigate('marketing-landing', null, '/')} label="← Back to home" />
-      <h1 className="heading-xl" style={{ marginTop: '14px' }}>FAQ</h1>
-      <div className="stack-sm" style={{ marginTop: '14px' }}>
-        <div>
-          <h3 className="heading-md">What is Fuse101?</h3>
-          <p className="subtitle">Fuse101 gives you one public page to organize links for your audience.</p>
-        </div>
-        <div>
-          <h3 className="heading-md">How do I get started?</h3>
-          <p className="subtitle">Choose Customer or Business from Sign up free and follow the existing onboarding flow.</p>
-        </div>
-        <div>
-          <h3 className="heading-md">Can I still access business tools?</h3>
-          <p className="subtitle">Yes. Business access remains available at /business with no backend changes.</p>
-        </div>
+      <h1 className="heading-xl faq-page__title">FAQ</h1>
+      <div className="faq-page__list" aria-label="Frequently asked questions list">
+        {faqPageItems.map((item) => (
+          <article key={item.question} className="faq-page__item">
+            <h3 className="heading-md faq-page__question">{item.question}</h3>
+            <p className="subtitle faq-page__answer">{item.answer}</p>
+          </article>
+        ))}
       </div>
     </div>
   </div>

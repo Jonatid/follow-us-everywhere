@@ -83,6 +83,7 @@ const badgeCards = [
   },
 ];
 
+
 export default function Landing({ onNavigate, onOpenRoleModal }) {
   const [openFeatureCard, setOpenFeatureCard] = useState('one-smart-profile');
   const splitCards = useMemo(() => [featureCards.slice(0, 3), featureCards.slice(3)], []);
