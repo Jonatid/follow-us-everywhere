@@ -6,6 +6,18 @@ const crypto = require('crypto');
 const pool = require('../config/db');
 const { authenticateCustomerToken } = require('../middleware/customer-auth');
 const { sendCustomerPasswordResetEmail } = require('../utils/email');
+const {
+  ACCOUNT_LOCKOUT_MINUTES,
+  clearAccountFailedAttempts,
+  enforceIpRateLimit,
+  getAccountAttempt,
+  getFailedAttemptDelay,
+  getRequestIp,
+  isAccountLocked,
+  normalizeEmail,
+  recordFailedPasswordAttempt,
+  sleep,
+} = require('../services/loginProtection');
 
 const router = express.Router();
 
@@ -25,16 +37,7 @@ const FORGOT_PASSWORD_WINDOW_MS = 15 * 60 * 1000;
 const FORGOT_PASSWORD_MAX_ATTEMPTS = 5;
 const forgotPasswordAttemptTracker = new Map();
 
-const normalizeEmail = (email = '') => email.trim().toLowerCase();
 const hashResetToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
-
-const getRequestIp = (req) => {
-  const forwardedFor = req.headers['x-forwarded-for'];
-  if (typeof forwardedFor === 'string' && forwardedFor.trim()) {
-    return forwardedFor.split(',')[0].trim();
-  }
-  return req.ip || req.socket?.remoteAddress || 'unknown';
-};
 
 const rateLimitForgotPassword = (ip, email) => {
   const now = Date.now();
@@ -125,22 +128,66 @@ router.post('/login', [body('email').isEmail(), body('password').exists()], asyn
   }
 
   const { email, password } = req.body;
+  const emailNormalized = normalizeEmail(email);
+  const requestIp = getRequestIp(req);
+
+  let client;
 
   try {
-    const result = await pool.query(
-      'SELECT id, email, first_name, last_name, phone, address, password_hash, created_at FROM customers WHERE email = $1',
-      [email]
+    client = await pool.connect();
+    await client.query('BEGIN');
+
+    const ipRateLimit = await enforceIpRateLimit(client, { routeScope: 'customer', ip: requestIp });
+    if (ipRateLimit.blocked) {
+      await client.query('ROLLBACK');
+      return res.status(429).json({ message: 'Too many attempts from this IP. Please try again later.' });
+    }
+
+    const accountAttempt = await getAccountAttempt(client, { routeScope: 'customer', emailNormalized });
+    if (isAccountLocked(accountAttempt)) {
+      await client.query('ROLLBACK');
+      return res
+        .status(429)
+        .json({ message: `Too many failed attempts. Try again in ${ACCOUNT_LOCKOUT_MINUTES} minutes.` });
+    }
+
+    const result = await client.query(
+      'SELECT id, email, first_name, last_name, phone, address, password_hash, created_at FROM customers WHERE LOWER(email) = LOWER($1)',
+      [emailNormalized]
     );
 
     if (result.rows.length === 0) {
+      await client.query('COMMIT');
+      await sleep(getFailedAttemptDelay(1));
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
     const customer = result.rows[0];
     const isMatch = await bcrypt.compare(password, customer.password_hash);
     if (!isMatch) {
+      const failedAttempt = await recordFailedPasswordAttempt(client, {
+        routeScope: 'customer',
+        emailNormalized,
+        ip: requestIp,
+      });
+      await client.query('COMMIT');
+      await sleep(getFailedAttemptDelay(failedAttempt.failCount));
+
+      if (failedAttempt.warning) {
+        return res.status(400).json({ message: 'Warning: 1 attempt remaining before temporary lockout.' });
+      }
+
+      if (failedAttempt.locked) {
+        return res
+          .status(429)
+          .json({ message: `Too many failed attempts. Try again in ${ACCOUNT_LOCKOUT_MINUTES} minutes.` });
+      }
+
       return res.status(400).json({ message: 'Invalid credentials' });
     }
+
+    await clearAccountFailedAttempts(client, { routeScope: 'customer', emailNormalized });
+    await client.query('COMMIT');
 
     const payload = { customerId: customer.id };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -148,8 +195,19 @@ router.post('/login', [body('email').isEmail(), body('password').exists()], asyn
     const { password_hash, ...customerData } = customer;
     return res.json({ token, customer: customerData });
   } catch (err) {
+    if (client) {
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        // Transaction may already be finalized.
+      }
+    }
     console.error('Customer login error:', err);
     return res.status(500).json({ message: 'Server error' });
+  } finally {
+    if (client) {
+      client.release();
+    }
   }
 });
 
@@ -272,7 +330,11 @@ router.post(
       return res.json({ message: 'Password updated successfully. Please log in with your new password.' });
     } catch (err) {
       if (client) {
-        await client.query('ROLLBACK');
+        try {
+          await client.query('ROLLBACK');
+        } catch (rollbackError) {
+          // Transaction may already be finalized.
+        }
       }
       console.error('Customer reset password error:', err);
       return res.status(500).json({ message: 'Server error' });
