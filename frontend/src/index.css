@@ -283,27 +283,6 @@ body {
   color: #0f172a;
 }
 
-.faq-page__intro {
-  margin: 0 0 1.4rem;
-  color: #64748b;
-}
-
-.faq-page__section {
-  display: grid;
-  gap: 0.9rem;
-}
-
-.faq-page__section + .faq-page__section {
-  margin-top: 1.6rem;
-  padding-top: 1.2rem;
-  border-top: 1px solid #e2e8f0;
-}
-
-.faq-page__section-title {
-  margin: 0;
-  color: #1e293b;
-}
-
 .faq-page__list {
   display: grid;
   gap: 1rem;
@@ -1346,10 +1325,5 @@ body {
 
   .faq-page__answer {
     font-size: 1rem;
-  }
-
-  .faq-page__section + .faq-page__section {
-    margin-top: 1.25rem;
-    padding-top: 1rem;
   }
 }

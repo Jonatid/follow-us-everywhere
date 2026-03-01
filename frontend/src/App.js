@@ -487,71 +487,42 @@ const AboutPage = ({ onNavigate }) => (
   </div>
 );
 
-const customerFaqItems = [
+const faqPageItems = [
   {
-    question: 'How do customers get started?',
-    answer: 'Click Sign up free, choose Customer, and complete the quick onboarding flow to start exploring businesses.',
+    question: 'What is Fuse101?',
+    answer: 'Fuse101 gives you one public page to organize links for your audience.',
   },
   {
-    question: 'How do I discover businesses that match my values?',
-    answer: 'Use the Explore businesses page to browse profiles, links, and verified signals in one place.',
-  },
-  {
-    question: 'Do I need to download an app?',
-    answer: 'No. You can access Follow Us Everywhere directly in your browser on desktop or mobile.',
-  },
-  {
-    question: 'Can I save businesses I like?',
-    answer: 'Yes. Signed-in customers can save favorites for quicker access later.',
-  },
-];
-
-const businessFaqItems = [
-  {
-    question: 'What is Fuse101 for businesses?',
-    answer: 'Fuse101 gives your business one public profile to share links, services, and updates with customers.',
-  },
-  {
-    question: 'How do I set up my business profile?',
-    answer: 'Choose Business from Sign up free, complete onboarding, and publish your profile with your key links and contact info.',
+    question: 'How do I get started?',
+    answer: 'Choose Customer or Business from Sign up free and follow the existing onboarding flow.',
   },
   {
     question: 'Can I still access business tools?',
     answer: 'Yes. Business access remains available at /business with no backend changes.',
   },
   {
-    question: 'Can I update my business profile anytime?',
+    question: 'Can I update my profile anytime?',
     answer: 'Yes. You can edit your links, messaging, and profile details whenever your business needs change.',
   },
   {
-    question: 'Where should I share my business profile link?',
-    answer: 'Use your Fuse101 link across social media, email signatures, printed QR cards, and marketing campaigns.',
+    question: 'Where should I send people?',
+    answer: 'Use your single Fuse101 profile link across social media, email signatures, QR cards, and campaigns.',
   },
 ];
-
-const FAQPageSection = ({ title, items }) => (
-  <section className="faq-page__section" aria-label={`${title} frequently asked questions`}>
-    <h2 className="heading-lg faq-page__section-title">{title}</h2>
-    <div className="faq-page__list">
-      {items.map((item) => (
-        <article key={item.question} className="faq-page__item">
-          <h3 className="heading-md faq-page__question">{item.question}</h3>
-          <p className="subtitle faq-page__answer">{item.answer}</p>
-        </article>
-      ))}
-    </div>
-  </section>
-);
 
 const FAQPage = ({ onNavigate }) => (
   <div className="page page--gradient faq-page">
     <div className="card card--wide faq-page__card" style={{ maxWidth: '980px' }}>
       <BackLink fallbackPath="/" onFallbackNavigate={() => onNavigate('marketing-landing', null, '/')} label="← Back to home" />
       <h1 className="heading-xl faq-page__title">FAQ</h1>
-      <p className="subtitle faq-page__intro">Answers for both customers and businesses using Follow Us Everywhere.</p>
-
-      <FAQPageSection title="Customer FAQ" items={customerFaqItems} />
-      <FAQPageSection title="Business FAQ" items={businessFaqItems} />
+      <div className="faq-page__list" aria-label="Frequently asked questions list">
+        {faqPageItems.map((item) => (
+          <article key={item.question} className="faq-page__item">
+            <h3 className="heading-md faq-page__question">{item.question}</h3>
+            <p className="subtitle faq-page__answer">{item.answer}</p>
+          </article>
+        ))}
+      </div>
     </div>
   </div>
 );
