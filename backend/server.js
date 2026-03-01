@@ -51,24 +51,33 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Test database connection
+// Health check endpoint for uptime monitoring.
 app.get('/api/health', async (req, res) => {
+  res.set({
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    Pragma: 'no-cache',
+    Expires: '0',
+    'Surrogate-Control': 'no-store'
+  });
+
+  let dbStatus = 'down';
+
   try {
-    const result = await db.query('SELECT NOW()');
-    res.json({ 
-      status: 'ok', 
-      message: 'Server is running',
-      database: 'connected',
-      timestamp: result.rows[0]
-    });
-  } catch (error) {
-    console.error('Database connection error:', error);
-    res.status(503).json({ 
-      status: 'error', 
-      message: 'Database connection failed',
-      error: error.message 
-    });
+    await Promise.race([
+      db.query('SELECT 1'),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('DB check timeout')), 300))
+    ]);
+    dbStatus = 'ok';
+  } catch (_) {
+    dbStatus = 'down';
   }
+
+  res.status(200).json({
+    ok: true,
+    service: 'api',
+    timestamp: new Date().toISOString(),
+    db: dbStatus
+  });
 });
 
 

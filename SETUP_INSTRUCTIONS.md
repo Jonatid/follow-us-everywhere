@@ -67,3 +67,21 @@ node -e "
 # Then check it logged:
 # GET https://fuse101.com/qr/analytics/detroit-coffee-co
 # Should return: { ok: true, slug: "detroit-coffee-co", stats: { total: 1, ... } }
+
+
+# ── BETTERSTACK HEALTH MONITORING ────────────────────────────────────────────
+#
+# BetterStack monitor URLs:
+# - Website monitor: https://fuse101.com
+# - API health monitor: https://followuseverywhere-api.onrender.com/api/health
+#
+# Verification checklist:
+# 1) Local check:
+#    curl -i http://localhost:5000/api/health
+#
+# 2) Production check:
+#    curl -i https://followuseverywhere-api.onrender.com/api/health
+#
+# 3) BetterStack "Alert us when":
+#    - Prefer: URL returns HTTP status other than 2xx/3xx
+#    - Fallback: URL becomes unavailable
