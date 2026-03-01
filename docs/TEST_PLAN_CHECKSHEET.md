@@ -81,3 +81,18 @@ Use this checksheet during manual testing of each release candidate.
 - [ ] Needs fixes before release
 
 **Approver:** ____________________
+
+## 11) Login Brute-Force Protection
+Run the following for each login endpoint:
+- `POST /api/auth/login`
+- `POST /api/customers/auth/login`
+- `POST /api/admin/auth/login`
+
+- [ ] 4th consecutive failed password attempt for an existing account returns:
+      `Warning: 1 attempt remaining before temporary lockout.`
+- [ ] 5th consecutive failed password attempt returns:
+      `Too many failed attempts. Try again in 15 minutes.`
+- [ ] Additional login attempts during lockout keep returning the lockout message.
+- [ ] Successful login after prior failures resets counters (next bad password goes back to generic invalid credentials).
+- [ ] IP throttling blocks at roughly 20 attempts in 10 minutes on the same route/IP.
+- [ ] Protection persists across backend restart (attempt counts remain in Postgres).
