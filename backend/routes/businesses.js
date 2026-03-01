@@ -96,6 +96,14 @@ const buildR2PublicUrlFromKey = (key) => {
   return `${publicBase}/${key}`;
 };
 
+const buildR2ProxyDownloadPath = (key) => {
+  if (!key) {
+    return null;
+  }
+
+  return `/api/r2/download/${key}?redirect=1`;
+};
+
 const handleDocumentUpload = (req, res) => {
   documentUpload.single('document')(req, res, async (uploadErr) => {
     if (uploadErr) {
@@ -671,6 +679,16 @@ router.post('/logo/upload', authenticateToken, (req, res) => {
     let storageProvider = 'local';
     let r2Key = null;
 
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[business-logo-upload:start]', {
+        businessId: req.businessId,
+        originalName: req.file.originalname,
+        mimeType: req.file.mimetype,
+        size: req.file.size,
+        r2Configured: isR2Configured(),
+      });
+    }
+
     if (isR2Configured()) {
       try {
         const extension = safeFileExtension;
@@ -684,10 +702,8 @@ router.post('/logo/upload', authenticateToken, (req, res) => {
         });
 
         const publicR2Url = buildR2PublicUrlFromKey(r2Key);
-        if (publicR2Url) {
-          logoUrl = publicR2Url;
-          storageProvider = 'r2';
-        }
+        logoUrl = publicR2Url || buildR2ProxyDownloadPath(r2Key);
+        storageProvider = 'r2';
       } catch (r2Error) {
         console.error('Error uploading business logo to R2:', r2Error);
 
