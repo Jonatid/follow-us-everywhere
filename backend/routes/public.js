@@ -4,6 +4,72 @@ const { getPublicBusinessBySlug } = require('../utils/publicBusinessProfile');
 
 const router = express.Router();
 
+const SCHEMA_CAPABILITIES_TTL_MS = 5 * 60 * 1000;
+let schemaCapabilitiesCache = {
+  value: null,
+  expiresAt: 0,
+  loadingPromise: null
+};
+
+const loadSchemaCapabilities = async () => {
+  const now = Date.now();
+
+  if (schemaCapabilitiesCache.value && now < schemaCapabilitiesCache.expiresAt) {
+    return schemaCapabilitiesCache.value;
+  }
+
+  if (schemaCapabilitiesCache.loadingPromise) {
+    return schemaCapabilitiesCache.loadingPromise;
+  }
+
+  schemaCapabilitiesCache.loadingPromise = (async () => {
+    const [columnsResult, tablesResult] = await Promise.all([
+      pool.query(
+        `SELECT column_name
+         FROM information_schema.columns
+         WHERE table_name = 'businesses'
+           AND column_name IN (
+             'verification_status',
+             'disabled_at',
+             'suspended_at',
+             'is_approved',
+             'is_verified',
+             'is_public',
+             'is_published',
+             'is_active',
+             'community_support_text'
+           )`
+      ),
+      pool.query(
+        `SELECT table_name
+         FROM information_schema.tables
+         WHERE table_schema = 'public'
+           AND table_name IN ('business_badges', 'badges')`
+      )
+    ]);
+
+    const value = {
+      availableColumns: new Set(columnsResult.rows.map((row) => row.column_name)),
+      availableTables: new Set(tablesResult.rows.map((row) => row.table_name))
+    };
+
+    schemaCapabilitiesCache = {
+      value,
+      expiresAt: Date.now() + SCHEMA_CAPABILITIES_TTL_MS,
+      loadingPromise: null
+    };
+
+    return value;
+  })();
+
+  try {
+    return await schemaCapabilitiesCache.loadingPromise;
+  } catch (error) {
+    schemaCapabilitiesCache.loadingPromise = null;
+    throw error;
+  }
+};
+
 router.get('/businesses', async (req, res) => {
   try {
     const query = typeof req.query.query === 'string' ? req.query.query.trim() : '';
@@ -15,32 +81,7 @@ router.get('/businesses', async (req, res) => {
     const limit = Number.isNaN(parsedLimit) || parsedLimit < 1 ? 10 : Math.min(parsedLimit, 25);
     const offset = (page - 1) * limit;
 
-    const columnsResult = await pool.query(
-      `SELECT column_name
-       FROM information_schema.columns
-       WHERE table_name = 'businesses'
-         AND column_name IN (
-           'verification_status',
-           'disabled_at',
-           'suspended_at',
-           'is_approved',
-           'is_verified',
-           'is_public',
-           'is_published',
-           'is_active',
-           'community_support_text'
-         )`
-    );
-
-    const tablesResult = await pool.query(
-      `SELECT table_name
-       FROM information_schema.tables
-       WHERE table_schema = 'public'
-         AND table_name IN ('business_badges', 'badges')`
-    );
-
-    const availableColumns = new Set(columnsResult.rows.map((row) => row.column_name));
-    const availableTables = new Set(tablesResult.rows.map((row) => row.table_name));
+    const { availableColumns, availableTables } = await loadSchemaCapabilities();
     const includeBadges = availableTables.has('business_badges') && availableTables.has('badges');
     const selectCommunitySupport = availableColumns.has('community_support_text')
       ? 'b.community_support_text'
