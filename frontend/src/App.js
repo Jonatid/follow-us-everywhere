@@ -308,19 +308,21 @@ const MarketingLandingPage = ({ onNavigate, onOpenRoleModal }) => {
         aria-label="Home hero"
       >
         <div className="home-hero__overlay">
-          <div className="home-hero__content stack-lg text-center">
-            <h1 className="heading-xxl home-hero__title">Built for Businesses That Show Up.</h1>
-            <p className="subtitle-lg home-hero__tagline">
-              Share your links, your services, and what matters to your business — all in one trusted place.
-            </p>
-            <div>
+          <div className="home-hero__content">
+            <div className="home-hero__text stack-lg">
+              <p className="home-hero__label">BUILT FOR BUSINESSES THAT SHOW UP.</p>
+              <h1 className="heading-xxl home-hero__title">Business Presence. Simplified.</h1>
+              <p className="subtitle-lg home-hero__tagline">Unified. Discoverable. Scalable.</p>
+            </div>
+            <div className="home-hero__actions">
               <button type="button" className="button button-primary button-lg" onClick={() => onOpenRoleModal('signup')}>
                 Sign up free
               </button>
-              <button type="button" className="button button-secondary button-lg" style={{ marginLeft: '12px' }} onClick={() => onNavigate('discover', null, '/discover')}>
+              <button type="button" className="button button-secondary button-lg" onClick={() => onNavigate('discover', null, '/discover')}>
                 Explore businesses
               </button>
             </div>
+            <div className="home-hero__visual" aria-hidden="true" />
           </div>
         </div>
       </section>

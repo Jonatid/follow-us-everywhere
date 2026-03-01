@@ -9,6 +9,18 @@ const { resolveVerificationStatus } = require('../utils/verification');
 const { sendPasswordResetEmail } = require('../utils/email');
 const crypto = require('crypto');
 const { resolveUniqueBusinessSlug } = require('../utils/businessSlug');
+const {
+  ACCOUNT_LOCKOUT_MINUTES,
+  clearAccountFailedAttempts,
+  enforceIpRateLimit,
+  getAccountAttempt,
+  getFailedAttemptDelay,
+  getRequestIp,
+  isAccountLocked,
+  normalizeEmail,
+  recordFailedPasswordAttempt,
+  sleep,
+} = require('../services/loginProtection');
 
 const router = express.Router();
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,64}$/;
@@ -133,7 +145,11 @@ router.post(
       res.json({ token, business });
     } catch (err) {
       if (client) {
-        await client.query('ROLLBACK');
+        try {
+          await client.query('ROLLBACK');
+        } catch (rollbackError) {
+          // Transaction may already be finalized.
+        }
       }
       console.error('Signup error:', err);
 
@@ -187,6 +203,8 @@ router.post(
   [body('email').optional().isEmail(), body('password').optional().isString()],
   async (req, res) => {
     const { email, password } = req.body;
+    const emailNormalized = normalizeEmail(email);
+    const requestIp = getRequestIp(req);
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password required' });
@@ -197,9 +215,27 @@ router.post(
       return res.status(400).json({ error: 'Email and password required' });
     }
 
+    let client;
     try {
+      client = await pool.connect();
+      await client.query('BEGIN');
+
+      const ipRateLimit = await enforceIpRateLimit(client, { routeScope: 'business', ip: requestIp });
+      if (ipRateLimit.blocked) {
+        await client.query('ROLLBACK');
+        return res.status(429).json({ error: 'Too many attempts from this IP. Please try again later.' });
+      }
+
+      const accountAttempt = await getAccountAttempt(client, { routeScope: 'business', emailNormalized });
+      if (isAccountLocked(accountAttempt)) {
+        await client.query('ROLLBACK');
+        return res
+          .status(429)
+          .json({ error: `Too many failed attempts. Try again in ${ACCOUNT_LOCKOUT_MINUTES} minutes.` });
+      }
+
       // Check if business exists
-      const result = await pool.query(
+      const result = await client.query(
         `SELECT id,
                 name,
                 slug,
@@ -223,11 +259,13 @@ router.post(
                 philanthropic_goals,
                 widget_settings
          FROM businesses
-         WHERE email = $1`,
-        [email]
+         WHERE LOWER(email) = LOWER($1)`,
+        [emailNormalized]
       );
 
       if (result.rows.length === 0) {
+        await client.query('COMMIT');
+        await sleep(getFailedAttemptDelay(1));
         return res.status(401).json({ error: 'Invalid credentials' });
       }
 
@@ -236,8 +274,29 @@ router.post(
       // Check password
       const isMatch = await bcrypt.compare(password, business.password_hash);
       if (!isMatch) {
+        const failedAttempt = await recordFailedPasswordAttempt(client, {
+          routeScope: 'business',
+          emailNormalized,
+          ip: requestIp,
+        });
+        await client.query('COMMIT');
+        await sleep(getFailedAttemptDelay(failedAttempt.failCount));
+
+        if (failedAttempt.warning) {
+          return res.status(401).json({ error: 'Warning: 1 attempt remaining before temporary lockout.' });
+        }
+
+        if (failedAttempt.locked) {
+          return res
+            .status(429)
+            .json({ error: `Too many failed attempts. Try again in ${ACCOUNT_LOCKOUT_MINUTES} minutes.` });
+        }
+
         return res.status(401).json({ error: 'Invalid credentials' });
       }
+
+      await clearAccountFailedAttempts(client, { routeScope: 'business', emailNormalized });
+      await client.query('COMMIT');
 
       // Get social links
       const socialsResult = await pool.query(
@@ -258,12 +317,23 @@ router.post(
 
       res.json({ token, business: businessData });
     } catch (err) {
+      if (client) {
+        try {
+          await client.query('ROLLBACK');
+        } catch (rollbackError) {
+          // Transaction may already be finalized.
+        }
+      }
       console.error('[auth/login] error', {
         email,
         message: err.message,
         stack: err.stack,
       });
       res.status(500).json({ error: 'Internal server error' });
+    } finally {
+      if (client) {
+        client.release();
+      }
     }
   }
 );

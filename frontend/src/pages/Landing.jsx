@@ -1,66 +1,85 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect } from 'react';
 import heroImage from '../assets/hero-web.svg';
 import businessVerifiedIcon from '../assets/business-verified.svg';
 import impactVerifiedIcon from '../assets/impact-verified.svg';
 import communityImpactIcon from '../assets/community-impact.svg';
+import { faqSections } from '../constants/faqItems';
 import '../styles/landing.css';
 
-const featureCards = [
+const landingSections = [
   {
-    id: 'one-smart-profile',
-    title: 'One Smart Profile',
-    preview: 'All your links, values, and updates in one structured page.',
-    bullets: [
-      'Links, socials, and contact in one place',
-      'Clear positioning customers can trust',
-      'Update anytime without breaking your link',
+    id: 'everyone',
+    title: 'For everyone',
+    description: 'Core platform value that applies to both businesses and customers.',
+    cards: [
+      {
+        id: 'one-smart-profile',
+        title: 'One Smart Profile',
+        bullets: [
+          'All your links, values, and updates in one structured page',
+          'Clear positioning customers can trust',
+          'Update anytime without breaking your public link',
+        ],
+      },
+      {
+        id: 'what-it-is',
+        title: 'What It Is',
+        bullets: [
+          'A focused business profile link people can understand quickly',
+          'One place for links, contact channels, and context',
+          'Simple and transparent experience from first visit',
+        ],
+      },
     ],
   },
   {
-    id: 'what-it-is',
-    title: 'What It Is',
-    preview:
-      'A focused business profile link that helps people quickly understand what you offer.',
-    bullets: [
-      'One place for key links and contact channels',
-      'Clear info for day-to-day purchase decisions',
-      'A practical way to show steady community commitment',
+    id: 'business',
+    title: 'For businesses',
+    description: 'Tools that help business owners control their profile and messaging.',
+    cards: [
+      {
+        id: 'how-it-works',
+        title: 'Business setup',
+        bullets: [
+          'Sign up free and create your business profile',
+          'Add your links, contact details, and services',
+          'Share one trusted profile URL across campaigns',
+        ],
+      },
+      {
+        id: 'cause-visibility',
+        title: 'Cause Visibility (Optional)',
+        bullets: [
+          'Optional badge requests tied to verification',
+          'Clear review process before display',
+          'Plain-language presentation for customers',
+        ],
+      },
+      {
+        id: 'why-businesses-use-it',
+        title: 'Why Businesses Use It',
+        bullets: [
+          'Simple setup and updates without technical overhead',
+          'Stronger visibility from one trusted link',
+          'Consistent messaging across channels',
+        ],
+      },
     ],
   },
   {
-    id: 'how-it-works',
-    title: 'How It Works',
-    preview: 'A simple flow for businesses and communities.',
-    bullets: [
-      'Businesses join for free and share who they are',
-      'Optional cause badges tied to verification requests',
-      'Communities choose where to spend with clarity',
-    ],
-  },
-  {
-    id: 'cause-visibility',
-    title: 'Cause Visibility (Optional)',
-    preview: 'Show verified community support with clarity.',
-    bullets: ['Optional badge requests', 'Clear verification process', 'Transparent plain-language presentation'],
-  },
-  {
-    id: 'built-differently',
-    title: 'Built Differently',
-    preview: 'A calmer, business-first approach.',
-    bullets: [
-      'Businesses control their own profile and updates',
-      'No hype language or moral ranking',
-      'Structured information for transparency',
-    ],
-  },
-  {
-    id: 'why-businesses-use-it',
-    title: 'Why Businesses Use It',
-    preview: 'Practical benefits that stay consistent.',
-    bullets: [
-      'Simple setup and updates without technical overhead',
-      'Stronger visibility from one trusted link',
-      'Consistent messaging across campaigns',
+    id: 'customer',
+    title: 'For customers',
+    description: 'Signals that make it easier to discover and trust local businesses.',
+    cards: [
+      {
+        id: 'built-differently',
+        title: 'Built differently',
+        bullets: [
+          'No hype language or moral ranking',
+          'Structured information people can understand fast',
+          'A calmer, trust-first discovery experience',
+        ],
+      },
     ],
   },
 ];
@@ -83,11 +102,7 @@ const badgeCards = [
   },
 ];
 
-
 export default function Landing({ onNavigate, onOpenRoleModal }) {
-  const [openFeatureCard, setOpenFeatureCard] = useState('one-smart-profile');
-  const splitCards = useMemo(() => [featureCards.slice(0, 3), featureCards.slice(3)], []);
-
   useEffect(() => {
     const revealTargets = Array.from(document.querySelectorAll('.landing-reveal'));
     if (!revealTargets.length) {
@@ -139,34 +154,25 @@ export default function Landing({ onNavigate, onOpenRoleModal }) {
         </div>
       </section>
 
-      <section className="landing-card-groups" aria-label="Platform features">
-        {splitCards.map((group, groupIndex) => (
-          <div key={`group-${groupIndex}`} className="landing-feature-grid landing-reveal">
-            {group.map((feature) => {
-              const isOpen = openFeatureCard === feature.id;
-
-              return (
-                <article key={feature.id} className={`landing-feature-card${isOpen ? ' landing-feature-card--open' : ''}`}>
-                  <h2 className="heading-md">{feature.title}</h2>
-                  <p className="subtitle">{feature.preview}</p>
-                  <button
-                    type="button"
-                    className="landing-feature-card__toggle"
-                    onClick={() => setOpenFeatureCard(isOpen ? null : feature.id)}
-                    aria-expanded={isOpen}
-                  >
-                    {isOpen ? 'Less info' : 'More info'}
-                  </button>
-                  <div className={`landing-feature-card__details${isOpen ? ' landing-feature-card__details--open' : ''}`}>
-                    <ul>
-                      {feature.bullets.map((bullet) => (
-                        <li key={bullet}>{bullet}</li>
-                      ))}
-                    </ul>
-                  </div>
+      <section className="landing-card-groups" aria-label="Platform features by audience">
+        {landingSections.map((section) => (
+          <div key={section.id} className="landing-section landing-reveal">
+            <header className="landing-section__header">
+              <h2 className="heading-xl">{section.title}</h2>
+              <p className="subtitle">{section.description}</p>
+            </header>
+            <div className="landing-feature-grid">
+              {section.cards.map((feature) => (
+                <article key={feature.id} className="landing-feature-card">
+                  <h3 className="heading-md">{feature.title}</h3>
+                  <ul>
+                    {feature.bullets.map((bullet) => (
+                      <li key={bullet}>{bullet}</li>
+                    ))}
+                  </ul>
                 </article>
-              );
-            })}
+              ))}
+            </div>
           </div>
         ))}
       </section>
@@ -181,6 +187,19 @@ export default function Landing({ onNavigate, onOpenRoleModal }) {
         ))}
       </section>
 
+      <section className="landing-faq-summary landing-reveal" aria-label="FAQ summary">
+        <h2 className="heading-xl">All onboarding and feature details now live in FAQ</h2>
+        <p className="subtitle">
+          We moved account and workflow questions into one place for easier maintenance. The FAQ includes
+          general, business, and customer guidance.
+        </p>
+        <div className="landing-faq-summary__meta">
+          <strong>{faqSections.reduce((count, section) => count + section.items.length, 0)} total questions</strong>
+          <button type="button" className="button button-secondary" onClick={() => onNavigate?.('faq', null, '/faq')}>
+            Open full FAQ
+          </button>
+        </div>
+      </section>
 
       <section className="landing-cta landing-reveal" aria-label="Call to action">
         <h2 className="heading-xl">Ready to launch your Follow Hub?</h2>
