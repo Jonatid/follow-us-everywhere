@@ -83,42 +83,9 @@ const badgeCards = [
   },
 ];
 
-const faqItems = [
-  {
-    id: 'how-long-setup',
-    question: 'How long does it take to set up a profile?',
-    answer:
-      'Most businesses can publish a profile in minutes. You can add your links, services, and updates right away, then refine details over time.',
-  },
-  {
-    id: 'is-it-free',
-    question: 'Is Follow Hub free to use?',
-    answer:
-      'Yes. Businesses can join for free and create a smart public profile. Optional verification-related features can be requested separately.',
-  },
-  {
-    id: 'can-i-edit-anytime',
-    question: 'Can I update my profile after it goes live?',
-    answer:
-      'Absolutely. Your profile is designed to stay flexible, so you can adjust links, contact details, and messaging whenever your business changes.',
-  },
-  {
-    id: 'what-are-badges',
-    question: 'What do the badges mean?',
-    answer:
-      'Badges help communicate trust and visibility signals. Some badges indicate profile authenticity, while others represent verified impact-related commitments.',
-  },
-  {
-    id: 'who-is-this-for',
-    question: 'Who is Follow Hub built for?',
-    answer:
-      'Follow Hub is built for businesses and organizations that want one clear, trusted link customers can use to discover, connect, and stay informed.',
-  },
-];
 
 export default function Landing({ onNavigate, onOpenRoleModal }) {
   const [openFeatureCard, setOpenFeatureCard] = useState('one-smart-profile');
-  const [openFaqItem, setOpenFaqItem] = useState(faqItems[0].id);
   const splitCards = useMemo(() => [featureCards.slice(0, 3), featureCards.slice(3)], []);
 
   useEffect(() => {
@@ -214,33 +181,6 @@ export default function Landing({ onNavigate, onOpenRoleModal }) {
         ))}
       </section>
 
-      <section className="landing-faq landing-reveal" aria-label="Frequently asked questions">
-        <h2 className="heading-xl">Frequently asked questions</h2>
-        <div className="landing-faq__list">
-          {faqItems.map((item) => {
-            const isOpen = openFaqItem === item.id;
-
-            return (
-              <article key={item.id} className={`landing-faq__item${isOpen ? ' landing-faq__item--open' : ''}`}>
-                <button
-                  type="button"
-                  className="landing-faq__question"
-                  aria-expanded={isOpen}
-                  onClick={() => setOpenFaqItem(isOpen ? null : item.id)}
-                >
-                  <span>{item.question}</span>
-                  <span className="landing-faq__icon" aria-hidden="true">
-                    {isOpen ? '−' : '+'}
-                  </span>
-                </button>
-                <div className={`landing-faq__answer${isOpen ? ' landing-faq__answer--open' : ''}`}>
-                  <p>{item.answer}</p>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      </section>
 
       <section className="landing-cta landing-reveal" aria-label="Call to action">
         <h2 className="heading-xl">Ready to launch your Follow Hub?</h2>

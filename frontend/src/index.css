@@ -285,7 +285,16 @@ body {
 
 .faq-page__list {
   display: grid;
-  gap: 1rem;
+  gap: 1.4rem;
+}
+
+.faq-page__group {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.faq-page__group h2 {
+  margin: 0;
 }
 
 .faq-page__item {
