@@ -12,6 +12,7 @@ import businessVerifiedIcon from './assets/business-verified.svg';
 import impactVerifiedIcon from './assets/impact-verified.svg';
 import communityImpactIcon from './assets/community-impact.svg';
 import heroBg from './assets/vector-network.png';
+import { faqSections } from './constants/faqItems';
 
 // API base URL resolution order:
 // 1) explicit env override, 2) localhost for local dev, 3) hosted Render API fallback.
@@ -487,40 +488,22 @@ const AboutPage = ({ onNavigate }) => (
   </div>
 );
 
-const faqPageItems = [
-  {
-    question: 'What is Fuse101?',
-    answer: 'Fuse101 gives you one public page to organize links for your audience.',
-  },
-  {
-    question: 'How do I get started?',
-    answer: 'Choose Customer or Business from Sign up free and follow the existing onboarding flow.',
-  },
-  {
-    question: 'Can I still access business tools?',
-    answer: 'Yes. Business access remains available at /business with no backend changes.',
-  },
-  {
-    question: 'Can I update my profile anytime?',
-    answer: 'Yes. You can edit your links, messaging, and profile details whenever your business needs change.',
-  },
-  {
-    question: 'Where should I send people?',
-    answer: 'Use your single Fuse101 profile link across social media, email signatures, QR cards, and campaigns.',
-  },
-];
-
 const FAQPage = ({ onNavigate }) => (
   <div className="page page--gradient faq-page">
     <div className="card card--wide faq-page__card" style={{ maxWidth: '980px' }}>
       <BackLink fallbackPath="/" onFallbackNavigate={() => onNavigate('marketing-landing', null, '/')} label="← Back to home" />
       <h1 className="heading-xl faq-page__title">FAQ</h1>
       <div className="faq-page__list" aria-label="Frequently asked questions list">
-        {faqPageItems.map((item) => (
-          <article key={item.question} className="faq-page__item">
-            <h3 className="heading-md faq-page__question">{item.question}</h3>
-            <p className="subtitle faq-page__answer">{item.answer}</p>
-          </article>
+        {faqSections.map((section) => (
+          <section key={section.id} className="faq-page__group" aria-label={`${section.title} FAQs`}>
+            <h2 className="heading-lg">{section.title}</h2>
+            {section.items.map((item) => (
+              <article key={item.question} className="faq-page__item">
+                <h3 className="heading-md faq-page__question">{item.question}</h3>
+                <p className="subtitle faq-page__answer">{item.answer}</p>
+              </article>
+            ))}
+          </section>
         ))}
       </div>
     </div>
