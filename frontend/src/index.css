@@ -122,58 +122,80 @@ body {
   width: 100%;
   min-height: 440px;
   background:
-    url('./assets/hero.png'),
-    radial-gradient(circle at 12% 28%, rgba(255, 255, 255, 0.18) 0 1px, transparent 2px),
-    radial-gradient(circle at 78% 22%, rgba(255, 255, 255, 0.14) 0 1px, transparent 2px),
-    radial-gradient(circle at 35% 70%, rgba(255, 255, 255, 0.12) 0 1px, transparent 2px),
-    radial-gradient(circle at 62% 62%, rgba(255, 255, 255, 0.16) 0 1px, transparent 2px),
-    radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1.5px),
-    radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1.5px),
-    repeating-linear-gradient(25deg, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 38px),
-    repeating-linear-gradient(-18deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 44px),
-    linear-gradient(180deg, rgba(4, 66, 179, 0.95) 0%, rgba(4, 66, 179, 0.9) 60%, rgba(4, 66, 179, 0.95) 100%);
-  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, repeat, repeat, no-repeat, no-repeat, no-repeat;
-  background-size: cover, auto, auto, auto, auto, 42px 42px, 68px 68px, cover, cover, cover;
-  background-position: center, 12% 28%, 78% 22%, 35% 70%, 62% 62%, 0 0, 24px 18px, center, center, center;
+    linear-gradient(108deg, rgba(5, 20, 66, 0.84) 0%, rgba(5, 20, 66, 0.58) 42%, rgba(5, 20, 66, 0.2) 68%, rgba(5, 20, 66, 0.68) 100%),
+    url('./assets/hero.png');
+  background-repeat: no-repeat, no-repeat;
+  background-size: cover, cover;
+  background-position: center, center;
 }
 
 .home-hero__overlay {
   min-height: inherit;
-  background: linear-gradient(180deg, rgba(4, 66, 179, 0.68) 0%, rgba(4, 66, 179, 0.82) 100%);
+  background: linear-gradient(180deg, rgba(5, 12, 34, 0.12) 0%, rgba(5, 12, 34, 0.36) 100%);
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   padding: 56px 24px;
 }
 
 .home-hero__content {
   width: 100%;
-  max-width: 900px;
+  max-width: 1120px;
   color: #fff;
   margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 560px) minmax(0, 1fr);
+  align-items: center;
+  gap: 32px;
+}
+
+.home-hero__text {
+  text-align: left;
+}
+
+.home-hero__label {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
 }
 
 .home-hero__title {
-  margin: 0 auto;
-  max-width: 16ch;
+  margin: 0;
+  max-width: 11ch;
   font-size: clamp(2.2rem, 5.2vw, 3.8rem);
-  font-weight: 900;
-  line-height: 1.08;
-  letter-spacing: 0.045em;
-  text-transform: uppercase;
-  text-align: center;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-transform: none;
+  text-align: left;
   text-shadow: 0 6px 22px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.35);
 }
 
 .home-hero__tagline {
-  margin: 0 auto;
-  max-width: 31ch;
+  margin: 0;
+  max-width: 34ch;
   font-size: clamp(1.05rem, 2.25vw, 1.35rem);
-  line-height: 1.5;
-  font-style: italic;
-  text-align: center;
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: 0.04em;
+  font-style: normal;
+  text-align: left;
   text-wrap: balance;
   text-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+}
+
+.home-hero__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.home-hero__visual {
+  min-height: 280px;
 }
 
 .home-hero__content .heading-xxl,
@@ -1000,15 +1022,41 @@ body {
 
   .home-hero__overlay {
     padding: 48px 16px;
+    justify-content: center;
+  }
+
+  .home-hero__content {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    justify-items: center;
+  }
+
+  .home-hero__text {
+    text-align: center;
+  }
+
+  .home-hero__label,
+  .home-hero__title,
+  .home-hero__tagline {
+    text-align: center;
   }
 
   .home-hero__title {
-    max-width: 14ch;
+    max-width: 13ch;
     font-size: clamp(1.95rem, 8vw, 2.85rem);
   }
 
   .home-hero__tagline {
     max-width: 26ch;
+  }
+
+  .home-hero__actions {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .home-hero__visual {
+    display: none;
   }
 
   .site-footer__inner {
