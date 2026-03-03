@@ -168,11 +168,6 @@
   transform: translateY(0);
 }
 
-.landing-reveal--hidden,
-.landing-reveal--visible {
-  transition: opacity 0.5s ease, transform 0.5s ease;
-}
-
 
 .landing-deploy-marker {
   margin-top: 1rem;
