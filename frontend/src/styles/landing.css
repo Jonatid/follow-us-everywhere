@@ -54,69 +54,69 @@
   font-weight: 600;
 }
 
-.landing-card-groups {
-  width: min(1120px, calc(100% - 48px));
-  display: grid;
-  gap: 1.25rem;
+.landing-mid-section {
+  width: 100%;
+  padding: 4rem 24px;
 }
 
-.landing-section {
-  border: 1px solid #d7deec;
-  border-radius: 18px;
-  background: #fff;
-  padding: 1.25rem;
-  display: grid;
-  gap: 1rem;
+.landing-mid-section--one,
+.landing-mid-section--three {
+  background: #ffffff;
 }
 
-.landing-section__header {
+.landing-mid-section--two {
+  background: #f4f8ff;
+}
+
+.landing-mid-section__inner {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.landing-mid-section__header {
   display: grid;
   gap: 0.35rem;
 }
 
-.landing-section__header h2,
-.landing-section__header p {
+.landing-mid-section__header h2,
+.landing-mid-section__header p {
   margin: 0;
 }
 
-.landing-feature-grid {
+.landing-card-grid {
   display: grid;
   gap: 1rem;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.landing-feature-card {
-  border: 1px solid #d7deec;
+.landing-info-card {
+  background: #ffffff;
+  border: 1px solid #dde5f3;
   border-radius: 16px;
-  background: #f8faff;
   padding: 1.25rem;
+  display: grid;
+  gap: 0.6rem;
 }
 
-.landing-feature-card h3 {
-  margin-top: 0;
-  margin-bottom: 0.6rem;
-}
-
-.landing-feature-card ul {
+.landing-info-card h3,
+.landing-info-card p {
   margin: 0;
-  padding-left: 1rem;
-  display: grid;
-  gap: 0.4rem;
-  color: #1f2937;
 }
 
-.landing-badges {
-  width: min(1120px, calc(100% - 48px));
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-.landing-badge-card {
-  border-radius: 16px;
-  background: #fff;
-  border: 1px solid #d7deec;
-  padding: 1.25rem;
+.landing-step-pill {
+  display: inline-flex;
+  width: fit-content;
+  font-size: 0.72rem;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #355291;
+  background: #eaf1ff;
+  border-radius: 999px;
+  padding: 0.3rem 0.6rem;
 }
 
 .landing-faq-summary {
@@ -168,9 +168,9 @@
   transform: translateY(0);
 }
 
-
 .landing-deploy-marker {
   margin-top: 1rem;
+  margin-bottom: 0;
   font-size: 0.75rem;
   color: #64748b;
 }
@@ -180,8 +180,7 @@
     grid-template-columns: 1fr;
   }
 
-  .landing-feature-grid,
-  .landing-badges {
+  .landing-card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -192,15 +191,16 @@
     background-position: center center;
   }
 
-  .landing-card-groups,
-  .landing-badges,
+  .landing-mid-section {
+    padding: 3rem 16px;
+  }
+
   .landing-faq-summary,
   .landing-cta {
     width: min(1120px, calc(100% - 32px));
   }
 
-  .landing-feature-grid,
-  .landing-badges {
+  .landing-card-grid {
     grid-template-columns: 1fr;
   }
 }
