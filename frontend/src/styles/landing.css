@@ -61,11 +61,11 @@
 
 .landing-mid-section--one,
 .landing-mid-section--three {
-  background: #ffffff;
+  background: transparent;
 }
 
 .landing-mid-section--two {
-  background: #f4f8ff;
+  background: transparent;
 }
 
 .landing-mid-section__inner {
@@ -167,14 +167,6 @@
 .landing-reveal--visible {
   opacity: 1;
   transform: translateY(0);
-}
-
-
-.landing-deploy-marker {
-  margin-top: 1rem;
-  margin-bottom: 0;
-  font-size: 0.75rem;
-  color: #64748b;
 }
 
 @media (max-width: 960px) {

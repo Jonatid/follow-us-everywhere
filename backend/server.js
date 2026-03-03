@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const multer = require('multer');
 const { uploadBuffer, getDownloadUrl } = require('./services/r2');
 const db = require('./config/db');
@@ -128,6 +129,27 @@ app.use('/api/customers', customerRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/r2', r2Routes);
 app.use('/qr', qrRoutes);
+
+const candidateFrontendBuildDirs = [
+  path.join(__dirname, '..', 'frontend', 'build'),
+  path.join(__dirname, 'public'),
+  path.join(process.cwd(), 'frontend', 'build'),
+  path.join(process.cwd(), 'build')
+];
+
+const frontendBuildDir = candidateFrontendBuildDirs.find((dir) => fs.existsSync(path.join(dir, 'index.html')));
+
+if (frontendBuildDir) {
+  app.use(express.static(frontendBuildDir));
+
+  app.get(/^\/(?!api|uploads|qr).*/, (req, res, next) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      return next();
+    }
+
+    return res.sendFile(path.join(frontendBuildDir, 'index.html'));
+  });
+}
 
 // 404 handler
 app.use((req, res) => {
