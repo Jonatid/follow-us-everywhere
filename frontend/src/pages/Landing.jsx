@@ -104,14 +104,17 @@ const badgeCards = [
 export default function Landing({ onNavigate, onOpenRoleModal }) {
   useEffect(() => {
     const revealTargets = Array.from(document.querySelectorAll('.landing-reveal'));
-    if (!revealTargets.length) {
+    if (!revealTargets.length || !('IntersectionObserver' in window)) {
       return undefined;
     }
+
+    revealTargets.forEach((target) => target.classList.add('landing-reveal--hidden'));
 
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
+            entry.target.classList.remove('landing-reveal--hidden');
             entry.target.classList.add('landing-reveal--visible');
             observer.unobserve(entry.target);
           }
