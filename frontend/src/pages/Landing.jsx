@@ -201,9 +201,6 @@ export default function Landing({ onNavigate, onOpenRoleModal }) {
             Log in
           </button>
         </div>
-        <p className="landing-deploy-marker" aria-label="deploy marker">
-          deploy-marker: hero-copy-v1
-        </p>
       </section>
     </div>
   );
