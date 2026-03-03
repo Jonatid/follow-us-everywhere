@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-import heroImage from '../assets/hero-web.svg';
 import businessVerifiedIcon from '../assets/business-verified.svg';
 import impactVerifiedIcon from '../assets/impact-verified.svg';
 import communityImpactIcon from '../assets/community-impact.svg';
@@ -105,14 +104,17 @@ const badgeCards = [
 export default function Landing({ onNavigate, onOpenRoleModal }) {
   useEffect(() => {
     const revealTargets = Array.from(document.querySelectorAll('.landing-reveal'));
-    if (!revealTargets.length) {
+    if (!revealTargets.length || !('IntersectionObserver' in window)) {
       return undefined;
     }
+
+    revealTargets.forEach((target) => target.classList.add('landing-reveal--hidden'));
 
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
+            entry.target.classList.remove('landing-reveal--hidden');
             entry.target.classList.add('landing-reveal--visible');
             observer.unobserve(entry.target);
           }
@@ -130,11 +132,9 @@ export default function Landing({ onNavigate, onOpenRoleModal }) {
       <section className="landing-hero landing-reveal" aria-label="Home hero section">
         <div className="landing-hero__inner">
           <div className="landing-hero__text">
-            <p className="landing-hero__eyebrow">Built for businesses that show up.</p>
-            <h1 className="heading-xxl">One smart public profile for your business.</h1>
-            <p className="subtitle-lg">
-              Share your links, your services, and what matters to your business — all in one trusted place.
-            </p>
+            <p className="landing-hero__eyebrow">BUILT FOR BUSINESSES THAT SHOW UP.</p>
+            <h1 className="heading-xxl">Business Presence. Simplified.</h1>
+            <p className="subtitle-lg">Unified. Discoverable. Scalable.</p>
             <div className="landing-hero__actions">
               <button type="button" className="button button-primary button-lg" onClick={() => onOpenRoleModal?.('signup')}>
                 Sign up free
@@ -147,9 +147,6 @@ export default function Landing({ onNavigate, onOpenRoleModal }) {
                 Explore businesses
               </button>
             </div>
-          </div>
-          <div className="landing-hero__media" aria-hidden="true">
-            <img src={heroImage} alt="" />
           </div>
         </div>
       </section>
@@ -212,6 +209,9 @@ export default function Landing({ onNavigate, onOpenRoleModal }) {
             Log in
           </button>
         </div>
+        <p className="landing-deploy-marker" aria-label="deploy marker">
+          deploy-marker: hero-copy-v1
+        </p>
       </section>
     </div>
   );
