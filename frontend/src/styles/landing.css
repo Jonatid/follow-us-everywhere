@@ -73,6 +73,7 @@
   margin: 0 auto;
   display: grid;
   gap: 1.5rem;
+  background: transparent;
 }
 
 .landing-mid-section__header {
@@ -167,6 +168,7 @@
   opacity: 1;
   transform: translateY(0);
 }
+
 
 .landing-deploy-marker {
   margin-top: 1rem;

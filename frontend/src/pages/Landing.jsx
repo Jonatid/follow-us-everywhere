@@ -136,7 +136,6 @@ export default function Landing({ onNavigate, onOpenRoleModal }) {
               </article>
             ))}
           </div>
-          <p className="landing-deploy-marker">deploy-marker: landing-section1-v1</p>
         </div>
       </section>
 
@@ -156,7 +155,6 @@ export default function Landing({ onNavigate, onOpenRoleModal }) {
               </article>
             ))}
           </div>
-          <p className="landing-deploy-marker">deploy-marker: landing-section2-v1</p>
         </div>
       </section>
 
@@ -175,7 +173,6 @@ export default function Landing({ onNavigate, onOpenRoleModal }) {
               </article>
             ))}
           </div>
-          <p className="landing-deploy-marker">deploy-marker: landing-section3-v1</p>
         </div>
       </section>
 
