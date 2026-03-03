@@ -124,6 +124,7 @@ export default function Landing({ onNavigate, onOpenRoleModal }) {
       <section className="landing-mid-section landing-mid-section--one landing-reveal" aria-label="Everything in one profile">
         <div className="landing-mid-section__inner">
           <header className="landing-mid-section__header">
+            <p className="landing-mid-section__eyebrow">Profile System</p>
             <h2 className="heading-xl">Everything in one profile</h2>
             <p className="subtitle">One public link that keeps your business clear and current.</p>
           </header>
@@ -142,10 +143,11 @@ export default function Landing({ onNavigate, onOpenRoleModal }) {
       <section className="landing-mid-section landing-mid-section--two landing-reveal" aria-label="How it works">
         <div className="landing-mid-section__inner">
           <header className="landing-mid-section__header">
+            <p className="landing-mid-section__eyebrow">Workflow</p>
             <h2 className="heading-xl">How it works</h2>
             <p className="subtitle">Set it up once. Share it everywhere.</p>
           </header>
-          <div className="landing-card-grid">
+          <div className="landing-card-grid landing-card-grid--workflow">
             {howItWorksSteps.map((step, index) => (
               <article key={step.id} className="landing-info-card">
                 <span className="landing-step-pill">Step {index + 1}</span>
@@ -161,6 +163,7 @@ export default function Landing({ onNavigate, onOpenRoleModal }) {
       <section className="landing-mid-section landing-mid-section--three landing-reveal" aria-label="Badges that build trust">
         <div className="landing-mid-section__inner">
           <header className="landing-mid-section__header">
+            <p className="landing-mid-section__eyebrow">Trust Signals</p>
             <h2 className="heading-xl">Badges that build trust</h2>
             <p className="subtitle">Verification signals customers can recognize at a glance.</p>
           </header>
