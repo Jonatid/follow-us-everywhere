@@ -692,7 +692,7 @@ const BusinessLogin = ({ onNavigate, onLoginSuccess }) => {
       localStorage.setItem('token', response.data.token);
       onLoginSuccess(response.data.business);
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      setError(getApiErrorMessage(err, 'Login failed. Please try again.'));
     } finally {
       setLoading(false);
     }

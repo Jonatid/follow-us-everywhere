@@ -108,6 +108,32 @@ test('warning on 4th, lockout on 5th, and clear on success for all scopes', asyn
   }
 });
 
+test('business scope progression exposes warning on 4th and lockout message on 5th', async () => {
+  const scope = 'business';
+  const emailNormalized = 'business-progression@example.com';
+  state.account.delete(makeEmailKey(scope, emailNormalized));
+
+  for (let i = 1; i <= 3; i += 1) {
+    const attempt = await loginProtection.recordFailedPasswordAttempt({ routeScope: scope, emailNormalized });
+    assert.equal(attempt.warning, false);
+    assert.equal(attempt.locked, false);
+  }
+
+  const warningAttempt = await loginProtection.recordFailedPasswordAttempt({ routeScope: scope, emailNormalized });
+  assert.equal(warningAttempt.warning, true);
+  assert.equal(warningAttempt.locked, false);
+
+  const warningMessage = warningAttempt.warning ? 'Warning: 1 attempt remaining before temporary lockout.' : 'Invalid credentials';
+  assert.equal(warningMessage, 'Warning: 1 attempt remaining before temporary lockout.');
+
+  const lockoutAttempt = await loginProtection.recordFailedPasswordAttempt({ routeScope: scope, emailNormalized });
+  assert.equal(lockoutAttempt.locked, true);
+
+  const lockoutMessage = lockoutAttempt.locked
+    ? `Too many failed attempts. Try again in ${loginProtection.ACCOUNT_LOCKOUT_MINUTES} minutes.`
+    : 'Invalid credentials';
+  assert.match(lockoutMessage, /^Too many failed attempts\. Try again in \d+ minutes\.$/);
+});
 test('fallback path keeps per-ip counting when ON CONFLICT target is missing', async () => {
   const txIpState = new Map();
 
