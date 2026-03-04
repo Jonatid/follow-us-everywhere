@@ -131,46 +131,30 @@ router.post('/login', [body('email').isEmail(), body('password').exists()], asyn
   const emailNormalized = normalizeEmail(email);
   const requestIp = getRequestIp(req);
 
-  let client;
-
   try {
-    client = await pool.connect();
-    await client.query('BEGIN');
-
-    const ipRateLimit = await enforceIpRateLimit(client, { routeScope: 'customer', ip: requestIp });
+    const ipRateLimit = await enforceIpRateLimit({ routeScope: 'customer', ip: requestIp });
     if (ipRateLimit.blocked) {
-      await client.query('ROLLBACK');
       return res.status(429).json({ message: 'Too many attempts from this IP. Please try again later.' });
     }
 
-    const accountAttempt = await getAccountAttempt(client, { routeScope: 'customer', emailNormalized });
+    const accountAttempt = await getAccountAttempt({ routeScope: 'customer', emailNormalized });
     if (isAccountLocked(accountAttempt)) {
-      await client.query('ROLLBACK');
       return res
         .status(429)
         .json({ message: `Too many failed attempts. Try again in ${ACCOUNT_LOCKOUT_MINUTES} minutes.` });
     }
 
-    const result = await client.query(
+    const result = await pool.query(
       'SELECT id, email, first_name, last_name, phone, address, password_hash, created_at FROM customers WHERE LOWER(email) = LOWER($1)',
       [emailNormalized]
     );
 
     if (result.rows.length === 0) {
-      await client.query('COMMIT');
-      await sleep(getFailedAttemptDelay(1));
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
-
-    const customer = result.rows[0];
-    const isMatch = await bcrypt.compare(password, customer.password_hash);
-    if (!isMatch) {
-      const failedAttempt = await recordFailedPasswordAttempt(client, {
+      const failedAttempt = await recordFailedPasswordAttempt({
         routeScope: 'customer',
         emailNormalized,
         ip: requestIp,
       });
-      await client.query('COMMIT');
       await sleep(getFailedAttemptDelay(failedAttempt.failCount));
 
       if (failedAttempt.warning) {
@@ -186,8 +170,30 @@ router.post('/login', [body('email').isEmail(), body('password').exists()], asyn
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    await clearAccountFailedAttempts(client, { routeScope: 'customer', emailNormalized });
-    await client.query('COMMIT');
+    const customer = result.rows[0];
+    const isMatch = await bcrypt.compare(password, customer.password_hash);
+    if (!isMatch) {
+      const failedAttempt = await recordFailedPasswordAttempt({
+        routeScope: 'customer',
+        emailNormalized,
+        ip: requestIp,
+      });
+      await sleep(getFailedAttemptDelay(failedAttempt.failCount));
+
+      if (failedAttempt.warning) {
+        return res.status(400).json({ message: 'Warning: 1 attempt remaining before temporary lockout.' });
+      }
+
+      if (failedAttempt.locked) {
+        return res
+          .status(429)
+          .json({ message: `Too many failed attempts. Try again in ${ACCOUNT_LOCKOUT_MINUTES} minutes.` });
+      }
+
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    await clearAccountFailedAttempts({ routeScope: 'customer', emailNormalized });
 
     const payload = { customerId: customer.id };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -195,19 +201,8 @@ router.post('/login', [body('email').isEmail(), body('password').exists()], asyn
     const { password_hash, ...customerData } = customer;
     return res.json({ token, customer: customerData });
   } catch (err) {
-    if (client) {
-      try {
-        await client.query('ROLLBACK');
-      } catch (rollbackError) {
-        // Transaction may already be finalized.
-      }
-    }
     console.error('Customer login error:', err);
     return res.status(500).json({ message: 'Server error' });
-  } finally {
-    if (client) {
-      client.release();
-    }
   }
 });
 
@@ -326,7 +321,6 @@ router.post(
 
       await client.query('UPDATE customer_password_resets SET used_at = NOW() WHERE id = $1', [resetRecord.id]);
 
-      await client.query('COMMIT');
       return res.json({ message: 'Password updated successfully. Please log in with your new password.' });
     } catch (err) {
       if (client) {
