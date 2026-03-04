@@ -165,22 +165,23 @@ const clearAccountFailedAttempts = async ({ routeScope, emailNormalized }) => {
   );
 };
 
-const recordFailedPasswordAttempt = async ({ routeScope, emailNormalized }) => {
+const recordFailedPasswordAttempt = async ({ routeScope, emailNormalized, ip = null }) => {
   try {
     const result = await pool.query(
       `INSERT INTO auth_login_attempts (route_scope, email_normalized, ip, fail_count, first_failed_at, locked_until)
-       VALUES ($1, $2, NULL, 1, NOW(), NULL)
+       VALUES ($1, $2, $3, 1, NOW(), NULL)
        ON CONFLICT (route_scope, email_normalized)
        DO UPDATE SET
          fail_count = auth_login_attempts.fail_count + 1,
          locked_until = CASE
-           WHEN auth_login_attempts.fail_count + 1 >= $3
-             THEN NOW() + ($4::int * INTERVAL '1 minute')
+           WHEN auth_login_attempts.fail_count + 1 >= $4
+             THEN NOW() + ($5::int * INTERVAL '1 minute')
            ELSE NULL
          END,
+         ip = EXCLUDED.ip,
          updated_at = NOW()
        RETURNING fail_count, locked_until`,
-      [routeScope, emailNormalized, ACCOUNT_LOCK_THRESHOLD, ACCOUNT_LOCKOUT_MINUTES]
+      [routeScope, emailNormalized, ip, ACCOUNT_LOCK_THRESHOLD, ACCOUNT_LOCKOUT_MINUTES]
     );
 
     const failCount = Number(result.rows[0].fail_count);
@@ -215,9 +216,9 @@ const recordFailedPasswordAttempt = async ({ routeScope, emailNormalized }) => {
       if (existing.rows.length === 0) {
         result = await client.query(
           `INSERT INTO auth_login_attempts (route_scope, email_normalized, ip, fail_count, first_failed_at, locked_until)
-           VALUES ($1, $2, NULL, 1, NOW(), NULL)
+           VALUES ($1, $2, $3, 1, NOW(), NULL)
            RETURNING fail_count, locked_until`,
-          [routeScope, emailNormalized]
+          [routeScope, emailNormalized, ip]
         );
       } else {
         result = await client.query(
@@ -228,10 +229,11 @@ const recordFailedPasswordAttempt = async ({ routeScope, emailNormalized }) => {
                    THEN NOW() + ($3::int * INTERVAL '1 minute')
                  ELSE NULL
                END,
+               ip = $4,
                updated_at = NOW()
            WHERE id = $1
            RETURNING fail_count, locked_until`,
-          [existing.rows[0].id, ACCOUNT_LOCK_THRESHOLD, ACCOUNT_LOCKOUT_MINUTES]
+          [existing.rows[0].id, ACCOUNT_LOCK_THRESHOLD, ACCOUNT_LOCKOUT_MINUTES, ip]
         );
       }
 

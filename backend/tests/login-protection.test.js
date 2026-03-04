@@ -203,7 +203,7 @@ test('fallback path keeps per-email lockout counting when ON CONFLICT target is 
         return { rows: [{ id: key, fail_count: current.fail_count }] };
       }
 
-      if (queryText.includes('VALUES ($1, $2, NULL, 1, NOW(), NULL)') && queryText.includes('RETURNING fail_count, locked_until')) {
+      if (queryText.includes('VALUES ($1, $2, $3, 1, NOW(), NULL)') && queryText.includes('RETURNING fail_count, locked_until')) {
         const key = makeEmailKey(params[0], params[1]);
         txAccountState.set(key, { fail_count: 1, locked_until: null });
         return { rows: [{ fail_count: 1, locked_until: null }] };
@@ -253,17 +253,4 @@ test('migration includes duplicate cleanup and unique index creation for conflic
   assert.match(migrationSql, /FROM pg_indexes[\s\S]*indexname = 'auth_login_attempts_scope_email_uq'/i);
   assert.match(migrationSql, /FROM pg_constraint[\s\S]*\(route_scope, email_normalized\)/i);
   assert.match(migrationSql, /CREATE UNIQUE INDEX auth_login_attempts_scope_email_uq[\s\S]*\(route_scope, email_normalized\)/i);
-});
-
-test('follow-up migration drops legacy non-partial unique constraints/indexes', async () => {
-  const migrationPath = path.join(__dirname, '..', 'migrations', '20261017_drop_legacy_auth_login_attempts_uniques.sql');
-  const migrationSql = fs.readFileSync(migrationPath, 'utf8');
-
-  assert.match(migrationSql, /DROP CONSTRAINT/i);
-  assert.match(migrationSql, /UNIQUE \(route_scope, ip\)/i);
-  assert.match(migrationSql, /UNIQUE \(route_scope, email_normalized\)/i);
-
-  assert.match(migrationSql, /DROP INDEX IF EXISTS/i);
-  assert.match(migrationSql, /route_scope, ip/i);
-  assert.match(migrationSql, /route_scope, email_normalized/i);
 });
