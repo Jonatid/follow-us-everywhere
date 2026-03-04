@@ -331,10 +331,14 @@ router.post(
     }
 
     const { email } = req.body;
+    const emailNormalized = normalizeEmail(email);
     const responseMessage = 'If that email exists, we sent a reset link.';
 
     try {
-      const businessResult = await pool.query('SELECT id, name, email FROM businesses WHERE email = $1', [email]);
+      const businessResult = await pool.query(
+        'SELECT id, name, email FROM businesses WHERE LOWER(email) = LOWER($1)',
+        [emailNormalized]
+      );
 
       if (businessResult.rows.length === 0) {
         return res.json({ message: responseMessage });
@@ -357,11 +361,7 @@ router.post(
         [business.id, token, expiresAt]
       );
 
-      const baseUrl = process.env.FRONTEND_URL;
-      if (!baseUrl) {
-        throw new Error('FRONTEND_URL is not configured for password reset links.');
-      }
-
+      const baseUrl = (process.env.FRONTEND_URL || process.env.CUSTOMER_FRONTEND_URL || 'https://fuse101.com').replace(/\/$/, '');
       const resetUrl = `${baseUrl}/reset-password?token=${token}`;
 
       await sendPasswordResetEmail({
