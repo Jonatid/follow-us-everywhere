@@ -84,7 +84,7 @@ router.post(
       const logo = name.substring(0, 2).toUpperCase();
 
       // Insert business
-      const result = await client.query(
+      const result = await pool.query(
         `INSERT INTO businesses (name, slug, tagline, logo, email, password_hash)
          VALUES ($1, $2, $3, $4, $5, $6)
          RETURNING id,
@@ -144,13 +144,6 @@ router.post(
       await client.query('COMMIT');
       res.json({ token, business });
     } catch (err) {
-      if (client) {
-        try {
-          await client.query('ROLLBACK');
-        } catch (rollbackError) {
-          // Transaction may already be finalized.
-        }
-      }
       console.error('Signup error:', err);
 
       if (err.code === '23505') {
@@ -187,10 +180,6 @@ router.post(
       }
 
       res.status(500).json({ message: 'Server error' });
-    } finally {
-      if (client) {
-        client.release();
-      }
     }
   }
 );
@@ -215,27 +204,21 @@ router.post(
       return res.status(400).json({ error: 'Email and password required' });
     }
 
-    let client;
     try {
-      client = await pool.connect();
-      await client.query('BEGIN');
-
-      const ipRateLimit = await enforceIpRateLimit(client, { routeScope: 'business', ip: requestIp });
+      const ipRateLimit = await enforceIpRateLimit({ routeScope: 'business', ip: requestIp });
       if (ipRateLimit.blocked) {
-        await client.query('ROLLBACK');
         return res.status(429).json({ error: 'Too many attempts from this IP. Please try again later.' });
       }
 
-      const accountAttempt = await getAccountAttempt(client, { routeScope: 'business', emailNormalized });
+      const accountAttempt = await getAccountAttempt({ routeScope: 'business', emailNormalized });
       if (isAccountLocked(accountAttempt)) {
-        await client.query('ROLLBACK');
         return res
           .status(429)
           .json({ error: `Too many failed attempts. Try again in ${ACCOUNT_LOCKOUT_MINUTES} minutes.` });
       }
 
       // Check if business exists
-      const result = await client.query(
+      const result = await pool.query(
         `SELECT id,
                 name,
                 slug,
@@ -264,22 +247,11 @@ router.post(
       );
 
       if (result.rows.length === 0) {
-        await client.query('COMMIT');
-        await sleep(getFailedAttemptDelay(1));
-        return res.status(401).json({ error: 'Invalid credentials' });
-      }
-
-      const business = result.rows[0];
-
-      // Check password
-      const isMatch = await bcrypt.compare(password, business.password_hash);
-      if (!isMatch) {
-        const failedAttempt = await recordFailedPasswordAttempt(client, {
+        const failedAttempt = await recordFailedPasswordAttempt({
           routeScope: 'business',
           emailNormalized,
           ip: requestIp,
         });
-        await client.query('COMMIT');
         await sleep(getFailedAttemptDelay(failedAttempt.failCount));
 
         if (failedAttempt.warning) {
@@ -295,8 +267,32 @@ router.post(
         return res.status(401).json({ error: 'Invalid credentials' });
       }
 
-      await clearAccountFailedAttempts(client, { routeScope: 'business', emailNormalized });
-      await client.query('COMMIT');
+      const business = result.rows[0];
+
+      // Check password
+      const isMatch = await bcrypt.compare(password, business.password_hash);
+      if (!isMatch) {
+        const failedAttempt = await recordFailedPasswordAttempt({
+          routeScope: 'business',
+          emailNormalized,
+          ip: requestIp,
+        });
+        await sleep(getFailedAttemptDelay(failedAttempt.failCount));
+
+        if (failedAttempt.warning) {
+          return res.status(401).json({ error: 'Warning: 1 attempt remaining before temporary lockout.' });
+        }
+
+        if (failedAttempt.locked) {
+          return res
+            .status(429)
+            .json({ error: `Too many failed attempts. Try again in ${ACCOUNT_LOCKOUT_MINUTES} minutes.` });
+        }
+
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+
+      await clearAccountFailedAttempts({ routeScope: 'business', emailNormalized });
 
       // Get social links
       const socialsResult = await pool.query(
@@ -317,23 +313,12 @@ router.post(
 
       res.json({ token, business: businessData });
     } catch (err) {
-      if (client) {
-        try {
-          await client.query('ROLLBACK');
-        } catch (rollbackError) {
-          // Transaction may already be finalized.
-        }
-      }
       console.error('[auth/login] error', {
         email,
         message: err.message,
         stack: err.stack,
       });
       res.status(500).json({ error: 'Internal server error' });
-    } finally {
-      if (client) {
-        client.release();
-      }
     }
   }
 );
