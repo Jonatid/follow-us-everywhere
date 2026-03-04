@@ -191,30 +191,29 @@ router.post(
   '/login',
   [body('email').optional().isEmail(), body('password').optional().isString()],
   async (req, res) => {
+    const sendLoginError = (status, message) => res.status(status).json({ message, error: message });
     const { email, password } = req.body;
     const emailNormalized = normalizeEmail(email);
     const requestIp = getRequestIp(req);
 
     if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password required' });
+      return sendLoginError(400, 'Email and password required');
     }
 
     const errorResponse = handleValidationErrors(req, res);
     if (errorResponse) {
-      return res.status(400).json({ error: 'Email and password required' });
+      return sendLoginError(400, 'Email and password required');
     }
 
     try {
       const ipRateLimit = await enforceIpRateLimit({ routeScope: 'business', ip: requestIp });
       if (ipRateLimit.blocked) {
-        return res.status(429).json({ error: 'Too many attempts from this IP. Please try again later.' });
+        return sendLoginError(429, 'Too many attempts from this IP. Please try again later.');
       }
 
       const accountAttempt = await getAccountAttempt({ routeScope: 'business', emailNormalized });
       if (isAccountLocked(accountAttempt)) {
-        return res
-          .status(429)
-          .json({ error: `Too many failed attempts. Try again in ${ACCOUNT_LOCKOUT_MINUTES} minutes.` });
+        return sendLoginError(429, `Too many failed attempts. Try again in ${ACCOUNT_LOCKOUT_MINUTES} minutes.`);
       }
 
       // Check if business exists
@@ -255,16 +254,14 @@ router.post(
         await sleep(getFailedAttemptDelay(failedAttempt.failCount));
 
         if (failedAttempt.warning) {
-          return res.status(401).json({ error: 'Warning: 1 attempt remaining before temporary lockout.' });
+          return sendLoginError(401, 'Warning: 1 attempt remaining before temporary lockout.');
         }
 
         if (failedAttempt.locked) {
-          return res
-            .status(429)
-            .json({ error: `Too many failed attempts. Try again in ${ACCOUNT_LOCKOUT_MINUTES} minutes.` });
+          return sendLoginError(429, `Too many failed attempts. Try again in ${ACCOUNT_LOCKOUT_MINUTES} minutes.`);
         }
 
-        return res.status(401).json({ error: 'Invalid credentials' });
+        return sendLoginError(401, 'Invalid credentials');
       }
 
       const business = result.rows[0];
@@ -280,16 +277,14 @@ router.post(
         await sleep(getFailedAttemptDelay(failedAttempt.failCount));
 
         if (failedAttempt.warning) {
-          return res.status(401).json({ error: 'Warning: 1 attempt remaining before temporary lockout.' });
+          return sendLoginError(401, 'Warning: 1 attempt remaining before temporary lockout.');
         }
 
         if (failedAttempt.locked) {
-          return res
-            .status(429)
-            .json({ error: `Too many failed attempts. Try again in ${ACCOUNT_LOCKOUT_MINUTES} minutes.` });
+          return sendLoginError(429, `Too many failed attempts. Try again in ${ACCOUNT_LOCKOUT_MINUTES} minutes.`);
         }
 
-        return res.status(401).json({ error: 'Invalid credentials' });
+        return sendLoginError(401, 'Invalid credentials');
       }
 
       await clearAccountFailedAttempts({ routeScope: 'business', emailNormalized });
@@ -318,7 +313,7 @@ router.post(
         message: err.message,
         stack: err.stack,
       });
-      res.status(500).json({ error: 'Internal server error' });
+      sendLoginError(500, 'Internal server error');
     }
   }
 );
