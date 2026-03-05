@@ -54,9 +54,9 @@ const base32Decode = (input) => {
 const generateTotpSecret = () => base32Encode(crypto.randomBytes(20));
 
 const getEncryptionKey = () => {
-  const raw = process.env.TOTP_ENCRYPTION_KEY || process.env.JWT_SECRET;
+  const raw = process.env.TOTP_ENCRYPTION_KEY;
   if (!raw) {
-    throw new Error('TOTP_ENCRYPTION_KEY or JWT_SECRET is required');
+    throw new Error('TOTP_ENCRYPTION_KEY is required');
   }
 
   const trimmed = raw.trim();
@@ -146,18 +146,18 @@ const buildOtpAuthUri = ({ secret, email, issuer = 'Follow Us Everywhere Admin' 
 };
 
 const createEnrollmentToken = ({ adminId }) => {
-  const secret = process.env.ADMIN_ENROLLMENT_TOKEN_SECRET || process.env.JWT_SECRET;
+  const secret = process.env.ADMIN_ENROLLMENT_TOKEN_SECRET;
   if (!secret) {
-    throw new Error('ADMIN_ENROLLMENT_TOKEN_SECRET or JWT_SECRET is required');
+    throw new Error('ADMIN_ENROLLMENT_TOKEN_SECRET is required');
   }
 
   return jwt.sign({ adminId, purpose: 'admin-2fa-enrollment' }, secret, { expiresIn: ENROLLMENT_EXPIRY });
 };
 
 const verifyEnrollmentToken = (token) => {
-  const secret = process.env.ADMIN_ENROLLMENT_TOKEN_SECRET || process.env.JWT_SECRET;
+  const secret = process.env.ADMIN_ENROLLMENT_TOKEN_SECRET;
   if (!secret) {
-    throw new Error('ADMIN_ENROLLMENT_TOKEN_SECRET or JWT_SECRET is required');
+    throw new Error('ADMIN_ENROLLMENT_TOKEN_SECRET is required');
   }
 
   const decoded = jwt.verify(token, secret);

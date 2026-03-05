@@ -388,8 +388,8 @@ The core value is **structured trust + discoverability**:
 - `ALLOWED_ORIGINS`: comma-separated CORS https allowlist (defaults to `https://fuse101.com,https://www.fuse101.com,https://admin.fuse101.com`).
 - `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME`: used by create-admin script.
 - `NODE_ENV`: affects debug logs.
-- `ADMIN_ENROLLMENT_TOKEN_SECRET`: dedicated JWT secret for 10-minute admin enrollment tokens (falls back to `JWT_SECRET` if not set, but dedicated value is strongly recommended).
-- `TOTP_ENCRYPTION_KEY`: app-level key used to encrypt admin TOTP secrets at rest (falls back to a key derived from `JWT_SECRET` if not set, but dedicated value is strongly recommended).
+- `ADMIN_ENROLLMENT_TOKEN_SECRET`: dedicated JWT secret for 10-minute admin enrollment tokens.
+- `TOTP_ENCRYPTION_KEY`: app-level key used to encrypt admin TOTP secrets at rest.
 
 ## Frontend variables
 - `VITE_API_BASE_URL`: API base override for frontend main app and admin API helper.
