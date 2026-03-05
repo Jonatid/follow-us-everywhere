@@ -57,6 +57,12 @@ const AdminLogin = ({ onSuccess }) => {
               />
             </label>
             <button type="button" className="admin-button primary" onClick={handleSubmit} disabled={loading}>
+              {loading && (
+                <>
+                  <span className="admin-spinner" aria-hidden="true" />
+                  <span className="admin-visually-hidden">Loading</span>
+                </>
+              )}
               {loading ? 'Signing in...' : 'Sign in'}
             </button>
           </div>
