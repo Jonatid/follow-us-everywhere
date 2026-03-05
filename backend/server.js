@@ -8,6 +8,7 @@ const { uploadBuffer, getDownloadUrl } = require('./services/r2');
 const db = require('./config/db');
 const { ensureSchema } = require('./config/schema');
 const { runMigrations } = require('./scripts/runMigrations');
+const { getCorsOptions } = require('./config/cors');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -31,19 +32,7 @@ if (!process.env.JWT_SECRET) {
 }
 
 // Middleware
-const corsOptions = {
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'https://follow-us-everywhere-web.onrender.com',
-    // Added for the new production custom frontend domain.
-    'https://fuse101.com',
-    'https://www.fuse101.com',
-    process.env.FRONTEND_URL
-  ].filter(Boolean),
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Authorization', 'Content-Type']
-};
+const corsOptions = getCorsOptions();
 
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));

@@ -375,12 +375,13 @@ The core value is **structured trust + discoverability**:
 ## Backend variables
 - `PORT`: HTTP port.
 - `JWT_SECRET` (**required at startup**).
-- `FRONTEND_URL`: CORS allowlist + business reset link base URL.
+- `FRONTEND_URL`: business reset link base URL.
 - `DATABASE_URL` or `DB_HOST/DB_PORT/DB_NAME/DB_USER/DB_PASSWORD`.
 - `DB_SSL`: SSL toggle.
 - `RESEND_API_KEY`, `RESEND_FROM`, `RESEND_FROM_EMAIL`: outbound email.
 - `SUPPORT_EMAIL` / `RESEND_SUPPORT_EMAIL`: support recipient fallback chain.
 - `CUSTOMER_FRONTEND_URL`: customer reset link base.
+- `ALLOWED_ORIGINS`: comma-separated CORS https allowlist (defaults to `https://fuse101.com,https://www.fuse101.com,https://admin.fuse101.com`).
 - `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME`: used by create-admin script.
 - `NODE_ENV`: affects debug logs.
 
@@ -406,7 +407,7 @@ The core value is **structured trust + discoverability**:
 - On backend start, server runs SQL migrations (`runMigrations`) then `ensureSchema` for additional table/column/index safety checks.
 
 ## Hosting assumptions
-- CORS allowlist includes Render frontend URL and custom domain (`fuse101.com`).
+- CORS allowlist is centralized in `ALLOWED_ORIGINS` (default includes `fuse101.com`, `www.fuse101.com`, and `admin.fuse101.com`).
 - Frontend default production API fallback targets Render API URL.
 
 ## Health checks, monitoring, logging
