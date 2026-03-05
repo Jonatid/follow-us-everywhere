@@ -7,7 +7,19 @@ import AdminApp from './pages/admin/AdminApp';
 import reportWebVitals from './reportWebVitals';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
-const isAdminRoute = window.location.pathname.startsWith('/admin');
+const ADMIN_HOSTNAME = 'admin.fuse101.com';
+const ADMIN_LOGIN_PATH = '/admin/login';
+const normalizePath = (path) => (path.endsWith('/') && path !== '/' ? path.slice(0, -1) : path);
+
+const isAdminHost = window.location.hostname === ADMIN_HOSTNAME;
+const currentPath = normalizePath(window.location.pathname);
+const shouldRedirectToAdminLogin = isAdminHost && (currentPath === '/' || !currentPath.startsWith('/admin'));
+
+if (shouldRedirectToAdminLogin) {
+  window.history.replaceState({}, '', ADMIN_LOGIN_PATH);
+}
+
+const isAdminRoute = isAdminHost || window.location.pathname.startsWith('/admin');
 
 root.render(
   <React.StrictMode>
