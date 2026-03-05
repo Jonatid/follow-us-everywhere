@@ -123,15 +123,19 @@ The core value is **structured trust + discoverability**:
 **Backend routes:** `auth.js`, `businesses.js`, `socials.js`, plus badge/document endpoints if used.
 
 ## C) Admin journey: login → review/approve/suspend → manage badges/verification → view data
-1. Admin opens `/admin/login` and authenticates via `POST /api/admin/auth/login`.
-2. Admin token saved as `adminToken` and attached by `frontend/src/utils/adminApi.js`.
-3. Dashboard pulls `GET /api/admin/dashboard/summary`.
+1. Admin opens `/admin/login` and submits email + password to `POST /api/admin/auth/login`.
+2. If admin is not enrolled in 2FA, backend returns `requires2faEnrollment` plus an `otpauth://` URI and short-lived `enrollmentToken`; login page shows enrollment and confirmation input.
+3. If admin is enrolled, backend returns `requires2fa` unless `totpCode` or `backupCode` is supplied and valid.
+4. On successful enrollment confirmation (`enrollmentToken` + `totpCode` posted to the same login endpoint), backup codes are shown exactly once in UI and JWT is issued.
+5. Admin token saved as `adminToken` and attached by `frontend/src/utils/adminApi.js`.
+6. Dashboard pulls `GET /api/admin/dashboard/summary`.
 4. Review queue uses `GET /api/admin/reviews/businesses` then `PATCH /api/admin/reviews/businesses/:id`.
 5. Business list/detail uses `GET /api/admin/businesses`, `GET /api/admin/businesses/:id`, approve/block actions.
 6. Badge catalog managed via `/api/admin/badges` CRUD.
 7. Badge assignments managed via `/api/admin/businesses/:id/badges` add/remove/list.
 8. Document review via `/api/admin/documents` and `PATCH /api/admin/documents/:id`.
 9. Badge requests review via `/api/admin/badge-requests` and `/api/admin/badge-requests/:id/review`.
+10. Backup code regeneration is not yet wired because there is no existing admin profile/settings endpoint suitable for this action without introducing a new route.
 
 **Frontend surfaces:** `AdminApp`, `AdminDashboard`, `ReviewList`, `BusinessList`, `BusinessDetail`, `BadgeManagement`, `AdminManagement`.
 
@@ -345,7 +349,7 @@ The core value is **structured trust + discoverability**:
 - `GET /api/public/businesses/:id/impact` (public)
 
 ## Admin auth + management
-- `POST /api/admin/auth/login` (public)
+- `POST /api/admin/auth/login` (public; handles password + 2FA challenge + first-time enrollment finalization)
 - `GET /api/admin/documents` (admin JWT)
 - `PATCH /api/admin/documents/:id` (admin JWT)
 - `GET /api/admin/dashboard/summary` (admin JWT)
@@ -384,6 +388,8 @@ The core value is **structured trust + discoverability**:
 - `ALLOWED_ORIGINS`: comma-separated CORS https allowlist (defaults to `https://fuse101.com,https://www.fuse101.com,https://admin.fuse101.com`).
 - `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME`: used by create-admin script.
 - `NODE_ENV`: affects debug logs.
+- `ADMIN_ENROLLMENT_TOKEN_SECRET`: dedicated JWT secret for 10-minute admin enrollment tokens (falls back to `JWT_SECRET` if not set, but dedicated value is strongly recommended).
+- `TOTP_ENCRYPTION_KEY`: app-level key used to encrypt admin TOTP secrets at rest (falls back to a key derived from `JWT_SECRET` if not set, but dedicated value is strongly recommended).
 
 ## Frontend variables
 - `VITE_API_BASE_URL`: API base override for frontend main app and admin API helper.

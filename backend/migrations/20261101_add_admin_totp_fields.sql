@@ -1,0 +1,7 @@
+ALTER TABLE admins
+  ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS totp_secret_encrypted TEXT,
+  ADD COLUMN IF NOT EXISTS totp_enrolled_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS backup_codes_hashed JSONB NOT NULL DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS backup_codes_generated_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS totp_last_verified_step BIGINT;

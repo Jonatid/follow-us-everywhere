@@ -26,8 +26,11 @@ adminApi.interceptors.request.use((config) => {
   return config;
 });
 
-export const adminLogin = async (email, password) => {
-  const response = await adminApi.post('/admin/auth/login', { email, password });
+export const adminLogin = async (payloadOrEmail, password) => {
+  const payload = typeof payloadOrEmail === 'object' && payloadOrEmail !== null
+    ? payloadOrEmail
+    : { email: payloadOrEmail, password };
+  const response = await adminApi.post('/admin/auth/login', payload);
   return response.data;
 };
 
