@@ -13,11 +13,13 @@ const AdminLogin = ({ onSuccess }) => {
   const [generatedBackupCodes, setGeneratedBackupCodes] = useState([]);
   const [postEnrollmentToken, setPostEnrollmentToken] = useState('');
   const [backupCodesSaved, setBackupCodesSaved] = useState(false);
+  const [challengeMessage, setChallengeMessage] = useState('');
+  const [useBackupCodeMode, setUseBackupCodeMode] = useState(false);
 
   const stepTitle = useMemo(() => {
     if (generatedBackupCodes.length) return 'Save backup codes';
     if (enrollment) return 'Set up authenticator app';
-    if (requires2fa) return 'Two-factor verification';
+    if (requires2fa) return 'Enter authentication code';
     return 'Admin Login';
   }, [enrollment, requires2fa, generatedBackupCodes.length]);
 
@@ -34,12 +36,17 @@ const AdminLogin = ({ onSuccess }) => {
       if (data?.requires2faEnrollment) {
         setEnrollment(data.enrollment || null);
         setRequires2fa(false);
+        setChallengeMessage('');
         return;
       }
 
       if (data?.requires2fa) {
         setRequires2fa(true);
         setEnrollment(null);
+        setChallengeMessage(data?.message || data?.challengeMessage || '');
+        setTotpCode('');
+        setBackupCode('');
+        setUseBackupCodeMode(false);
         return;
       }
 
@@ -85,8 +92,13 @@ const AdminLogin = ({ onSuccess }) => {
 
   const handleVerifySecondFactor = async () => {
     setError('');
-    if (!totpCode && !backupCode) {
-      setError('Enter your 6-digit code or a backup code.');
+    if (useBackupCodeMode && !backupCode) {
+      setError('Enter a backup code.');
+      return;
+    }
+
+    if (!useBackupCodeMode && !totpCode) {
+      setError('Enter your 6-digit authentication code.');
       return;
     }
 
@@ -95,8 +107,8 @@ const AdminLogin = ({ onSuccess }) => {
       const data = await adminLogin({
         email,
         password,
-        totpCode: totpCode || undefined,
-        backupCode: backupCode || undefined,
+        totpCode: useBackupCodeMode ? undefined : totpCode,
+        backupCode: useBackupCodeMode ? backupCode : undefined,
       });
 
       if (data?.token) {
@@ -187,29 +199,49 @@ const AdminLogin = ({ onSuccess }) => {
 
           {requires2fa && (
             <div className="admin-form">
-              <p>Enter your 6-digit authenticator code or use a backup code.</p>
-              <label>
-                6-digit code
-                <input
-                  type="text"
-                  className="admin-input"
-                  value={totpCode}
-                  onChange={(event) => setTotpCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="123456"
-                />
-              </label>
-              <label>
-                Backup code (optional)
-                <input
-                  type="text"
-                  className="admin-input"
-                  value={backupCode}
-                  onChange={(event) => setBackupCode(event.target.value.toUpperCase())}
-                  placeholder="ABCD-EFGH-IJKL"
-                />
-              </label>
+              <h2 style={{ marginTop: 0 }}>Enter authentication code</h2>
+              {challengeMessage && <p>{challengeMessage}</p>}
+
+              {!useBackupCodeMode && (
+                <label>
+                  6-digit authentication code
+                  <input
+                    type="text"
+                    className="admin-input"
+                    value={totpCode}
+                    onChange={(event) => setTotpCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="123456"
+                  />
+                </label>
+              )}
+
+              {useBackupCodeMode && (
+                <label>
+                  Backup code
+                  <input
+                    type="text"
+                    className="admin-input"
+                    value={backupCode}
+                    onChange={(event) => setBackupCode(event.target.value.toUpperCase())}
+                    placeholder="ABCD-EFGH-IJKL"
+                  />
+                </label>
+              )}
+
               <button type="button" className="admin-button primary" onClick={handleVerifySecondFactor} disabled={loading}>
-                {loading ? 'Verifying...' : 'Verify and continue'}
+                {loading ? 'Verifying...' : 'Verify code'}
+              </button>
+
+              <button
+                type="button"
+                className="admin-button"
+                onClick={() => {
+                  setUseBackupCodeMode((prev) => !prev);
+                  setError('');
+                }}
+                disabled={loading}
+              >
+                {useBackupCodeMode ? 'Use authenticator code instead' : 'Use backup code instead'}
               </button>
             </div>
           )}
