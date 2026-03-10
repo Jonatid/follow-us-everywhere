@@ -55,7 +55,18 @@ const AdminLogin = ({ onSuccess }) => {
       }
       onSuccess();
     } catch (err) {
-      setError(err.response?.data?.message || 'Unable to sign in as admin.');
+      const challengeData = err.response?.data;
+      if (challengeData?.requires2fa) {
+        setRequires2fa(true);
+        setEnrollment(null);
+        setChallengeMessage(challengeData?.message || challengeData?.challengeMessage || '');
+        setTotpCode('');
+        setBackupCode('');
+        setUseBackupCodeMode(false);
+        return;
+      }
+
+      setError(challengeData?.message || 'Unable to sign in as admin.');
     } finally {
       setLoading(false);
     }
