@@ -124,6 +124,10 @@ const normalizeLogoUrlValue = (value) => {
   return normalized ? normalized : null;
 };
 
+const LOGO_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
+const ALLOWED_LOGO_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const LOGO_UPLOAD_ACCEPT = '.jpg,.jpeg,.png,.webp';
+
 const DEFAULT_WIDGET_SETTINGS = Object.freeze({
   layoutMode: 'branded',
   showBranding: true,
@@ -2946,6 +2950,20 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
       return;
     }
 
+    if (!ALLOWED_LOGO_MIME_TYPES.includes(file.type)) {
+      setSaveError('Unsupported logo file type. Please upload a JPG, PNG, or WebP image.');
+      setSaveMessage('');
+      event.target.value = '';
+      return;
+    }
+
+    if (file.size > LOGO_UPLOAD_MAX_BYTES) {
+      setSaveError('Image must be 10 MB or smaller.');
+      setSaveMessage('');
+      event.target.value = '';
+      return;
+    }
+
     setUploadLoading(true);
     setSaveError('');
     setSaveMessage('');
@@ -3119,8 +3137,8 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
               </div>
               <div className="field">
                 <label className="label">Upload logo image</label>
-                <input className="input" type="file" accept="image/*" onChange={handleLogoFileChange} />
-                <p className="helper-text">Max upload size: 10 MB</p>
+                <input className="input" type="file" accept={LOGO_UPLOAD_ACCEPT} onChange={handleLogoFileChange} />
+                <p className="helper-text">Accepted: JPG, PNG, WebP. Max upload size: 10 MB.</p>
               </div>
               <div style={{ marginTop: '12px' }}>
                 <p className="muted-text" style={{ marginBottom: '8px' }}>Logo preview</p>
