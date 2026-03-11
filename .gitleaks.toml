@@ -1,0 +1,11 @@
+title = "Follow Us Everywhere gitleaks config"
+
+[allowlist]
+description = "Allow placeholder/example values in tracked templates"
+paths = [
+  '''(^|/)\.env\.example$'''
+]
+regexes = [
+  '''YOUR_[A-Z0-9_]+''',
+  '''example'''
+]

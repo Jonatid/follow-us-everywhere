@@ -85,3 +85,25 @@ node -e "
 # 3) BetterStack "Alert us when":
 #    - Prefer: URL returns HTTP status other than 2xx/3xx
 #    - Fallback: URL becomes unavailable
+
+## Secrets Hygiene Discipline (Prevention)
+
+- Never commit real secrets to this repository.
+- `.env.example` files must only contain placeholder values (for example `YOUR_API_KEY`).
+- Real `.env` files must remain untracked locally.
+- Production secrets must only be set in Render environment variables.
+- If a real secret is ever committed, rotate it immediately in the source system and update Render.
+
+### Lightweight commit safeguard
+
+A repo-level pre-commit hook is included at `.githooks/pre-commit`.
+
+1. Enable the hook path once per clone:
+   ```bash
+   git config core.hooksPath .githooks
+   ```
+2. (Optional) Install `gitleaks` locally for deeper scanning; the hook auto-runs it when available.
+
+The hook blocks:
+- committing real `.env` files
+- obvious hardcoded secrets in staged changes
