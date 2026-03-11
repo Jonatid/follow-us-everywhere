@@ -101,7 +101,8 @@ const buildR2ProxyDownloadPath = (key) => {
     return null;
   }
 
-  return `/api/r2/download/${key}?redirect=1`;
+  // Logo images are public assets, so use the public logo proxy route.
+  return `/api/r2/public-download/${key}?redirect=1`;
 };
 
 const handleDocumentUpload = (req, res) => {

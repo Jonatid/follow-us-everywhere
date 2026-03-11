@@ -86,4 +86,34 @@ router.get('/download/*', authenticatePrivilegedUser, downloadRateLimit, async (
   }
 });
 
+router.get('/public-download/*', async (req, res) => {
+  try {
+    const requestedKey = normalizeObjectKey(req.params[0] || '');
+    const expiresInSeconds = req.query.expiresInSeconds ? Number(req.query.expiresInSeconds) : undefined;
+    const shouldRedirect = req.query.redirect === '1';
+
+    if (!requestedKey) {
+      return res.status(400).json({ message: 'key is required', code: 'KEY_REQUIRED' });
+    }
+
+    if (!requestedKey.startsWith('business-logos/')) {
+      return res.status(403).json({ message: 'Access denied for requested file', code: 'SCOPE_DENIED' });
+    }
+
+    const downloadUrl = await getSignedDownloadUrl({
+      key: requestedKey,
+      expiresInSeconds,
+    });
+
+    if (shouldRedirect) {
+      return res.redirect(downloadUrl);
+    }
+
+    return res.json({ key: requestedKey, downloadUrl, expiresIn: expiresInSeconds || 600 });
+  } catch (error) {
+    console.error('R2 public download URL error:', error);
+    return res.status(500).json({ message: 'Failed to create download URL', code: 'SIGNED_DOWNLOAD_FAILED' });
+  }
+});
+
 module.exports = router;
