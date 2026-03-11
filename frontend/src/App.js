@@ -3120,6 +3120,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
               <div className="field">
                 <label className="label">Upload logo image</label>
                 <input className="input" type="file" accept="image/*" onChange={handleLogoFileChange} />
+                <p className="helper-text">Max upload size: 10 MB</p>
               </div>
               <div style={{ marginTop: '12px' }}>
                 <p className="muted-text" style={{ marginBottom: '8px' }}>Logo preview</p>
