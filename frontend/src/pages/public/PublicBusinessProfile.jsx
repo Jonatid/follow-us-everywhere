@@ -236,9 +236,9 @@ export default function PublicBusinessProfile({
               padding: '8px 0 4px',
               animation: 'fadeUp 0.3s ease both',
             }}>
-              <QrCard businessName={businessName} slug={slug} size={160} compact />
+              <QrCard businessName={businessName} slug={slug} size={200} compact />
               <div style={{ fontSize: 11, color: BRAND.midGray, textAlign: 'center' }}>
-                Scan with your phone camera to connect
+                Scan to view and connect
               </div>
             </div>
           )}
