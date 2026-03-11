@@ -3,8 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const multer = require('multer');
-const { uploadBuffer, getDownloadUrl } = require('./services/r2');
+const { getDownloadUrl } = require('./services/r2');
 const db = require('./config/db');
 const { ensureSchema } = require('./config/schema');
 const { runMigrations } = require('./scripts/runMigrations');
@@ -22,6 +21,7 @@ const publicRoutes = require('./routes/public');
 const badgesRoutes = require('./routes/badges');
 const r2Routes = require('./routes/r2Routes');
 const qrRoutes = require('./routes/qr');
+const uploadRoutes = require('./routes/uploadRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -70,31 +70,7 @@ app.get('/api/health', async (req, res) => {
   });
 });
 
-
-const upload = multer({ storage: multer.memoryStorage() });
-
-app.post('/upload', upload.single('file'), async (req, res, next) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded. Use multipart/form-data with field name "file".' });
-    }
-
-    const key = `${Date.now()}-${req.file.originalname}`;
-    await uploadBuffer({
-      key,
-      buffer: req.file.buffer,
-      contentType: req.file.mimetype
-    });
-
-    res.status(201).json({
-      message: 'File uploaded successfully',
-      key,
-      bucket: process.env.R2_BUCKET
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+app.use('/', uploadRoutes);
 
 app.get('/files/:key', async (req, res, next) => {
   try {
