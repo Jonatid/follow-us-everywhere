@@ -104,6 +104,8 @@ A repo-level pre-commit hook is included at `.githooks/pre-commit`.
    ```
 2. (Optional) Install `gitleaks` locally for deeper scanning; the hook auto-runs it when available.
 
+Note: the secrets check now works even when `rg` (ripgrep) is not available in your Git hook PATH (common on some Windows setups).
+
 The hook blocks:
 - committing real `.env` files
 - obvious hardcoded secrets in staged changes
