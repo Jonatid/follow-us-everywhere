@@ -66,7 +66,7 @@ const logoStorage = multer.diskStorage({
 
 const logoUpload = multer({
   storage: isR2Configured() ? multer.memoryStorage() : logoStorage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) {
       return cb(new Error('Unsupported logo file type'));
@@ -661,7 +661,10 @@ router.post('/logo/upload', authenticateToken, (req, res) => {
   logoUpload.single('logo')(req, res, async (uploadErr) => {
     if (uploadErr) {
       if (uploadErr instanceof multer.MulterError && uploadErr.code === 'LIMIT_FILE_SIZE') {
-        return res.status(400).json({ error: 'Logo exceeds 5MB limit' });
+        return res.status(400).json({
+          error: 'Image must be 10 MB or smaller.',
+          code: 'LOGO_FILE_TOO_LARGE',
+        });
       }
       return res.status(400).json({ error: uploadErr.message || 'Invalid logo upload' });
     }
