@@ -4,6 +4,29 @@
 
 import React, { useEffect, useRef } from 'react';
 
+const configuredPublicWebUrl =
+  (typeof process !== 'undefined' && process.env?.REACT_APP_PUBLIC_WEB_URL) ||
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_PUBLIC_WEB_URL) ||
+  '';
+
+const normalizePublicKey = (value) =>
+  typeof value === 'string' ? value.trim().toLowerCase() : '';
+
+const getPublicBaseUrl = () => {
+  const configuredBase = configuredPublicWebUrl.trim();
+  if (configuredBase) return configuredBase.replace(/\/$/, '');
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin.replace(/\/$/, '');
+  }
+  return 'https://fuse101.com';
+};
+
+const buildPublicBusinessUrl = (slug) => {
+  const normalizedSlug = normalizePublicKey(slug) || 'your-business';
+  return `${getPublicBaseUrl()}/b/${encodeURIComponent(normalizedSlug)}`;
+};
+
+
 // ── Minimal QR matrix generator (spec-compliant finder + timing patterns) ────
 function buildQRMatrix(text) {
   const size = 29;
@@ -78,7 +101,7 @@ function QrCanvas({ value, size, fgColor, bgColor }) {
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
-    const matrix = buildQRMatrix(value || 'https://fuse101.com/qr/your-business');
+    const matrix = buildQRMatrix(value || buildPublicBusinessUrl('your-business'));
     const modules = matrix.length;
     const safeSize = Number.isFinite(size) ? Math.max(size, modules) : 180;
     const scale = Math.max(1, Math.floor(safeSize / modules));
@@ -96,25 +119,25 @@ function QrCanvas({ value, size, fgColor, bgColor }) {
     );
   }, [value, size, fgColor, bgColor]);
 
-  return <canvas ref={ref} style={{ borderRadius: 4, display: 'block' }} />;
+  return <canvas ref={ref} style={{ borderRadius: 4, display: 'block', imageRendering: 'pixelated' }} />;
 }
 
 // ── QrCard ────────────────────────────────────────────────────────────────────
 /**
  * @param {string}  businessName
- * @param {string}  slug          - fuse101.com/qr/:slug
- * @param {number}  [size=180]    - QR pixel size
+ * @param {string}  slug          - public business key
+ * @param {number}  [size=200]    - QR pixel size
  * @param {boolean} [compact]     - Smaller card for public profile
  */
 export default function QrCard({
   businessName,
   slug,
-  size = 180,
+  size = 200,
   compact = false,
   showBranding = true,
   showBusinessName = true,
 }) {
-  const url = `https://fuse101.com/qr/${slug || 'your-business'}`;
+  const url = buildPublicBusinessUrl(slug);
 
   return (
     <div
