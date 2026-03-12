@@ -99,12 +99,12 @@ router.post(
       const result = await pool.query(
         `INSERT INTO customers (email, password_hash, first_name, last_name)
          VALUES ($1, $2, $3, $4)
-         RETURNING id, email, first_name, last_name, phone, address, created_at`,
+         RETURNING id, email, first_name, last_name, phone, address, created_at, token_version`,
         [email, passwordHash, first_name, last_name]
       );
 
       const customer = result.rows[0];
-      const payload = { customerId: customer.id };
+      const payload = { customerId: customer.id, tokenVersion: customer.token_version };
       const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
 
       return res.json({ token, customer });
@@ -145,7 +145,7 @@ router.post('/login', [body('email').isEmail(), body('password').exists()], asyn
     }
 
     const result = await pool.query(
-      'SELECT id, email, first_name, last_name, phone, address, password_hash, created_at FROM customers WHERE LOWER(email) = LOWER($1)',
+      'SELECT id, email, first_name, last_name, phone, address, password_hash, created_at, token_version FROM customers WHERE LOWER(email) = LOWER($1)',
       [emailNormalized]
     );
 
@@ -195,7 +195,7 @@ router.post('/login', [body('email').isEmail(), body('password').exists()], asyn
 
     await clearAccountFailedAttempts({ routeScope: 'customer', emailNormalized });
 
-    const payload = { customerId: customer.id };
+    const payload = { customerId: customer.id, tokenVersion: customer.token_version };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
 
     const { password_hash, ...customerData } = customer;

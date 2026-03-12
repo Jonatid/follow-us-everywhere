@@ -107,7 +107,8 @@ router.post(
                    mission_statement,
                    vision_statement,
                    philanthropic_goals,
-                   widget_settings`,
+                   widget_settings,
+                   token_version`,
         [name, resolvedSlug, tagline || '', logo, email, passwordHash]
       );
 
@@ -138,7 +139,7 @@ router.post(
       business.verificationStatus = business.verification_status;
 
       // Create JWT token
-      const payload = { businessId: business.id };
+      const payload = { businessId: business.id, tokenVersion: business.token_version };
       const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
 
       await client.query('COMMIT');
@@ -239,7 +240,8 @@ router.post(
                 mission_statement,
                 vision_statement,
                 philanthropic_goals,
-                widget_settings
+                widget_settings,
+                token_version
          FROM businesses
          WHERE LOWER(email) = LOWER($1)`,
         [emailNormalized]
@@ -296,7 +298,7 @@ router.post(
       );
 
       // Create JWT token
-      const payload = { businessId: business.id };
+      const payload = { businessId: business.id, tokenVersion: business.token_version };
       const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
 
       // Return business data without password

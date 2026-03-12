@@ -52,6 +52,7 @@ const ensureSchema = async () => {
         lara_number TEXT,
         email VARCHAR(255) UNIQUE NOT NULL,
         password_hash VARCHAR(255) NOT NULL,
+        token_version INTEGER NOT NULL DEFAULT 0,
         is_verified BOOLEAN DEFAULT false,
         is_approved BOOLEAN DEFAULT false,
         suspended_reason TEXT,
@@ -90,7 +91,8 @@ const ensureSchema = async () => {
         ADD COLUMN IF NOT EXISTS philanthropic_goals TEXT,
         ADD COLUMN IF NOT EXISTS widget_settings JSONB,
         ADD COLUMN IF NOT EXISTS logo_url TEXT,
-        ADD COLUMN IF NOT EXISTS lara_number TEXT;
+        ADD COLUMN IF NOT EXISTS lara_number TEXT,
+        ADD COLUMN IF NOT EXISTS token_version INTEGER NOT NULL DEFAULT 0;
     `);
 
     await pool.query(`
@@ -113,8 +115,15 @@ const ensureSchema = async () => {
         name TEXT,
         email TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
+        token_version INTEGER NOT NULL DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+    `);
+
+
+    await pool.query(`
+      ALTER TABLE admins
+        ADD COLUMN IF NOT EXISTS token_version INTEGER NOT NULL DEFAULT 0;
     `);
 
     await pool.query(`
@@ -122,6 +131,7 @@ const ensureSchema = async () => {
         id SERIAL PRIMARY KEY,
         email VARCHAR(255) UNIQUE NOT NULL,
         password_hash VARCHAR(255) NOT NULL,
+        token_version INTEGER NOT NULL DEFAULT 0,
         first_name VARCHAR(255) NOT NULL DEFAULT '',
         last_name VARCHAR(255) NOT NULL DEFAULT '',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -134,7 +144,8 @@ const ensureSchema = async () => {
         ADD COLUMN IF NOT EXISTS first_name VARCHAR(255) NOT NULL DEFAULT '',
         ADD COLUMN IF NOT EXISTS last_name VARCHAR(255) NOT NULL DEFAULT '',
         ADD COLUMN IF NOT EXISTS phone TEXT,
-        ADD COLUMN IF NOT EXISTS address TEXT;
+        ADD COLUMN IF NOT EXISTS address TEXT,
+        ADD COLUMN IF NOT EXISTS token_version INTEGER NOT NULL DEFAULT 0;
     `);
 
     await pool.query(`

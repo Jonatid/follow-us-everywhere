@@ -31,7 +31,7 @@ The core value is **structured trust + discoverability**:
   - Accessed with `pg` pool.
   - Schema created/updated by startup migration runner + ensure-schema bootstrap.
 - **Auth model**
-  - JWT with shared `JWT_SECRET`; payload includes one of `businessId`, `customerId`, `adminId`.
+  - JWT with shared `JWT_SECRET`; payload includes one of `businessId`, `customerId`, `adminId` plus required `tokenVersion` sourced from the corresponding identity row (`businesses.token_version`, `customers.token_version`, `admins.token_version`).
 - **Hosting assumptions**
   - Frontend assumes Render-hosted API fallback URL.
   - Backend CORS allowlist includes localhost and Render/custom frontend domains.
@@ -90,6 +90,12 @@ The core value is **structured trust + discoverability**:
 
 **Cannot do:**
 - Business/customer self-service endpoints unless those endpoints are also public and do not require role token.
+
+### Token version session strategy
+- Identity tables `businesses`, `customers`, and `admins` each include non-null `token_version` (default `0`).
+- Access JWTs now embed `tokenVersion` and middleware validates it against the current DB `token_version` for that identity.
+- Tokens are rejected when `tokenVersion` is missing or mismatched with DB state, using a session-expired response (`{"message":"Session expired. Please sign in again."}`).
+- Backward compatibility decision: legacy tokens created before this rollout do not contain `tokenVersion` and are intentionally rejected, requiring users to sign in again after deployment.
 
 ### Guards/middleware enforcement
 - `authenticateToken` (business): used across business social/profile/badge-request/document endpoints.
