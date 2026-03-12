@@ -96,6 +96,9 @@ The core value is **structured trust + discoverability**:
 - Access JWTs now embed `tokenVersion` and middleware validates it against the current DB `token_version` for that identity.
 - Tokens are rejected when `tokenVersion` is missing or mismatched with DB state, using a session-expired response (`{"message":"Session expired. Please sign in again."}`).
 - Backward compatibility decision: legacy tokens created before this rollout do not contain `tokenVersion` and are intentionally rejected, requiring users to sign in again after deployment.
+- Logout invalidation: `POST /api/auth/logout`, `POST /api/customers/auth/logout`, and `POST /api/admin/auth/logout` increment `token_version` for the authenticated identity.
+- Current logout model invalidates *all* existing tokens for that account identity (current + other devices/sessions), because revocation is version-based and there is no per-device session store yet.
+- `logout-all` endpoints are also available (`/api/auth/logout-all`, `/api/customers/auth/logout-all`, `/api/admin/auth/logout-all`) and currently perform the same version bump behavior for explicitness.
 
 ### Guards/middleware enforcement
 - `authenticateToken` (business): used across business social/profile/badge-request/document endpoints.
@@ -315,6 +318,8 @@ The core value is **structured trust + discoverability**:
 - `POST /api/auth/forgot-password` (public)
 - `POST /api/auth/reset-password` (public)
 - `GET /api/auth/me` (business JWT)
+- `POST /api/auth/logout` (business JWT; token-version invalidation)
+- `POST /api/auth/logout-all` (business JWT; currently same full-account invalidation)
 
 ## Business profile/documents
 - `POST /api/businesses/documents` (business JWT, multipart)
@@ -339,6 +344,8 @@ The core value is **structured trust + discoverability**:
 - `POST /api/customers/auth/forgot-password` (public)
 - `POST /api/customers/auth/reset-password` (public)
 - `GET /api/customers/auth/me` (customer JWT)
+- `POST /api/customers/auth/logout` (customer JWT; token-version invalidation)
+- `POST /api/customers/auth/logout-all` (customer JWT; currently same full-account invalidation)
 - `GET /api/customers/profile` (customer JWT)
 - `PUT /api/customers/profile` (customer JWT)
 - `GET /api/customers/favorites` (customer JWT)
@@ -356,6 +363,8 @@ The core value is **structured trust + discoverability**:
 
 ## Admin auth + management
 - `POST /api/admin/auth/login` (public; handles password + 2FA challenge + first-time enrollment finalization)
+- `POST /api/admin/auth/logout` (admin JWT; token-version invalidation)
+- `POST /api/admin/auth/logout-all` (admin JWT; currently same full-account invalidation)
 - `GET /api/admin/documents` (admin JWT)
 - `PATCH /api/admin/documents/:id` (admin JWT)
 - `GET /api/admin/dashboard/summary` (admin JWT)

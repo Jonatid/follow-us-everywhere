@@ -35,6 +35,22 @@ const handleValidationErrors = (req, res) => {
   return null;
 };
 
+const businessLogoutHandler = async (req, res) => {
+  try {
+    await pool.query(
+      `UPDATE businesses
+       SET token_version = token_version + 1
+       WHERE id = $1`,
+      [req.businessId]
+    );
+
+    return res.json({ message: 'Logged out successfully.' });
+  } catch (err) {
+    console.error('Business logout error:', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
 // @route   POST /api/auth/signup
 // @desc    Register new business
 // @access  Public
@@ -490,4 +506,15 @@ router.get('/me', authenticateToken, async (req, res) => {
   }
 });
 
+// @route   POST /api/auth/logout
+// @desc    Invalidate current business session tokens via token version bump
+// @access  Private
+router.post('/logout', authenticateToken, businessLogoutHandler);
+
+// @route   POST /api/auth/logout-all
+// @desc    Invalidate all business session tokens via token version bump
+// @access  Private
+router.post('/logout-all', authenticateToken, businessLogoutHandler);
+
 module.exports = router;
+module.exports.businessLogoutHandler = businessLogoutHandler;

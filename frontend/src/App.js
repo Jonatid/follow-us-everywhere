@@ -3748,17 +3748,29 @@ export default function App() {
     setCurrentScreen('dashboard');
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    setCurrentBusiness(null);
-    setCurrentScreen('landing');
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (err) {
+      console.error('Business logout request failed:', err);
+    } finally {
+      localStorage.removeItem('token');
+      setCurrentBusiness(null);
+      setCurrentScreen('landing');
+    }
   };
 
-  const handleCustomerLogout = () => {
-    localStorage.removeItem('customer_token');
-    setCurrentCustomer(null);
-    setCurrentScreen('customer-login');
-    window.history.pushState({}, '', '/customer/login');
+  const handleCustomerLogout = async () => {
+    try {
+      await customerApi.post('/customers/auth/logout');
+    } catch (err) {
+      console.error('Customer logout request failed:', err);
+    } finally {
+      localStorage.removeItem('customer_token');
+      setCurrentCustomer(null);
+      setCurrentScreen('customer-login');
+      window.history.pushState({}, '', '/customer/login');
+    }
   };
 
   const handleCustomerAuthSuccess = (customer) => {
