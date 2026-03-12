@@ -1,4 +1,7 @@
 const jwt = require('jsonwebtoken');
+const pool = require('../config/db');
+
+const SESSION_EXPIRED_RESPONSE = { message: 'Session expired. Please sign in again.' };
 
 const authenticatePrivilegedUser = (req, res, next) => {
   const authHeader = req.headers.authorization || '';
@@ -8,24 +11,39 @@ const authenticatePrivilegedUser = (req, res, next) => {
     return res.status(401).json({ message: 'Access token required', code: 'AUTH_REQUIRED' });
   }
 
-  return jwt.verify(token, process.env.JWT_SECRET, (err, payload) => {
-    if (err) {
-      return res.status(403).json({ message: 'Invalid or expired token', code: 'AUTH_INVALID' });
+  return jwt.verify(token, process.env.JWT_SECRET, async (err, payload) => {
+    if (err || typeof payload?.tokenVersion !== 'number') {
+      return res.status(403).json(SESSION_EXPIRED_RESPONSE);
     }
 
-    if (payload?.businessId) {
-      req.auth = { role: 'business', id: String(payload.businessId) };
-      req.businessId = payload.businessId;
-      return next();
-    }
+    try {
+      if (payload?.businessId) {
+        const result = await pool.query('SELECT id, token_version FROM businesses WHERE id = $1', [payload.businessId]);
+        if (result.rows.length === 0 || result.rows[0].token_version !== payload.tokenVersion) {
+          return res.status(403).json(SESSION_EXPIRED_RESPONSE);
+        }
 
-    if (payload?.adminId) {
-      req.auth = { role: 'admin', id: String(payload.adminId) };
-      req.adminId = payload.adminId;
-      return next();
-    }
+        req.auth = { role: 'business', id: String(payload.businessId) };
+        req.businessId = payload.businessId;
+        return next();
+      }
 
-    return res.status(403).json({ message: 'Insufficient permissions', code: 'ROLE_NOT_ALLOWED' });
+      if (payload?.adminId) {
+        const result = await pool.query('SELECT id, token_version FROM admins WHERE id = $1', [payload.adminId]);
+        if (result.rows.length === 0 || result.rows[0].token_version !== payload.tokenVersion) {
+          return res.status(403).json(SESSION_EXPIRED_RESPONSE);
+        }
+
+        req.auth = { role: 'admin', id: String(payload.adminId) };
+        req.adminId = payload.adminId;
+        return next();
+      }
+
+      return res.status(403).json({ message: 'Insufficient permissions', code: 'ROLE_NOT_ALLOWED' });
+    } catch (dbError) {
+      console.error('Privileged auth token version check failed:', dbError);
+      return res.status(500).json({ message: 'Server error', code: 'AUTH_CHECK_FAILED' });
+    }
   });
 };
 

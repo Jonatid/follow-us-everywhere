@@ -54,7 +54,7 @@ const sendFailedAttemptResponse = async ({ req, res, emailNormalized }) => {
 };
 
 const issueAdminToken = (admin) => {
-  const payload = { adminId: admin.id };
+  const payload = { adminId: admin.id, tokenVersion: admin.token_version };
   return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
 
@@ -73,7 +73,7 @@ const finalizeEnrollment = async (req, res) => {
   }
 
   const result = await pool.query(
-    `SELECT id, name, email, totp_enabled, totp_secret_encrypted, totp_last_verified_step
+    `SELECT id, name, email, totp_enabled, totp_secret_encrypted, totp_last_verified_step, token_version
      FROM admins
      WHERE id = $1`,
     [tokenPayload.adminId]
@@ -167,7 +167,8 @@ const adminLoginHandler = async (req, res) => {
               totp_enabled,
               totp_secret_encrypted,
               backup_codes_hashed,
-              totp_last_verified_step
+              totp_last_verified_step,
+              token_version
        FROM admins
        WHERE LOWER(email) = LOWER($1)`,
       [emailNormalized]

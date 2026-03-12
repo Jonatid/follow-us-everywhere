@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS businesses (
     logo VARCHAR(10) DEFAULT '',
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
+    token_version INTEGER NOT NULL DEFAULT 0,
     is_verified BOOLEAN DEFAULT false,
     is_approved BOOLEAN DEFAULT false,
     suspended_reason TEXT,
@@ -56,6 +57,7 @@ CREATE TABLE IF NOT EXISTS admins (
     name TEXT,
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
+    token_version INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -64,6 +66,7 @@ CREATE TABLE IF NOT EXISTS customers (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
+    token_version INTEGER NOT NULL DEFAULT 0,
     first_name VARCHAR(255) NOT NULL DEFAULT '',
     last_name VARCHAR(255) NOT NULL DEFAULT '',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
