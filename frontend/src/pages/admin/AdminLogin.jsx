@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { adminLogin } from '../../utils/adminApi';
 
-const AdminLogin = ({ onSuccess }) => {
+const AdminLogin = ({ onSuccess, resetSignal = 0 }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [totpCode, setTotpCode] = useState('');
@@ -15,6 +15,25 @@ const AdminLogin = ({ onSuccess }) => {
   const [backupCodesSaved, setBackupCodesSaved] = useState(false);
   const [challengeMessage, setChallengeMessage] = useState('');
   const [useBackupCodeMode, setUseBackupCodeMode] = useState(false);
+
+  const resetLoginState = useCallback(() => {
+    setEmail('');
+    setPassword('');
+    setTotpCode('');
+    setBackupCode('');
+    setError('');
+    setEnrollment(null);
+    setRequires2fa(false);
+    setGeneratedBackupCodes([]);
+    setPostEnrollmentToken('');
+    setBackupCodesSaved(false);
+    setChallengeMessage('');
+    setUseBackupCodeMode(false);
+  }, []);
+
+  useEffect(() => {
+    resetLoginState();
+  }, [resetLoginState, resetSignal]);
 
   const stepTitle = useMemo(() => {
     if (generatedBackupCodes.length) return 'Save backup codes';
@@ -161,6 +180,8 @@ const AdminLogin = ({ onSuccess }) => {
                 Email
                 <input
                   type="email"
+                  name="admin-email"
+                  autoComplete="off"
                   className="admin-input"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
@@ -171,6 +192,8 @@ const AdminLogin = ({ onSuccess }) => {
                 Password
                 <input
                   type="password"
+                  name="admin-password"
+                  autoComplete="new-password"
                   className="admin-input"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
@@ -196,6 +219,7 @@ const AdminLogin = ({ onSuccess }) => {
                 6-digit code
                 <input
                   type="text"
+                  autoComplete="one-time-code"
                   className="admin-input"
                   value={totpCode}
                   onChange={(event) => setTotpCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
@@ -218,6 +242,7 @@ const AdminLogin = ({ onSuccess }) => {
                   6-digit authentication code
                   <input
                     type="text"
+                    autoComplete="one-time-code"
                     className="admin-input"
                     value={totpCode}
                     onChange={(event) => setTotpCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
@@ -231,6 +256,7 @@ const AdminLogin = ({ onSuccess }) => {
                   Backup code
                   <input
                     type="text"
+                    autoComplete="off"
                     className="admin-input"
                     value={backupCode}
                     onChange={(event) => setBackupCode(event.target.value.toUpperCase())}

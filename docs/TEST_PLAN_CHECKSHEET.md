@@ -96,3 +96,18 @@ Run the following for each login endpoint:
 - [ ] Successful login after prior failures resets counters (next bad password goes back to generic invalid credentials).
 - [ ] IP throttling blocks at roughly 20 attempts in 10 minutes on the same route/IP.
 - [ ] Protection persists across backend restart (attempt counts remain in Postgres).
+
+## 12) Token Version Logout Invalidation (Item 5)
+Validate each role (`business`, `customer`, `admin`):
+- [ ] A valid JWT works before logout.
+- [ ] Calling role logout endpoint invalidates the JWT immediately.
+- [ ] Reusing the same JWT after logout returns session-expired/unauthorized behavior.
+- [ ] Protected UI route redirects to login after logout.
+
+Admin-specific:
+- [ ] Admin 2FA login still works after logout/login cycle.
+- [ ] Returning to `/admin/login` after logout does not preserve stale email/password/TOTP/backup-code form state.
+
+Notes:
+- Current revocation model is identity-wide (all sessions for that identity are invalidated together).
+- Per-device session management is not yet implemented.
