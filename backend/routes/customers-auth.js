@@ -39,6 +39,23 @@ const forgotPasswordAttemptTracker = new Map();
 
 const hashResetToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
+
+const customerLogoutHandler = async (req, res) => {
+  try {
+    await pool.query(
+      `UPDATE customers
+       SET token_version = token_version + 1
+       WHERE id = $1`,
+      [req.customerId]
+    );
+
+    return res.json({ message: 'Logged out successfully.' });
+  } catch (err) {
+    console.error('Customer logout error:', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
 const rateLimitForgotPassword = (ip, email) => {
   const now = Date.now();
   const ipKey = `ip:${ip}`;
@@ -361,4 +378,16 @@ router.get('/me', authenticateCustomerToken, async (req, res) => {
   }
 });
 
+
+// @route   POST /api/customers/auth/logout
+// @desc    Invalidate current customer session tokens via token version bump
+// @access  Private
+router.post('/logout', authenticateCustomerToken, customerLogoutHandler);
+
+// @route   POST /api/customers/auth/logout-all
+// @desc    Invalidate all customer session tokens via token version bump
+// @access  Private
+router.post('/logout-all', authenticateCustomerToken, customerLogoutHandler);
+
 module.exports = router;
+module.exports.customerLogoutHandler = customerLogoutHandler;

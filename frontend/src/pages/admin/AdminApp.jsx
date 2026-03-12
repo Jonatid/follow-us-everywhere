@@ -8,6 +8,7 @@ import BusinessDetail from './BusinessDetail';
 import BusinessList from './BusinessList';
 import ReviewList from './ReviewList';
 import AdminDocuments from './AdminDocuments';
+import { logoutAdmin } from '../../utils/adminApi';
 
 const normalizePath = (path) => (path.endsWith('/') && path !== '/' ? path.slice(0, -1) : path);
 
@@ -22,9 +23,15 @@ const AdminApp = () => {
     setCurrentPath(normalized);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminToken');
-    navigate('/admin/login');
+  const handleLogout = async () => {
+    try {
+      await logoutAdmin();
+    } catch (err) {
+      console.error('Admin logout request failed:', err);
+    } finally {
+      localStorage.removeItem('adminToken');
+      navigate('/admin/login');
+    }
   };
 
   const businessId = useMemo(() => {

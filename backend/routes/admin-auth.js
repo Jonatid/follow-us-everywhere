@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
+const { authenticateAdminToken } = require('../middleware/admin-auth');
 const {
   BACKUP_CODES_COUNT,
   buildOtpAuthUri,
@@ -56,6 +57,23 @@ const sendFailedAttemptResponse = async ({ req, res, emailNormalized }) => {
 const issueAdminToken = (admin) => {
   const payload = { adminId: admin.id, tokenVersion: admin.token_version };
   return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
+};
+
+
+const adminLogoutHandler = async (req, res) => {
+  try {
+    await pool.query(
+      `UPDATE admins
+       SET token_version = token_version + 1
+       WHERE id = $1`,
+      [req.adminId]
+    );
+
+    return res.json({ message: 'Logged out successfully.' });
+  } catch (err) {
+    console.error('Admin logout error:', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
 };
 
 const finalizeEnrollment = async (req, res) => {
@@ -301,5 +319,17 @@ const adminLoginHandler = async (req, res) => {
 // @access  Public
 router.post('/login', adminLoginHandler);
 
+
+// @route   POST /api/admin/auth/logout
+// @desc    Invalidate current admin session tokens via token version bump
+// @access  Private
+router.post('/logout', authenticateAdminToken, adminLogoutHandler);
+
+// @route   POST /api/admin/auth/logout-all
+// @desc    Invalidate all admin session tokens via token version bump
+// @access  Private
+router.post('/logout-all', authenticateAdminToken, adminLogoutHandler);
+
 module.exports = router;
 module.exports.adminLoginHandler = adminLoginHandler;
+module.exports.adminLogoutHandler = adminLogoutHandler;
