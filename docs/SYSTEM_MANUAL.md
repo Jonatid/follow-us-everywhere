@@ -99,6 +99,8 @@ The core value is **structured trust + discoverability**:
 - Logout invalidation: `POST /api/auth/logout`, `POST /api/customers/auth/logout`, and `POST /api/admin/auth/logout` increment `token_version` for the authenticated identity.
 - Current logout model invalidates *all* existing tokens for that account identity (current + other devices/sessions), because revocation is version-based and there is no per-device session store yet.
 - `logout-all` endpoints are also available (`/api/auth/logout-all`, `/api/customers/auth/logout-all`, `/api/admin/auth/logout-all`) and currently perform the same version bump behavior for explicitness.
+- Post-logout browser Back navigation may traverse history, but protected routes still reject stale/absent auth and force re-authentication; Back does not restore valid protected access.
+- Admin login UI resets credential + 2FA challenge/enrollment state when returning to `/admin/login` after logout to prevent stale form/challenge confusion.
 
 ### Guards/middleware enforcement
 - `authenticateToken` (business): used across business social/profile/badge-request/document endpoints.

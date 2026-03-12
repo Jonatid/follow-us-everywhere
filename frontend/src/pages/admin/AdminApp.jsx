@@ -14,6 +14,7 @@ const normalizePath = (path) => (path.endsWith('/') && path !== '/' ? path.slice
 
 const AdminApp = () => {
   const [currentPath, setCurrentPath] = useState(normalizePath(window.location.pathname));
+  const [loginResetSignal, setLoginResetSignal] = useState(0);
 
   const adminToken = localStorage.getItem('adminToken');
 
@@ -30,6 +31,7 @@ const AdminApp = () => {
       console.error('Admin logout request failed:', err);
     } finally {
       localStorage.removeItem('adminToken');
+      setLoginResetSignal((value) => value + 1);
       navigate('/admin/login');
     }
   };
@@ -56,7 +58,7 @@ const AdminApp = () => {
   }, [adminToken, currentPath]);
 
   if (currentPath === '/admin/login') {
-    return <AdminLogin onSuccess={() => navigate('/admin/dashboard')} />;
+    return <AdminLogin onSuccess={() => navigate('/admin/dashboard')} resetSignal={loginResetSignal} />;
   }
 
   let content = null;

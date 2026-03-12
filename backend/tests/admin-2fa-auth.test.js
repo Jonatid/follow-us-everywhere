@@ -1,5 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const jwt = require('jsonwebtoken');
 
 process.env.JWT_SECRET = 'jwt-secret';
 process.env.ADMIN_ENROLLMENT_TOKEN_SECRET = 'enroll-secret';
@@ -11,7 +12,7 @@ const loginProtection = require('../services/loginProtection');
 const admin2fa = require('../services/admin2fa');
 const adminAuthRoute = require('../routes/admin-auth');
 
-const { adminLoginHandler } = adminAuthRoute;
+const { adminLoginHandler, adminLogoutHandler } = adminAuthRoute;
 
 const makeReq = (body = {}) => ({
   body,
@@ -100,6 +101,11 @@ pool.query = async (queryText, params = []) => {
   if (queryText.includes('SET backup_codes_hashed')) {
     currentAdmin.backup_codes_hashed = JSON.parse(params[1]);
     lastBackupCodesWritten = currentAdmin.backup_codes_hashed;
+    return { rows: [] };
+  }
+
+  if (queryText.includes('UPDATE admins') && queryText.includes('token_version = token_version + 1')) {
+    currentAdmin.token_version = Number(currentAdmin.token_version || 0) + 1;
     return { rows: [] };
   }
 
@@ -198,4 +204,37 @@ test('backup code success issues jwt and marks code used; reuse is rejected', as
 
   assert.equal(secondRes.statusCode, 400);
   assert.equal(secondRes.payload.message, 'Invalid verification code');
+});
+
+test('admin can login with 2FA again after logout and gets a fresh token version', async () => {
+  const secret = admin2fa.generateTotpSecret();
+  currentAdmin = {
+    ...baseAdmin,
+    token_version: 0,
+    totp_enabled: true,
+    totp_secret_encrypted: admin2fa.encryptSecret(secret),
+    totp_last_verified_step: null,
+  };
+
+  const firstCode = admin2fa.createHotp(secret, Math.floor(Date.now() / 1000 / 30));
+  const firstLoginReq = makeReq({ email: currentAdmin.email, password: 'correct-password', totpCode: firstCode });
+  const firstLoginRes = makeRes();
+  await adminLoginHandler(firstLoginReq, firstLoginRes);
+
+  assert.equal(firstLoginRes.statusCode, 200);
+  const firstTokenPayload = jwt.verify(firstLoginRes.payload.token, process.env.JWT_SECRET);
+  assert.equal(firstTokenPayload.tokenVersion, 0);
+
+  const logoutRes = makeRes();
+  await adminLogoutHandler({ adminId: currentAdmin.id }, logoutRes);
+  assert.equal(logoutRes.statusCode, 200);
+
+  const secondCode = admin2fa.createHotp(secret, Math.floor(Date.now() / 1000 / 30) + 1);
+  const secondLoginReq = makeReq({ email: currentAdmin.email, password: 'correct-password', totpCode: secondCode });
+  const secondLoginRes = makeRes();
+  await adminLoginHandler(secondLoginReq, secondLoginRes);
+
+  assert.equal(secondLoginRes.statusCode, 200);
+  const secondTokenPayload = jwt.verify(secondLoginRes.payload.token, process.env.JWT_SECRET);
+  assert.equal(secondTokenPayload.tokenVersion, 1);
 });
