@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-staged_files=$(git diff --cached --name-only --diff-filter=ACM)
+mapfile -d '' -t staged_files < <(git diff --cached --name-only --diff-filter=ACM -z)
 
-if [[ -z "${staged_files}" ]]; then
+if [[ ${#staged_files[@]} -eq 0 ]]; then
   exit 0
 fi
 
@@ -12,44 +12,141 @@ if command -v gitleaks >/dev/null 2>&1; then
   gitleaks protect --staged --config .gitleaks.toml --redact --verbose
 fi
 
-# Never allow real .env files to be committed.
-while IFS= read -r file; do
-  [[ -z "$file" ]] && continue
-  if [[ "$file" =~ (^|/)\.env($|\.) ]] && [[ "$file" != *.env.example ]]; then
+# Block commits for secret-sensitive filenames.
+for file in "${staged_files[@]}"; do
+  lower_file=$(printf '%s' "$file" | tr '[:upper:]' '[:lower:]')
+
+  if [[ "$lower_file" =~ (^|/)\.env($|\.) ]] && [[ "$lower_file" != *.env.example ]]; then
     echo "❌ Commit blocked: '$file' looks like a real .env file."
     echo "   Keep real secrets only in local untracked .env files or Render environment variables."
     exit 1
   fi
-done <<< "$staged_files"
 
-# Lightweight fallback check for likely hardcoded secrets in added lines.
-# Prefer ripgrep when available; otherwise use a bash-only parser so hooks
-# remain functional on Windows environments where `rg` may be missing in PATH.
-if command -v rg >/dev/null 2>&1; then
-  added_lines=$(git diff --cached --unified=0 --no-color | rg '^[+]' | rg -v '^\+\+\+' || true)
-else
-  added_lines=""
-  while IFS= read -r line; do
-    [[ "${line}" == +++* ]] && continue
-    if [[ "${line}" == +* ]]; then
-      added_lines+="${line}"
-      added_lines+=$'\n'
-    fi
-  done < <(git diff --cached --unified=0 --no-color)
-fi
-
-if [[ -z "$added_lines" ]]; then
-  exit 0
-fi
-
-lower_added=$(printf '%s' "$added_lines" | tr '[:upper:]' '[:lower:]')
-
-if [[ "$lower_added" =~ (api[_-]?key|secret|token|password|passwd|private[_-]?key)[[:space:]]*[:=][[:space:]]*[a-z0-9_-]{8,} ]]; then
-  if [[ ! "$lower_added" =~ (your_|example|changeme|localhost|127\.0\.0\.1) ]]; then
-    echo "❌ Commit blocked: possible secret detected in staged changes."
-    echo "   Use placeholders in committed files and store real values in Render environment variables."
+  if [[ "$lower_file" =~ (\.pem$|\.key$|credential|credentials|secret|token|password|passwd|api[_-]?key|jwt) ]]; then
+    echo "❌ Commit blocked: '$file' has a secret-sensitive filename."
+    echo "   Do not commit secret material. Use placeholders and environment variables instead."
     exit 1
   fi
+done
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "❌ Commit blocked: python3 is required for robust staged secret scanning."
+  echo "   Install python3 to enable UTF-16/binary-safe staged file inspection."
+  exit 1
 fi
+
+# Robust staged-content scan from the Git index, including UTF-16 and binary-safe checks.
+python3 - "${staged_files[@]}" <<'PY'
+import re
+import subprocess
+import sys
+
+KEYS = ["JWT_SECRET", "API_KEY", "PASSWORD", "SECRET", "TOKEN"]
+TEXT_PATTERN = re.compile(r"(?:JWT_SECRET|API_KEY|PASSWORD|SECRET|TOKEN)\s*=\s*[^\s\"'`]", re.IGNORECASE)
+BINARY_PATTERN = re.compile(rb"(?:JWT_SECRET|API_KEY|PASSWORD|SECRET|TOKEN)\s*=\s*[^\s\"'`]", re.IGNORECASE)
+
+
+def fail(message: str) -> None:
+    print(message)
+    sys.exit(1)
+
+
+def blob_bytes(path: str) -> bytes:
+    try:
+        return subprocess.check_output(["git", "show", f":{path}"], stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as exc:
+        output = exc.output.decode("utf-8", errors="replace").strip()
+        fail(f"❌ Commit blocked: unable to read staged contents for '{path}'.\n   {output}\n   Failing closed to avoid leaking secrets.")
+
+
+def has_utf16_assignment(data: bytes, key: str, endian: str) -> bool:
+    encoded = f"{key}=".encode(endian)
+    start = data.upper().find(encoded.upper())
+
+    while start != -1:
+        value_index = start + len(encoded)
+        while value_index + 1 < len(data):
+            unit = data[value_index:value_index + 2]
+            if unit in {b"\x00\x00", b" \x00", b"\x00 ", b"\t\x00", b"\x00\t", b"\r\x00", b"\x00\r", b"\n\x00", b"\x00\n"}:
+                value_index += 2
+                continue
+            if unit in {b'"\x00', b"\x00\"", b"'\x00", b"\x00'", b"`\x00", b"\x00`"}:
+                break
+            return True
+        start = data.upper().find(encoded.upper(), start + 2)
+
+    return False
+
+
+def is_safely_scannable_bytes(data: bytes) -> bool:
+    if not data:
+        return True
+
+    length = len(data)
+    null_count = data.count(0)
+    null_ratio = null_count / length
+
+    if null_ratio > 0.10:
+        even_null_ratio = sum(1 for i in range(0, length, 2) if data[i] == 0) / ((length + 1) // 2)
+        odd_null_ratio = sum(1 for i in range(1, length, 2) if data[i] == 0) / (length // 2 or 1)
+        if max(even_null_ratio, odd_null_ratio) < 0.30:
+            return False
+
+    control_count = sum(1 for b in data if (b < 9) or (13 < b < 32) or b == 127)
+    if (control_count / length) > 0.30:
+        return False
+
+    return True
+
+
+def is_safely_scannable_text(text: str) -> bool:
+    if not text:
+        return True
+    printable = sum(1 for ch in text if ch.isprintable() or ch in "\n\r\t")
+    return (printable / len(text)) >= 0.85
+
+
+def contains_secret(data: bytes) -> bool:
+    if BINARY_PATTERN.search(data):
+        return True
+
+    for key in KEYS:
+        if has_utf16_assignment(data, key, "utf-16-le") or has_utf16_assignment(data, key, "utf-16-be"):
+            return True
+
+    if not is_safely_scannable_bytes(data):
+        fail("❌ Commit blocked: unable to safely scan one or more staged files for secrets.\n   Failing closed to avoid leaking secrets.")
+
+    safe_decode = False
+    for enc in ["utf-8", "utf-8-sig", "utf-16", "utf-16-le", "utf-16-be"]:
+        try:
+            text = data.decode(enc)
+        except UnicodeDecodeError:
+            continue
+
+        if not is_safely_scannable_text(text):
+            continue
+
+        safe_decode = True
+        if TEXT_PATTERN.search(text):
+            return True
+
+    if not safe_decode:
+        fail("❌ Commit blocked: unable to safely scan one or more staged files for secrets.\n   Failing closed to avoid leaking secrets.")
+
+    return False
+
+
+paths = sys.argv[1:]
+if not paths:
+    sys.exit(0)
+
+for path in paths:
+    data = blob_bytes(path)
+    if contains_secret(data):
+        fail(f"❌ Commit blocked: secret-like assignment detected in staged file '{path}'.\n   Remove secret values and commit placeholders instead.")
+
+sys.exit(0)
+PY
 
 exit 0

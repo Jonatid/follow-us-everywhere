@@ -104,8 +104,10 @@ A repo-level pre-commit hook is included at `.githooks/pre-commit`.
    ```
 2. (Optional) Install `gitleaks` locally for deeper scanning; the hook auto-runs it when available.
 
-Note: the secrets check now works even when `rg` (ripgrep) is not available in your Git hook PATH (common on some Windows setups).
+Note: the secrets check now scans staged blob contents directly from Git (not only diff text), so UTF-16 / PowerShell-created files are inspected as well.
+
+If the hook cannot safely read or scan a staged file, it fails closed and blocks the commit.
 
 The hook blocks:
-- committing real `.env` files
-- obvious hardcoded secrets in staged changes
+- committing secret-sensitive filenames (for example: real `.env`, `.pem`, `.key`, `credentials*`, `*secret*`, `*token*`)
+- secret-like assignments in staged contents, including UTF-16 files (for example `JWT_SECRET=`, `API_KEY=`, `PASSWORD=`, `SECRET=`, `TOKEN=`)
