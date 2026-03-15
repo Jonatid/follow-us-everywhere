@@ -17,7 +17,7 @@ router.post('/upload', authenticatePrivilegedUser, uploadRateLimit, (req, res) =
   multipartUpload.single('file')(req, res, async (uploadErr) => {
     if (uploadErr) {
       if (uploadErr instanceof multer.MulterError && uploadErr.code === 'LIMIT_FILE_SIZE') {
-        return res.status(413).json({ message: 'File too large', code: 'FILE_TOO_LARGE' });
+        return res.status(413).json({ message: 'File exceeds the maximum allowed size.', code: 'FILE_TOO_LARGE' });
       }
       return res.status(400).json({ message: uploadErr.message || 'Invalid upload request', code: 'UPLOAD_INVALID' });
     }

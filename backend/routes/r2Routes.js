@@ -12,7 +12,7 @@ const parseSignedUrlBody = express.json({ limit: maxJsonBytes });
 const parseSignedUploadBody = (req, res, next) => {
   parseSignedUrlBody(req, res, (err) => {
     if (err?.type === 'entity.too.large') {
-      return res.status(413).json({ message: 'Request body too large', code: 'BODY_TOO_LARGE' });
+      return res.status(413).json({ message: 'Request is too large.', code: 'REQUEST_TOO_LARGE' });
     }
 
     if (err) {

@@ -8,6 +8,12 @@ const db = require('./config/db');
 const { ensureSchema } = require('./config/schema');
 const { runMigrations } = require('./scripts/runMigrations');
 const { getCorsOptions } = require('./config/cors');
+const {
+  securityHeadersMiddleware,
+  jsonBodyParser,
+  urlencodedBodyParser,
+  requestSizeLimitErrorHandler,
+} = require('./config/security');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -36,8 +42,10 @@ const corsOptions = getCorsOptions();
 
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(securityHeadersMiddleware);
+app.use(jsonBodyParser);
+app.use(urlencodedBodyParser);
+app.use(requestSizeLimitErrorHandler);
 app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 

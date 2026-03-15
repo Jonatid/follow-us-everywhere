@@ -109,7 +109,7 @@ const handleDocumentUpload = (req, res) => {
   documentUpload.single('document')(req, res, async (uploadErr) => {
     if (uploadErr) {
       if (uploadErr instanceof multer.MulterError && uploadErr.code === 'LIMIT_FILE_SIZE') {
-        return res.status(400).json({ error: 'File exceeds 10MB limit' });
+        return res.status(413).json({ message: 'File exceeds the maximum allowed size.', code: 'FILE_TOO_LARGE' });
       }
       return res.status(400).json({ error: uploadErr.message || 'Invalid upload' });
     }
@@ -662,9 +662,9 @@ router.post('/logo/upload', authenticateToken, (req, res) => {
   logoUpload.single('logo')(req, res, async (uploadErr) => {
     if (uploadErr) {
       if (uploadErr instanceof multer.MulterError && uploadErr.code === 'LIMIT_FILE_SIZE') {
-        return res.status(400).json({
-          error: 'Image must be 10 MB or smaller.',
-          code: 'LOGO_FILE_TOO_LARGE',
+        return res.status(413).json({
+          message: 'File exceeds the maximum allowed size.',
+          code: 'FILE_TOO_LARGE',
         });
       }
       return res.status(400).json({ error: uploadErr.message || 'Invalid logo upload' });
