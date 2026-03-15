@@ -55,7 +55,7 @@ const sendFailedAttemptResponse = async ({ req, res, emailNormalized }) => {
 };
 
 const issueAdminToken = (admin) => {
-  const payload = { adminId: admin.id, tokenVersion: admin.token_version };
+  const payload = { adminId: admin.id, tokenVersion: Number(admin.token_version || 0) };
   return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
 
