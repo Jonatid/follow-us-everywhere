@@ -402,7 +402,7 @@ The core value is **structured trust + discoverability**:
 - `RESEND_API_KEY`, `RESEND_FROM`, `RESEND_FROM_EMAIL`: outbound email.
 - `SUPPORT_EMAIL` / `RESEND_SUPPORT_EMAIL`: support recipient fallback chain.
 - `CUSTOMER_FRONTEND_URL`: customer reset link base.
-- `ALLOWED_ORIGINS`: comma-separated CORS https allowlist (defaults to `https://fuse101.com,https://www.fuse101.com,https://admin.fuse101.com`).
+- `ALLOWED_ORIGINS`: comma-separated CORS allowlist (**required**, no defaults). Use exact origins, e.g. `https://fuse101.com,https://www.fuse101.com,https://admin.fuse101.com` and include explicit local entries only when needed (for example `http://localhost:3000,http://127.0.0.1:3000`).
 - `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME`: used by create-admin script.
 - `NODE_ENV`: affects debug logs.
 - `ADMIN_ENROLLMENT_TOKEN_SECRET`: dedicated JWT secret for 10-minute admin enrollment tokens.
@@ -430,7 +430,8 @@ The core value is **structured trust + discoverability**:
 - On backend start, server runs SQL migrations (`runMigrations`) then `ensureSchema` for additional table/column/index safety checks.
 
 ## Hosting assumptions
-- CORS allowlist is centralized in `ALLOWED_ORIGINS` (default includes `fuse101.com`, `www.fuse101.com`, and `admin.fuse101.com`).
+- To add a new allowed origin safely: append the exact origin to `ALLOWED_ORIGINS`, redeploy, and verify preflight/credentialed requests from that origin.
+- CORS is configured in `backend/config/cors.js` and applied globally in `backend/server.js`; allowed origins come only from `ALLOWED_ORIGINS`.
 - Frontend default production API fallback targets Render API URL.
 
 ## Health checks, monitoring, logging

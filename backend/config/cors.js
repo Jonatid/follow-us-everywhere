@@ -1,20 +1,17 @@
-const DEFAULT_ALLOWED_ORIGINS = [
-  'https://fuse101.com',
-  'https://www.fuse101.com',
-  'https://admin.fuse101.com'
-];
+const LOCALHOST_HOSTS = new Set(['localhost', '127.0.0.1']);
 
 const parseAllowedOrigins = (rawOrigins = process.env.ALLOWED_ORIGINS) => {
-  const source = rawOrigins && rawOrigins.trim().length > 0
-    ? rawOrigins.split(',')
-    : DEFAULT_ALLOWED_ORIGINS;
+  if (!rawOrigins || rawOrigins.trim().length === 0) {
+    throw new Error('ALLOWED_ORIGINS is required and must include at least one origin.');
+  }
 
-  const origins = source
+  const origins = rawOrigins
+    .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean);
 
   if (origins.length === 0) {
-    throw new Error('ALLOWED_ORIGINS must include at least one https origin.');
+    throw new Error('ALLOWED_ORIGINS is required and must include at least one origin.');
   }
 
   for (const origin of origins) {
@@ -26,8 +23,17 @@ const parseAllowedOrigins = (rawOrigins = process.env.ALLOWED_ORIGINS) => {
       throw new Error(`Invalid origin in ALLOWED_ORIGINS: ${origin}`);
     }
 
-    if (parsed.protocol !== 'https:' || parsed.origin !== origin) {
-      throw new Error(`ALLOWED_ORIGINS entries must be exact https origins: ${origin}`);
+    const isHttpsOrigin = parsed.protocol === 'https:' && parsed.origin === origin;
+    const isExplicitLocalDevOrigin = (
+      parsed.protocol === 'http:'
+      && LOCALHOST_HOSTS.has(parsed.hostname)
+      && parsed.origin === origin
+    );
+
+    if (!isHttpsOrigin && !isExplicitLocalDevOrigin) {
+      throw new Error(
+        `ALLOWED_ORIGINS entries must be exact https origins, or explicit http localhost/127.0.0.1 origins: ${origin}`
+      );
     }
   }
 
@@ -46,7 +52,9 @@ const createCorsOriginValidator = (allowedOrigins) => {
       return callback(null, true);
     }
 
-    return callback(new Error(`CORS blocked for origin: ${origin}`));
+    const corsError = new Error(`CORS blocked for origin: ${origin}`);
+    corsError.status = 403;
+    return callback(corsError);
   };
 };
 
@@ -62,7 +70,6 @@ const getCorsOptions = () => {
 };
 
 module.exports = {
-  DEFAULT_ALLOWED_ORIGINS,
   parseAllowedOrigins,
   createCorsOriginValidator,
   getCorsOptions
