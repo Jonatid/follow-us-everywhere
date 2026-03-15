@@ -14,6 +14,10 @@ const pool = require('../config/db');
 const ipCounters = new Map();
 const subjectCounters = new Map();
 
+const tokenVersions = {
+  businesses: new Map(),
+};
+
 const bumpCounter = (map, key) => {
   const next = (map.get(key) || 0) + 1;
   map.set(key, next);
@@ -21,6 +25,14 @@ const bumpCounter = (map, key) => {
 };
 
 pool.query = async (queryText, params = []) => {
+  if (queryText.includes('SELECT id, token_version FROM businesses WHERE id = $1')) {
+    const id = Number(params[0]);
+    if (!tokenVersions.businesses.has(id)) {
+      return { rows: [] };
+    }
+    return { rows: [{ id, token_version: tokenVersions.businesses.get(id) }] };
+  }
+
   if (queryText.includes('ON CONFLICT (route_scope, ip)')) {
     const key = `${params[0]}:${params[1]}`;
     return { rows: [{ fail_count: bumpCounter(ipCounters, key) }] };
@@ -87,7 +99,15 @@ const request = async ({ server, method, path, token, jsonBody, formData }) => {
   return { status: response.status, body, headers: response.headers };
 };
 
-const makeBusinessToken = (businessId) => jwt.sign({ businessId }, process.env.JWT_SECRET);
+const makeBusinessToken = (businessId) => jwt.sign({ businessId, tokenVersion: 0 }, process.env.JWT_SECRET);
+
+test.beforeEach(() => {
+  ipCounters.clear();
+  subjectCounters.clear();
+  tokenVersions.businesses.clear();
+  tokenVersions.businesses.set(3, 0);
+  tokenVersions.businesses.set(4, 0);
+});
 
 test('security headers are included on api responses', async () => {
   const server = await startServer();

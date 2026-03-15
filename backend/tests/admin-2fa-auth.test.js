@@ -220,7 +220,9 @@ test('enrolled admin with valid totp receives jwt', async () => {
 
   assert.equal(res.statusCode, 200);
   assert.ok(res.payload.token);
-  assert.equal(securityState.cleared > 0, true);
+  const tokenPayload = jwt.verify(res.payload.token, process.env.JWT_SECRET);
+  assert.equal(tokenPayload.adminId, currentAdmin.id);
+  assert.equal(tokenPayload.tokenVersion, Number(currentAdmin.token_version || 0));
 });
 
 test('backup code success issues jwt and marks code used; reuse is rejected', async () => {
