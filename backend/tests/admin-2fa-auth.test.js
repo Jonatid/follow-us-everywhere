@@ -53,6 +53,9 @@ const securityState = {
   cleared: 0,
 };
 
+const ipAttempts = new Map();
+const emailAttempts = new Map();
+
 loginProtection.enforceIpRateLimit = async () => ({ blocked: false });
 loginProtection.getAccountAttempt = async () => null;
 loginProtection.isAccountLocked = () => false;
@@ -73,6 +76,38 @@ bcrypt.compare = async (incoming, stored) => incoming === 'correct-password' && 
 let currentAdmin;
 let lastBackupCodesWritten;
 pool.query = async (queryText, params = []) => {
+  if (queryText.includes('ON CONFLICT (route_scope, ip)')) {
+    const key = `${params[0]}:${params[1]}`;
+    const nextFailCount = Number(ipAttempts.get(key) || 0) + 1;
+    ipAttempts.set(key, nextFailCount);
+    return { rows: [{ fail_count: nextFailCount }] };
+  }
+
+  if (queryText.includes('FROM auth_login_attempts') && queryText.includes('email_normalized = $2')) {
+    const key = `${params[0]}:${params[1]}`;
+    const attempt = emailAttempts.get(key);
+    return {
+      rows: attempt
+        ? [{ id: 1, fail_count: attempt.fail_count, first_failed_at: attempt.first_failed_at, locked_until: attempt.locked_until }]
+        : [],
+    };
+  }
+
+  if (queryText.includes('DELETE FROM auth_login_attempts') && queryText.includes('email_normalized = $2')) {
+    const key = `${params[0]}:${params[1]}`;
+    emailAttempts.delete(key);
+    return { rows: [] };
+  }
+
+  if (queryText.includes('ON CONFLICT (route_scope, email_normalized)')) {
+    const key = `${params[0]}:${params[1]}`;
+    const prevFailCount = Number(emailAttempts.get(key)?.fail_count || 0);
+    const nextFailCount = prevFailCount + 1;
+    const nextAttempt = { fail_count: nextFailCount, first_failed_at: new Date().toISOString(), locked_until: null };
+    emailAttempts.set(key, nextAttempt);
+    return { rows: [{ fail_count: nextFailCount, locked_until: null }] };
+  }
+
   if (queryText.includes('FROM admins') && queryText.includes('LOWER(email)')) {
     return { rows: currentAdmin ? [currentAdmin] : [] };
   }
@@ -111,6 +146,14 @@ pool.query = async (queryText, params = []) => {
 
   throw new Error(`Unhandled query: ${queryText}`);
 };
+
+test.beforeEach(() => {
+  ipAttempts.clear();
+  emailAttempts.clear();
+  securityState.failed = 0;
+  securityState.cleared = 0;
+  lastBackupCodesWritten = undefined;
+});
 
 test('not enrolled admin receives requires2faEnrollment payload', async () => {
   currentAdmin = { ...baseAdmin };

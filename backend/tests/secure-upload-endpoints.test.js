@@ -14,6 +14,10 @@ const pool = require('../config/db');
 
 const ipCounters = new Map();
 const subjectCounters = new Map();
+const tokenVersions = {
+  businesses: new Map(),
+  admins: new Map(),
+};
 
 const bumpCounter = (map, key) => {
   const next = (map.get(key) || 0) + 1;
@@ -22,6 +26,22 @@ const bumpCounter = (map, key) => {
 };
 
 pool.query = async (queryText, params = []) => {
+  if (queryText.includes('SELECT id, token_version FROM businesses WHERE id = $1')) {
+    const id = Number(params[0]);
+    if (!tokenVersions.businesses.has(id)) {
+      return { rows: [] };
+    }
+    return { rows: [{ id, token_version: tokenVersions.businesses.get(id) }] };
+  }
+
+  if (queryText.includes('SELECT id, token_version FROM admins WHERE id = $1')) {
+    const id = Number(params[0]);
+    if (!tokenVersions.admins.has(id)) {
+      return { rows: [] };
+    }
+    return { rows: [{ id, token_version: tokenVersions.admins.get(id) }] };
+  }
+
   if (queryText.includes('ON CONFLICT (route_scope, ip)')) {
     const key = `${params[0]}:${params[1]}`;
     return { rows: [{ fail_count: bumpCounter(ipCounters, key) }] };
@@ -90,12 +110,18 @@ const request = async ({ server, method, path, token, jsonBody, formData }) => {
   return { status: response.status, body };
 };
 
-const makeBusinessToken = (businessId) => jwt.sign({ businessId }, process.env.JWT_SECRET);
-const makeAdminToken = (adminId) => jwt.sign({ adminId }, process.env.JWT_SECRET);
+const makeBusinessToken = (businessId) => jwt.sign({ businessId, tokenVersion: 0 }, process.env.JWT_SECRET);
+const makeAdminToken = (adminId) => jwt.sign({ adminId, tokenVersion: 0 }, process.env.JWT_SECRET);
 
 test.beforeEach(() => {
   ipCounters.clear();
   subjectCounters.clear();
+  tokenVersions.businesses.clear();
+  tokenVersions.admins.clear();
+  tokenVersions.businesses.set(1, 0);
+  tokenVersions.businesses.set(2, 0);
+  tokenVersions.businesses.set(7, 0);
+  tokenVersions.admins.set(99, 0);
 });
 
 test('unauthenticated requests to protected upload/download endpoints are rejected', async () => {
