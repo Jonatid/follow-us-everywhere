@@ -88,11 +88,12 @@ const startServer = () =>
     const server = createApp().listen(0, () => resolve(server));
   });
 
-const request = async ({ server, method, path, token, jsonBody, formData }) => {
+const request = async ({ server, method, path, token, jsonBody, formData, ip }) => {
   const port = server.address().port;
   const headers = {};
   if (token) headers.Authorization = `Bearer ${token}`;
   if (jsonBody) headers['Content-Type'] = 'application/json';
+  if (ip) headers['X-Forwarded-For'] = ip;
 
   const response = await fetch(`http://127.0.0.1:${port}${path}`, {
     method,
@@ -175,7 +176,14 @@ test('authenticated business/admin requests can upload and access in-scope keys'
     const adminForm = new FormData();
     adminForm.append('file', new Blob(['logo']), 'logo.png');
 
-    const adminUpload = await request({ server, method: 'POST', path: '/upload', token: adminToken, formData: adminForm });
+    const adminUpload = await request({
+      server,
+      method: 'POST',
+      path: '/upload',
+      token: adminToken,
+      formData: adminForm,
+      ip: '198.51.100.10',
+    });
     assert.equal(adminUpload.status, 201);
     assert.match(adminUpload.body.key, /^admin\/99\//);
   } finally {
