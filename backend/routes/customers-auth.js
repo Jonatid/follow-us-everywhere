@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const pool = require('../config/db');
 const { authenticateCustomerToken } = require('../middleware/customer-auth');
 const { sendCustomerPasswordResetEmail } = require('../utils/email');
+const { requestLogger } = require('../config/logger');
 const {
   ACCOUNT_LOCKOUT_MINUTES,
   clearAccountFailedAttempts,
@@ -49,9 +50,10 @@ const customerLogoutHandler = async (req, res) => {
       [req.customerId]
     );
 
+    requestLogger(req).info({ customerId: req.customerId }, 'Customer session invalidated on logout');
     return res.json({ message: 'Logged out successfully.' });
   } catch (err) {
-    console.error('Customer logout error:', err);
+    requestLogger(req).error({ err }, 'Customer logout error');
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -126,7 +128,7 @@ router.post(
 
       return res.json({ token, customer });
     } catch (err) {
-      console.error('Customer signup error:', err);
+      requestLogger(req).error({ err }, 'Customer signup error');
       if (err.code === '23505') {
         return res.status(409).json({ message: 'Customer with this email already exists' });
       }
@@ -151,11 +153,13 @@ router.post('/login', [body('email').isEmail(), body('password').exists()], asyn
   try {
     const ipRateLimit = await enforceIpRateLimit({ routeScope: 'customer', ip: requestIp });
     if (ipRateLimit.blocked) {
+      requestLogger(req).warn({ scope: 'customer', ip: requestIp }, 'Customer login blocked by IP rate limit');
       return res.status(429).json({ message: 'Too many attempts from this IP. Please try again later.' });
     }
 
     const accountAttempt = await getAccountAttempt({ routeScope: 'customer', emailNormalized });
     if (isAccountLocked(accountAttempt)) {
+      requestLogger(req).warn({ scope: 'customer' }, 'Customer account currently locked');
       return res
         .status(429)
         .json({ message: `Too many failed attempts. Try again in ${ACCOUNT_LOCKOUT_MINUTES} minutes.` });
@@ -175,15 +179,18 @@ router.post('/login', [body('email').isEmail(), body('password').exists()], asyn
       await sleep(getFailedAttemptDelay(failedAttempt.failCount));
 
       if (failedAttempt.warning) {
+        requestLogger(req).warn({ scope: 'customer', failCount: failedAttempt.failCount }, 'Customer login failed; warning threshold reached');
         return res.status(400).json({ message: 'Warning: 1 attempt remaining before temporary lockout.' });
       }
 
       if (failedAttempt.locked) {
+        requestLogger(req).warn({ scope: 'customer', failCount: failedAttempt.failCount }, 'Customer account lockout triggered');
         return res
           .status(429)
           .json({ message: `Too many failed attempts. Try again in ${ACCOUNT_LOCKOUT_MINUTES} minutes.` });
       }
 
+      requestLogger(req).info({ scope: 'customer' }, 'Customer login failed');
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
@@ -198,19 +205,23 @@ router.post('/login', [body('email').isEmail(), body('password').exists()], asyn
       await sleep(getFailedAttemptDelay(failedAttempt.failCount));
 
       if (failedAttempt.warning) {
+        requestLogger(req).warn({ scope: 'customer', failCount: failedAttempt.failCount }, 'Customer login failed; warning threshold reached');
         return res.status(400).json({ message: 'Warning: 1 attempt remaining before temporary lockout.' });
       }
 
       if (failedAttempt.locked) {
+        requestLogger(req).warn({ scope: 'customer', failCount: failedAttempt.failCount }, 'Customer account lockout triggered');
         return res
           .status(429)
           .json({ message: `Too many failed attempts. Try again in ${ACCOUNT_LOCKOUT_MINUTES} minutes.` });
       }
 
+      requestLogger(req).info({ scope: 'customer' }, 'Customer login failed');
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
     await clearAccountFailedAttempts({ routeScope: 'customer', emailNormalized });
+    requestLogger(req).info({ customerId: customer.id }, 'Customer login succeeded');
 
     const payload = { customerId: customer.id, tokenVersion: customer.token_version };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -218,7 +229,7 @@ router.post('/login', [body('email').isEmail(), body('password').exists()], asyn
     const { password_hash, ...customerData } = customer;
     return res.json({ token, customer: customerData });
   } catch (err) {
-    console.error('Customer login error:', err);
+    requestLogger(req).error({ err }, 'Customer login error');
     return res.status(500).json({ message: 'Server error' });
   }
 });
@@ -279,7 +290,7 @@ router.post('/forgot-password', [body('email').isEmail()], async (req, res) => {
 
     return res.json({ message: responseMessage });
   } catch (err) {
-    console.error('Customer forgot password error:', err);
+    requestLogger(req).error({ err }, 'Customer forgot password error');
     return res.json({ message: responseMessage });
   }
 });
@@ -347,7 +358,7 @@ router.post(
           // Transaction may already be finalized.
         }
       }
-      console.error('Customer reset password error:', err);
+      requestLogger(req).error({ err }, 'Customer reset password error');
       return res.status(500).json({ message: 'Server error' });
     } finally {
       if (client) {
@@ -373,7 +384,7 @@ router.get('/me', authenticateCustomerToken, async (req, res) => {
 
     return res.json(result.rows[0]);
   } catch (err) {
-    console.error('Customer me error:', err);
+    requestLogger(req).error({ err }, 'Customer me error');
     return res.status(500).json({ message: 'Server error' });
   }
 });

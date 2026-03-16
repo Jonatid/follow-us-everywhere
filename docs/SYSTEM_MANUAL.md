@@ -436,7 +436,11 @@ The core value is **structured trust + discoverability**:
 
 ## Health checks, monitoring, logging
 - `GET /api/health` reports DB connectivity and timestamp.
-- Console logs used for startup info and error logging; no external monitoring SDK found.
+- Backend now emits structured JSON logs via `backend/config/logger.js` (`level`, `timestamp`, `message`, `service`, `env`, plus context metadata).
+- `LOG_LEVEL` controls verbosity (`debug` by default outside production, `info` by default in production). Recommended production level: `info` (or `warn` for reduced volume).
+- Request correlation uses `backend/middleware/request-context.js`: incoming `X-Request-Id` is reused; otherwise a UUID is generated, attached to `req.requestId`, and returned in the `X-Request-Id` response header.
+- Security events are logged for failed logins/lockouts, admin 2FA enrollment + backup code usage, logout invalidation, blocked CORS origins, upload/rate-limit blocks, privileged access denials, and request/body size limit violations.
+- Sensitive values are redacted/omitted (passwords, JWT/token values, TOTP secrets/codes, backup codes, authorization values).
 
 ## Backups and security considerations (inferred)
 - No explicit backup automation in repo.
@@ -502,3 +506,13 @@ The core value is **structured trust + discoverability**:
 ## DB schema/migrations enumeration summary
 - Canonical schema bootstrap in `backend/config/schema.js`.
 - SQL migration files in `backend/migrations/*.sql` with `schema_migrations` tracking.
+
+
+## Health checks, monitoring, logging
+
+- `/api/health` reports service status and performs a short DB probe (`SELECT 1`) with timeout fallback.
+- Backend now emits structured JSON logs through `backend/config/logger.js` with `level`, `timestamp`, `message`, `service`, `env`, and optional metadata fields.
+- `LOG_LEVEL` controls verbosity (`debug` in non-production by default, `info` in production by default). Recommended production value: `info` (or `warn` for quieter output).
+- Request correlation is enabled via `backend/middleware/request-context.js`: incoming `X-Request-Id` is reused when present, otherwise a UUID is generated, attached to `req.requestId`, and echoed in the `X-Request-Id` response header.
+- Security-focused structured events are logged for login failures/lockouts, admin 2FA enrollment + backup code usage, logout token invalidation, blocked CORS origins, request-size violations, privileged access denials, upload rate-limit triggers, and expired token-version checks.
+- Sensitive values are redacted/omitted from logs (passwords, JWTs/tokens, TOTP secrets/codes, backup codes, authorization values).

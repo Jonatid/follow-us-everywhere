@@ -1,5 +1,6 @@
 const pool = require('./db');
 const { COMMUNITY_IMPACT_BADGES } = require('../constants/communityImpactBadges');
+const { logger } = require('./logger');
 
 const REQUIRED_TABLES = [
   'businesses',
@@ -31,10 +32,7 @@ const getMissingTables = async (client = pool) => {
     const existingTables = new Set(result.rows.map((row) => row.table_name));
     return REQUIRED_TABLES.filter((table) => !existingTables.has(table));
   } catch (error) {
-    console.warn(
-      'Warning: schema verification failed, skipping strict table check.',
-      error
-    );
+    logger.warn({ err: error }, 'Schema verification failed, skipping strict table check.');
     return null;
   }
 };
