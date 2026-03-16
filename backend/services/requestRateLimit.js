@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { getRequestIp } = require('./loginProtection');
+const { requestLogger } = require('../config/logger');
 
 const WINDOW_SECONDS = Number(process.env.UPLOAD_RATE_LIMIT_WINDOW_SECONDS || 600);
 const UPLOAD_MAX = Number(process.env.UPLOAD_RATE_LIMIT_MAX || 30);
@@ -177,12 +178,13 @@ const enforceEndpointRateLimit = ({ routeScope, maxAttempts }) => async (req, re
     ]);
 
     if (ipCount > maxAttempts || subjectCount > maxAttempts) {
+      requestLogger(req).warn({ routeScope, ipCount, subjectCount, maxAttempts }, 'Rate limit triggered');
       return res.status(429).json({ message: 'Too many requests. Please try again later.', code: 'RATE_LIMITED' });
     }
 
     return next();
   } catch (error) {
-    console.error('Endpoint rate limit error:', error);
+    requestLogger(req).error({ err: error, routeScope }, 'Endpoint rate limit error');
     return res.status(500).json({ message: 'Unable to process request', code: 'RATE_LIMIT_ERROR' });
   }
 };

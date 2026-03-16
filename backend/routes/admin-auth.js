@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
 const { authenticateAdminToken } = require('../middleware/admin-auth');
+const { requestLogger } = require('../config/logger');
 const {
   BACKUP_CODES_COUNT,
   buildOtpAuthUri,
@@ -42,15 +43,18 @@ const sendFailedAttemptResponse = async ({ req, res, emailNormalized }) => {
   await sleep(getFailedAttemptDelay(failedAttempt.failCount));
 
   if (failedAttempt.warning) {
+    requestLogger(req).warn({ scope: 'admin', failCount: failedAttempt.failCount }, 'Admin failed second factor warning threshold reached');
     return res.status(400).json({ message: 'Warning: 1 attempt remaining before temporary lockout.' });
   }
 
   if (failedAttempt.locked) {
+    requestLogger(req).warn({ scope: 'admin', failCount: failedAttempt.failCount }, 'Admin account lockout triggered');
     return res
       .status(429)
       .json({ message: `Too many failed attempts. Try again in ${ACCOUNT_LOCKOUT_MINUTES} minutes.` });
   }
 
+  requestLogger(req).info({ scope: 'admin' }, 'Admin second factor verification failed');
   return res.status(400).json({ message: getInvalidSecondFactorMessage() });
 };
 
@@ -69,9 +73,10 @@ const adminLogoutHandler = async (req, res) => {
       [req.adminId]
     );
 
+    requestLogger(req).info({ adminId: req.adminId }, 'Admin session invalidated on logout');
     return res.json({ message: 'Logged out successfully.' });
   } catch (err) {
-    console.error('Admin logout error:', err);
+    requestLogger(req).error({ err }, 'Admin logout error');
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -114,7 +119,8 @@ const finalizeEnrollment = async (req, res) => {
   const totpVerification = verifyTotpCode({ secret: totpSecret, code: totpCode });
 
   if (!totpVerification.valid) {
-    return res.status(400).json({ message: getInvalidSecondFactorMessage() });
+    requestLogger(req).info({ scope: 'admin' }, 'Admin second factor verification failed');
+  return res.status(400).json({ message: getInvalidSecondFactorMessage() });
   }
 
   const { plainCodes, hashedCodes } = makeBackupCodes();
@@ -129,7 +135,7 @@ const finalizeEnrollment = async (req, res) => {
     [admin.id, JSON.stringify(hashedCodes), totpVerification.step]
   );
 
-  console.log('[admin-security] enrollment completed', { adminId: admin.id, email: admin.email });
+  requestLogger(req).info({ adminId: admin.id }, 'Admin 2FA enrollment completed');
 
   const token = issueAdminToken(admin);
   return res.json({
@@ -150,7 +156,7 @@ const adminLoginHandler = async (req, res) => {
     try {
       return await finalizeEnrollment(req, res);
     } catch (err) {
-      console.error('Admin enrollment finalization error:', err);
+      requestLogger(req).error({ err }, 'Admin enrollment finalization error');
       return res.status(500).json({ message: 'Server error' });
     }
   }
@@ -167,11 +173,13 @@ const adminLoginHandler = async (req, res) => {
   try {
     const ipRateLimit = await enforceIpRateLimit({ routeScope: 'admin', ip: requestIp });
     if (ipRateLimit.blocked) {
+      requestLogger(req).warn({ scope: 'admin', ip: requestIp }, 'Admin login blocked by IP rate limit');
       return res.status(429).json({ message: 'Too many attempts from this IP. Please try again later.' });
     }
 
     const accountAttempt = await getAccountAttempt({ routeScope: 'admin', emailNormalized });
     if (isAccountLocked(accountAttempt)) {
+      requestLogger(req).warn({ scope: 'admin' }, 'Admin account currently locked');
       return res
         .status(429)
         .json({ message: `Too many failed attempts. Try again in ${ACCOUNT_LOCKOUT_MINUTES} minutes.` });
@@ -201,15 +209,18 @@ const adminLoginHandler = async (req, res) => {
       await sleep(getFailedAttemptDelay(failedAttempt.failCount));
 
       if (failedAttempt.warning) {
+        requestLogger(req).warn({ scope: 'admin', failCount: failedAttempt.failCount }, 'Admin login failed; warning threshold reached');
         return res.status(400).json({ message: 'Warning: 1 attempt remaining before temporary lockout.' });
       }
 
       if (failedAttempt.locked) {
+        requestLogger(req).warn({ scope: 'admin', failCount: failedAttempt.failCount }, 'Admin account lockout triggered');
         return res
           .status(429)
           .json({ message: `Too many failed attempts. Try again in ${ACCOUNT_LOCKOUT_MINUTES} minutes.` });
       }
 
+      requestLogger(req).info({ scope: 'admin' }, 'Admin login failed');
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
@@ -224,15 +235,18 @@ const adminLoginHandler = async (req, res) => {
       await sleep(getFailedAttemptDelay(failedAttempt.failCount));
 
       if (failedAttempt.warning) {
+        requestLogger(req).warn({ scope: 'admin', failCount: failedAttempt.failCount }, 'Admin login failed; warning threshold reached');
         return res.status(400).json({ message: 'Warning: 1 attempt remaining before temporary lockout.' });
       }
 
       if (failedAttempt.locked) {
+        requestLogger(req).warn({ scope: 'admin', failCount: failedAttempt.failCount }, 'Admin account lockout triggered');
         return res
           .status(429)
           .json({ message: `Too many failed attempts. Try again in ${ACCOUNT_LOCKOUT_MINUTES} minutes.` });
       }
 
+      requestLogger(req).info({ scope: 'admin' }, 'Admin login failed');
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
@@ -248,7 +262,7 @@ const adminLoginHandler = async (req, res) => {
         [admin.id, encryptedSecret]
       );
 
-      console.log('[admin-security] enrollment started', { adminId: admin.id, email: admin.email });
+      requestLogger(req).info({ adminId: admin.id }, 'Admin 2FA enrollment started');
 
       return res.json({
         requires2faEnrollment: true,
@@ -293,10 +307,11 @@ const adminLoginHandler = async (req, res) => {
         [admin.id, JSON.stringify(backupResult.nextCodes)]
       );
 
-      console.log('[admin-security] backup code used', { adminId: admin.id, email: admin.email });
+      requestLogger(req).warn({ adminId: admin.id }, 'Admin backup code used');
     }
 
     await clearAccountFailedAttempts({ routeScope: 'admin', emailNormalized });
+    requestLogger(req).info({ adminId: admin.id }, 'Admin login succeeded');
 
     const token = issueAdminToken(admin);
 
@@ -309,7 +324,7 @@ const adminLoginHandler = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error('Admin login error:', err);
+    requestLogger(req).error({ err }, 'Admin login error');
     return res.status(500).json({ message: 'Server error' });
   }
 };

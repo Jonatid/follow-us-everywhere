@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const { getDownloadUrl } = require('./services/r2');
+const { logger } = require('./config/logger');
 const db = require('./config/db');
 const { ensureSchema } = require('./config/schema');
 const { runMigrations } = require('./scripts/runMigrations');
@@ -14,6 +15,7 @@ const {
   urlencodedBodyParser,
   requestSizeLimitErrorHandler,
 } = require('./config/security');
+const { requestContextMiddleware } = require('./middleware/request-context');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -33,7 +35,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 if (!process.env.JWT_SECRET) {
-  console.error('JWT_SECRET is required to start the server.');
+  logger.fatal('JWT_SECRET is required to start the server.');
   process.exit(1);
 }
 
@@ -42,6 +44,7 @@ const corsOptions = getCorsOptions();
 
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
+app.use(requestContextMiddleware);
 app.use(securityHeadersMiddleware);
 app.use(jsonBodyParser);
 app.use(urlencodedBodyParser);
@@ -131,7 +134,8 @@ app.use((req, res) => {
 
 // Error handler
 app.use((err, req, res, next) => {
-  console.error('Error:', err);
+  const requestLogger = req.log || logger;
+  requestLogger.error({ err }, 'Unhandled request error');
   res.status(err.status || 500).json({ 
     error: err.message || 'Internal server error' 
   });
@@ -145,15 +149,14 @@ const startServer = async () => {
     await ensureSchema();
   } catch (error) {
     startupInitializationOk = false;
-    console.error('Startup initialization error:', error.message);
-    console.error('Server will continue to run, but database-backed routes may fail until connectivity is restored.');
+    logger.error({ err: error }, 'Startup initialization error. Server will continue in degraded mode.');
   }
 
   app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    logger.info({ port: PORT }, 'Server is running');
+    logger.info({ env: process.env.NODE_ENV || 'development' }, 'Environment loaded');
     if (!startupInitializationOk) {
-      console.warn('Startup completed in degraded mode due to initialization errors.');
+      logger.warn('Startup completed in degraded mode due to initialization errors.');
     }
   });
 };

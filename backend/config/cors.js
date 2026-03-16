@@ -1,3 +1,4 @@
+const { logger } = require('./logger');
 const LOCALHOST_HOSTS = new Set(['localhost', '127.0.0.1']);
 
 const parseAllowedOrigins = (rawOrigins = process.env.ALLOWED_ORIGINS) => {
@@ -52,6 +53,7 @@ const createCorsOriginValidator = (allowedOrigins) => {
       return callback(null, true);
     }
 
+    logger.warn({ origin }, 'Blocked CORS origin');
     const corsError = new Error(`CORS blocked for origin: ${origin}`);
     corsError.status = 403;
     return callback(corsError);

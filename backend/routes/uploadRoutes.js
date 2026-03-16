@@ -4,6 +4,7 @@ const { uploadBuffer } = require('../services/r2');
 const { authenticatePrivilegedUser } = require('../middleware/privileged-auth');
 const { buildScopedKey } = require('../services/objectAccess');
 const { uploadRateLimit } = require('../services/requestRateLimit');
+const { requestLogger } = require('../config/logger');
 
 const router = express.Router();
 
@@ -17,6 +18,7 @@ router.post('/upload', authenticatePrivilegedUser, uploadRateLimit, (req, res) =
   multipartUpload.single('file')(req, res, async (uploadErr) => {
     if (uploadErr) {
       if (uploadErr instanceof multer.MulterError && uploadErr.code === 'LIMIT_FILE_SIZE') {
+        requestLogger(req).warn({ maxBytes: uploadLimitBytes }, 'Blocked upload: file too large');
         return res.status(413).json({ message: 'File exceeds the maximum allowed size.', code: 'FILE_TOO_LARGE' });
       }
       return res.status(400).json({ message: uploadErr.message || 'Invalid upload request', code: 'UPLOAD_INVALID' });
@@ -32,7 +34,7 @@ router.post('/upload', authenticatePrivilegedUser, uploadRateLimit, (req, res) =
 
       return res.status(201).json({ message: 'File uploaded successfully', key });
     } catch (error) {
-      console.error('Upload endpoint error:', error);
+      requestLogger(req).error({ err: error }, 'Upload endpoint error');
       return res.status(500).json({ message: 'Failed to upload file', code: 'UPLOAD_FAILED' });
     }
   });

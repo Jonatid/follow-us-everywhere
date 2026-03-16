@@ -1,5 +1,6 @@
 const express = require('express');
 const helmet = require('helmet');
+const { requestLogger } = require('./logger');
 
 const defaultBodyLimit = '1mb';
 
@@ -37,6 +38,7 @@ const urlencodedBodyParser = express.urlencoded({ limit: urlencodedBodyLimit, ex
 
 const requestSizeLimitErrorHandler = (err, req, res, next) => {
   if (err?.type === 'entity.too.large' || err?.status === 413) {
+    requestLogger(req).warn({ contentLength: req.get('content-length') }, 'Request size limit exceeded');
     return res.status(413).json({
       message: 'Request is too large.',
       code: 'REQUEST_TOO_LARGE',

@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 require('dotenv').config();
+const { logger } = require('./logger');
 
 let pool;
 const useSsl = process.env.DB_SSL === 'true' || Boolean(process.env.DATABASE_URL);
@@ -43,16 +44,14 @@ if (process.env.DATABASE_URL) {
 }
 
 const connectionInfo = getConnectionInfo();
-console.log(
-  `Database connection configured: host=${connectionInfo.host} database=${connectionInfo.database} user=${connectionInfo.user}`
-);
+logger.info({ host: connectionInfo.host, database: connectionInfo.database, user: connectionInfo.user }, 'Database connection configured');
 
 pool.on('error', (err) => {
-  console.error('Unexpected error on idle client', err);
+  logger.error({ err }, 'Unexpected error on idle client');
 });
 
 pool.on('connect', () => {
-  console.log('Successfully connected to PostgreSQL database');
+  logger.info('Successfully connected to PostgreSQL database');
 });
 
 module.exports = pool;

@@ -7,6 +7,7 @@ const { getMissingTables } = require('../config/schema');
 const { authenticateToken } = require('../middleware/auth');
 const { resolveVerificationStatus } = require('../utils/verification');
 const { sendPasswordResetEmail } = require('../utils/email');
+const { requestLogger } = require('../config/logger');
 const crypto = require('crypto');
 const { resolveUniqueBusinessSlug } = require('../utils/businessSlug');
 const {
@@ -44,9 +45,10 @@ const businessLogoutHandler = async (req, res) => {
       [req.businessId]
     );
 
+    requestLogger(req).info({ businessId: req.businessId }, 'Business session invalidated on logout');
     return res.json({ message: 'Logged out successfully.' });
   } catch (err) {
-    console.error('Business logout error:', err);
+    requestLogger(req).error({ err }, 'Business logout error');
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -161,7 +163,7 @@ router.post(
       await client.query('COMMIT');
       res.json({ token, business });
     } catch (err) {
-      console.error('Signup error:', err);
+      requestLogger(req).error({ err }, 'Business signup error');
 
       if (err.code === '23505') {
         return res.status(400).json({
@@ -188,7 +190,7 @@ router.post(
             });
           }
         } catch (schemaError) {
-          console.error('Schema check failed after query error:', schemaError);
+          requestLogger(req).error({ err: schemaError }, 'Schema check failed after business signup error');
         }
       }
 
@@ -225,11 +227,13 @@ router.post(
     try {
       const ipRateLimit = await enforceIpRateLimit({ routeScope: 'business', ip: requestIp });
       if (ipRateLimit.blocked) {
+        requestLogger(req).warn({ scope: 'business', ip: requestIp }, 'Business login blocked by IP rate limit');
         return sendLoginError(429, 'Too many attempts from this IP. Please try again later.');
       }
 
       const accountAttempt = await getAccountAttempt({ routeScope: 'business', emailNormalized });
       if (isAccountLocked(accountAttempt)) {
+        requestLogger(req).warn({ scope: 'business' }, 'Business account currently locked');
         return sendLoginError(429, `Too many failed attempts. Try again in ${ACCOUNT_LOCKOUT_MINUTES} minutes.`);
       }
 
@@ -272,13 +276,16 @@ router.post(
         await sleep(getFailedAttemptDelay(failedAttempt.failCount));
 
         if (failedAttempt.warning) {
+          requestLogger(req).warn({ scope: 'business', failCount: failedAttempt.failCount }, 'Business login failed; warning threshold reached');
           return sendLoginError(401, 'Warning: 1 attempt remaining before temporary lockout.');
         }
 
         if (failedAttempt.locked) {
+          requestLogger(req).warn({ scope: 'business', failCount: failedAttempt.failCount }, 'Business account lockout triggered');
           return sendLoginError(429, `Too many failed attempts. Try again in ${ACCOUNT_LOCKOUT_MINUTES} minutes.`);
         }
 
+        requestLogger(req).info({ scope: 'business' }, 'Business login failed');
         return sendLoginError(401, 'Invalid credentials');
       }
 
@@ -295,17 +302,21 @@ router.post(
         await sleep(getFailedAttemptDelay(failedAttempt.failCount));
 
         if (failedAttempt.warning) {
+          requestLogger(req).warn({ scope: 'business', failCount: failedAttempt.failCount }, 'Business login failed; warning threshold reached');
           return sendLoginError(401, 'Warning: 1 attempt remaining before temporary lockout.');
         }
 
         if (failedAttempt.locked) {
+          requestLogger(req).warn({ scope: 'business', failCount: failedAttempt.failCount }, 'Business account lockout triggered');
           return sendLoginError(429, `Too many failed attempts. Try again in ${ACCOUNT_LOCKOUT_MINUTES} minutes.`);
         }
 
+        requestLogger(req).info({ scope: 'business' }, 'Business login failed');
         return sendLoginError(401, 'Invalid credentials');
       }
 
       await clearAccountFailedAttempts({ routeScope: 'business', emailNormalized });
+      requestLogger(req).info({ businessId: business.id }, 'Business login succeeded');
 
       // Get social links
       const socialsResult = await pool.query(
@@ -326,11 +337,7 @@ router.post(
 
       res.json({ token, business: businessData });
     } catch (err) {
-      console.error('[auth/login] error', {
-        email,
-        message: err.message,
-        stack: err.stack,
-      });
+      requestLogger(req).error({ err: { message: err.message, code: err.code } }, 'Business login error');
       sendLoginError(500, 'Internal server error');
     }
   }
@@ -390,7 +397,7 @@ router.post(
 
       return res.json({ message: responseMessage });
     } catch (err) {
-      console.error('Forgot password error:', err);
+      requestLogger(req).error({ err }, 'Business forgot password error');
       return res.json({ message: responseMessage });
     }
   }
@@ -445,7 +452,7 @@ router.post(
 
       res.json({ message: 'Password updated successfully. Please log in with your new password.' });
     } catch (err) {
-      console.error('Reset password error:', err);
+      requestLogger(req).error({ err }, 'Business reset password error');
       res.status(500).json({ message: 'Server error' });
     }
   }
@@ -501,7 +508,7 @@ router.get('/me', authenticateToken, async (req, res) => {
 
     res.json(business);
   } catch (err) {
-    console.error('Get me error:', err);
+    requestLogger(req).error({ err }, 'Business me route error');
     res.status(500).json({ message: 'Server error' });
   }
 });
