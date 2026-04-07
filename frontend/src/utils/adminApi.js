@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getStoredAdminToken } from './adminAuth';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || 'https://followuseverywhere-api.onrender.com/api';
@@ -19,7 +20,7 @@ adminApi.interceptors.request.use((config) => {
     return config;
   }
 
-  const adminToken = localStorage.getItem('adminToken');
+  const adminToken = getStoredAdminToken();
   if (adminToken) {
     config.headers.Authorization = `Bearer ${adminToken}`;
   }

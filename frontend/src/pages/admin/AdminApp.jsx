@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import AdminDashboard from './AdminDashboard';
 import AdminLogin from './AdminLogin';
@@ -8,7 +8,9 @@ import BusinessDetail from './BusinessDetail';
 import BusinessList from './BusinessList';
 import ReviewList from './ReviewList';
 import AdminDocuments from './AdminDocuments';
+import RequireAdminAuth from '../../components/RequireAdminAuth';
 import { logoutAdmin } from '../../utils/adminApi';
+import { clearAdminAuthStorage, getStoredAdminToken } from '../../utils/adminAuth';
 
 const normalizePath = (path) => (path.endsWith('/') && path !== '/' ? path.slice(0, -1) : path);
 
@@ -16,13 +18,17 @@ const AdminApp = () => {
   const [currentPath, setCurrentPath] = useState(normalizePath(window.location.pathname));
   const [loginResetSignal, setLoginResetSignal] = useState(0);
 
-  const adminToken = localStorage.getItem('adminToken');
+  const adminToken = getStoredAdminToken();
 
-  const navigate = (path) => {
+  const navigate = useCallback((path) => {
     const normalized = normalizePath(path);
     window.history.pushState({}, '', normalized);
     setCurrentPath(normalized);
-  };
+  }, []);
+
+  const handleUnauthorized = useCallback(() => {
+    navigate('/admin/login');
+  }, [navigate]);
 
   const handleLogout = async () => {
     try {
@@ -30,7 +36,7 @@ const AdminApp = () => {
     } catch (err) {
       console.error('Admin logout request failed:', err);
     } finally {
-      localStorage.removeItem('adminToken');
+      clearAdminAuthStorage();
       setLoginResetSignal((value) => value + 1);
       navigate('/admin/login');
     }
@@ -48,14 +54,10 @@ const AdminApp = () => {
   }, []);
 
   useEffect(() => {
-    if (!adminToken && currentPath !== '/admin/login') {
-      navigate('/admin/login');
-    }
-
     if (currentPath === '/admin' || currentPath === '/admin/') {
       navigate(adminToken ? '/admin/dashboard' : '/admin/login');
     }
-  }, [adminToken, currentPath]);
+  }, [adminToken, currentPath, navigate]);
 
   if (currentPath === '/admin/login') {
     return <AdminLogin onSuccess={() => navigate('/admin/dashboard')} resetSignal={loginResetSignal} />;
@@ -86,9 +88,11 @@ const AdminApp = () => {
   }
 
   return (
-    <AdminLayout currentPath={currentPath} onNavigate={navigate} onLogout={handleLogout}>
-      {content}
-    </AdminLayout>
+    <RequireAdminAuth currentPath={currentPath} onUnauthorized={handleUnauthorized}>
+      <AdminLayout currentPath={currentPath} onNavigate={navigate} onLogout={handleLogout}>
+        {content}
+      </AdminLayout>
+    </RequireAdminAuth>
   );
 };
 

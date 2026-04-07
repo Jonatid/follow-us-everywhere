@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { adminLogin } from '../../utils/adminApi';
+import { storeAdminToken } from '../../utils/adminAuth';
 
 const AdminLogin = ({ onSuccess, resetSignal = 0 }) => {
   const [email, setEmail] = useState('');
@@ -70,7 +71,7 @@ const AdminLogin = ({ onSuccess, resetSignal = 0 }) => {
       }
 
       if (data?.token) {
-        localStorage.setItem('adminToken', data.token);
+        storeAdminToken(data.token);
       }
       onSuccess();
     } catch (err) {
@@ -142,7 +143,7 @@ const AdminLogin = ({ onSuccess, resetSignal = 0 }) => {
       });
 
       if (data?.token) {
-        localStorage.setItem('adminToken', data.token);
+        storeAdminToken(data.token);
       }
       onSuccess();
     } catch (err) {
@@ -159,7 +160,7 @@ const AdminLogin = ({ onSuccess, resetSignal = 0 }) => {
     }
 
     if (postEnrollmentToken) {
-      localStorage.setItem('adminToken', postEnrollmentToken);
+      storeAdminToken(postEnrollmentToken);
     }
 
     onSuccess();
