@@ -1,5 +1,6 @@
 const { logger } = require('./logger');
 const LOCALHOST_HOSTS = new Set(['localhost', '127.0.0.1']);
+const LOCAL_FRONTEND_ORIGIN = 'http://localhost:3000';
 
 const parseAllowedOrigins = (rawOrigins = process.env.ALLOWED_ORIGINS) => {
   if (!rawOrigins || rawOrigins.trim().length === 0) {
@@ -62,6 +63,10 @@ const createCorsOriginValidator = (allowedOrigins) => {
 
 const getCorsOptions = () => {
   const allowedOrigins = parseAllowedOrigins();
+
+  if (!allowedOrigins.includes(LOCAL_FRONTEND_ORIGIN)) {
+    allowedOrigins.push(LOCAL_FRONTEND_ORIGIN);
+  }
 
   return {
     origin: createCorsOriginValidator(allowedOrigins),
