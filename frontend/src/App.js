@@ -3670,7 +3670,11 @@ export default function App() {
       const response = await api.get('/auth/me');
       setCurrentBusiness(response.data);
       const businessScreens = new Set(['dashboard', 'business-profile', 'business-qr', 'social-hub']);
-      setCurrentScreen(businessScreens.has(targetScreen) ? targetScreen : 'dashboard');
+      const pathnameScreen = getScreenFromPath(window.location.pathname);
+      const resolvedScreen = businessScreens.has(targetScreen)
+        ? targetScreen
+        : (businessScreens.has(pathnameScreen) ? pathnameScreen : 'dashboard');
+      setCurrentScreen(resolvedScreen);
     } catch (err) {
       localStorage.removeItem('token');
     }
@@ -3750,7 +3754,9 @@ export default function App() {
 
   const handleLoginSuccess = (business) => {
     setCurrentBusiness(business);
-    setCurrentScreen('dashboard');
+    const businessScreens = new Set(['dashboard', 'business-profile', 'business-qr', 'social-hub']);
+    const pathnameScreen = getScreenFromPath(window.location.pathname);
+    setCurrentScreen(businessScreens.has(pathnameScreen) ? pathnameScreen : 'dashboard');
   };
 
   const handleLogout = async () => {
