@@ -3669,11 +3669,8 @@ export default function App() {
     try {
       const response = await api.get('/auth/me');
       setCurrentBusiness(response.data);
-      if (targetScreen === 'business-profile') {
-        setCurrentScreen('business-profile');
-      } else {
-        setCurrentScreen('dashboard');
-      }
+      const businessScreens = new Set(['dashboard', 'business-profile', 'business-qr', 'social-hub']);
+      setCurrentScreen(businessScreens.has(targetScreen) ? targetScreen : 'dashboard');
     } catch (err) {
       localStorage.removeItem('token');
     }
