@@ -69,6 +69,14 @@ test('cors options keep credentials enabled', () => {
   assert.deepEqual(options.allowedHeaders, ['Authorization', 'Content-Type']);
 });
 
+test('localhost frontend origin is always allowed by cors options', async () => {
+  process.env.ALLOWED_ORIGINS = TEST_ALLOWED_ORIGINS.join(',');
+  const options = getCorsOptions();
+  const allowed = await validateOrigin(options.origin, 'http://localhost:3000');
+
+  assert.equal(allowed, true);
+});
+
 test('non-https origin entries are rejected unless explicitly localhost/127.0.0.1', () => {
   assert.throws(
     () => parseAllowedOrigins('https://fuse101.com,http://admin.fuse101.com'),
