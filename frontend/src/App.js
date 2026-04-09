@@ -8,6 +8,7 @@ import Landing from './pages/Landing';
 import BusinessQrPage from './pages/business/BusinessQrPage';
 import QrCard from './pages/business/components/QrCard';
 import QrDisplayModeSelector from './pages/business/components/QrDisplayModeSelector';
+import SocialHub from './pages/SocialHub';
 import businessVerifiedIcon from './assets/business-verified.svg';
 import impactVerifiedIcon from './assets/impact-verified.svg';
 import communityImpactIcon from './assets/community-impact.svg';
@@ -3577,6 +3578,7 @@ export default function App() {
     if (pathname === '/business/signup') return 'signup';
     if (pathname === '/business/profile') return 'business-profile';
     if (pathname === '/business/qr') return 'business-qr';
+    if (pathname === '/business/social-hub') return 'social-hub';
     if (pathname === '/reset-password') return 'reset';
     if (pathname === '/customer' || pathname === '/customer/login') return 'customer-login';
     if (pathname === '/customer/signup') return 'customer-signup';
@@ -3877,6 +3879,8 @@ export default function App() {
         );
       case 'business-qr':
         return <BusinessQrPage />;
+      case 'social-hub':
+        return currentBusiness ? <SocialHub /> : <BusinessLogin onNavigate={handleNavigate} onLoginSuccess={handleLoginSuccess} />;
       case 'public':
         return <PublicFollowPage slug={publicSlug} onNavigate={handleNavigate} />;
       case 'contact':

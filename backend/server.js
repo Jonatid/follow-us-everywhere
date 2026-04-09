@@ -21,6 +21,7 @@ const { requestContextMiddleware } = require('./middleware/request-context');
 const authRoutes = require('./routes/auth');
 const businessesRoutes = require('./routes/businesses');
 const socialsRoutes = require('./routes/socials');
+const socialRoutes = require('./routes/social');
 const adminAuthRoutes = require('./routes/admin-auth');
 const adminRoutes = require('./routes/admin');
 const customerAuthRoutes = require('./routes/customers-auth');
@@ -30,6 +31,7 @@ const badgesRoutes = require('./routes/badges');
 const r2Routes = require('./routes/r2Routes');
 const qrRoutes = require('./routes/qr');
 const uploadRoutes = require('./routes/uploadRoutes');
+const { authenticateToken } = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -96,6 +98,7 @@ app.get('/files/:key', async (req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/businesses', businessesRoutes);
 app.use('/api/socials', socialsRoutes);
+app.use('/api/social', authenticateToken, socialRoutes);
 app.use('/api/admin/auth', adminAuthRoutes);
 app.use('/api', badgesRoutes);
 app.use('/api/business', businessesRoutes);
