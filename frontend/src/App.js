@@ -3567,18 +3567,24 @@ export default function App() {
     pathname === '/favorites' ||
     ((pathname.startsWith('/business/') && pathname !== '/business/profile' && !isBusinessAuthPath(pathname)) || pathname.startsWith('/b/'));
 
-  const isBusinessPath = (pathname) => pathname === '/business' || pathname.startsWith('/business/');
+  const isBusinessPath = (pathname) =>
+    pathname === '/business' ||
+    pathname.startsWith('/business/') ||
+    pathname === '/dashboard' ||
+    pathname.startsWith('/dashboard/');
 
   const getScreenFromPath = (pathname) => {
     if (pathname === '/') return 'marketing-landing';
     if (pathname === '/about') return 'about';
     if (pathname === '/faq') return 'faq';
     if (pathname === '/business') return 'dashboard';
+    if (pathname === '/dashboard') return 'dashboard';
     if (pathname === '/business/login') return 'login';
     if (pathname === '/business/signup') return 'signup';
     if (pathname === '/business/profile') return 'business-profile';
     if (pathname === '/business/qr') return 'business-qr';
     if (pathname === '/business/social-hub') return 'social-hub';
+    if (pathname === '/dashboard/social') return 'social-hub';
     if (pathname === '/reset-password') return 'reset';
     if (pathname === '/customer' || pathname === '/customer/login') return 'customer-login';
     if (pathname === '/customer/signup') return 'customer-signup';
