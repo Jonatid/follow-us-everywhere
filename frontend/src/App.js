@@ -3889,7 +3889,7 @@ export default function App() {
       case 'business-qr':
         return <BusinessQrPage />;
       case 'social-hub':
-        return currentBusiness ? <SocialHub /> : <BusinessLogin onNavigate={handleNavigate} onLoginSuccess={handleLoginSuccess} />;
+        return currentBusiness ? <SocialHub businessName={currentBusiness.name} /> : <BusinessLogin onNavigate={handleNavigate} onLoginSuccess={handleLoginSuccess} />;
       case 'public':
         return <PublicFollowPage slug={publicSlug} onNavigate={handleNavigate} />;
       case 'contact':

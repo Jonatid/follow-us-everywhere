@@ -22,8 +22,9 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-export default function SocialHub() {
+export default function SocialHub({ businessName = 'Business' }) {
   const [posts, setPosts] = useState([]);
+  const [connectedAccounts, setConnectedAccounts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -44,7 +45,18 @@ export default function SocialHub() {
     setLoading(true);
     setMessage('');
     try {
-      await api.post('/social/connect', payload);
+      const response = await api.post('/social/connect', payload);
+      const newConnection = response.data?.connection;
+      if (newConnection?.platform) {
+        setConnectedAccounts((prev) => {
+          const existing = prev.some(
+            (account) =>
+              account.platform?.toLowerCase() === newConnection.platform.toLowerCase() &&
+              account.accountHandle?.toLowerCase() === newConnection.accountHandle?.toLowerCase()
+          );
+          return existing ? prev : [...prev, newConnection];
+        });
+      }
       setMessage('Account connected successfully.');
     } catch (error) {
       setMessage(error.response?.data?.error || 'Failed to connect account.');
@@ -75,11 +87,16 @@ export default function SocialHub() {
   return (
     <div className="page page--gradient">
       <div className="card card--wide stack-lg">
-        <h1 className="heading-xl">Social Hub</h1>
+        <div className="dashboard-header">
+          <h1 className="heading-xl">Social Hub</h1>
+          <div className="button button-secondary button-sm" style={{ cursor: 'default' }}>
+            {businessName}
+          </div>
+        </div>
         <p className="subtitle">Connect accounts and publish posts with your Zernio integration.</p>
         {message ? <p className="muted-text">{message}</p> : null}
         <ConnectAccounts onConnect={handleConnect} loading={loading} />
-        <CreatePost onCreate={handleCreatePost} loading={loading} />
+        <CreatePost onCreate={handleCreatePost} loading={loading} connectedAccounts={connectedAccounts} />
         <PostHistory posts={posts} />
       </div>
     </div>
