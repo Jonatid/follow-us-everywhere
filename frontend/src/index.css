@@ -601,6 +601,31 @@ body {
   font-size: 1.4rem;
 }
 
+.social-create-post-layout {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.social-platform-checklist {
+  list-style: none;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 160px;
+}
+
+.social-platform-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .truncate {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -697,6 +722,12 @@ body {
 .public-business-page {
   display: block;
   padding: 0 0 24px;
+}
+
+@media (max-width: 720px) {
+  .social-create-post-layout {
+    grid-template-columns: 1fr;
+  }
 }
 
 .public-business-hero {
