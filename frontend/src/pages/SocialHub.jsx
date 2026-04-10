@@ -3,13 +3,18 @@ import axios from 'axios';
 import ConnectAccounts from '../components/ConnectAccounts';
 import CreatePost from '../components/CreatePost';
 import PostHistory from '../components/PostHistory';
+import BusinessAccountMenu from '../components/BusinessAccountMenu';
 
 const configuredApiBaseUrl =
   (typeof process !== 'undefined' && process.env?.REACT_APP_API_BASE_URL) ||
   import.meta.env.VITE_API_BASE_URL ||
   '';
 
-const API_BASE_URL = configuredApiBaseUrl || (import.meta.env.DEV ? 'http://localhost:5000/api' : '/api');
+const DEFAULT_API_BASE_URL = 'https://followuseverywhere-api.onrender.com/api';
+
+const API_BASE_URL =
+  configuredApiBaseUrl ||
+  (import.meta.env.DEV ? 'http://localhost:5000/api' : DEFAULT_API_BASE_URL);
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -22,7 +27,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-export default function SocialHub({ businessName = 'Business' }) {
+export default function SocialHub({ businessName = 'Business', onNavigate, onLogout }) {
   const [posts, setPosts] = useState([]);
   const [connectedAccounts, setConnectedAccounts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -89,9 +94,7 @@ export default function SocialHub({ businessName = 'Business' }) {
       <div className="card card--wide stack-lg">
         <div className="dashboard-header">
           <h1 className="heading-xl">Social Hub</h1>
-          <div className="button button-secondary button-sm" style={{ cursor: 'default' }}>
-            {businessName}
-          </div>
+          <BusinessAccountMenu businessName={businessName} onNavigate={onNavigate} onLogout={onLogout} />
         </div>
         <p className="subtitle">Connect accounts and publish posts with your Zernio integration.</p>
         {message ? <p className="muted-text">{message}</p> : null}
