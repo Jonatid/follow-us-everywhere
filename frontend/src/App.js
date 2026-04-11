@@ -3005,7 +3005,13 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
         <div className="card dashboard-card">
           <div className="dashboard-header">
             <h1 className="heading-lg">Business Profile</h1>
-            <BusinessAccountMenu businessName={business?.name || 'Business'} onNavigate={onNavigate} onLogout={onLogout} currentView="business-profile" />
+            <BusinessAccountMenu
+              businessName={business?.name || 'Business'}
+              onNavigate={onNavigate}
+              onLogout={onLogout}
+              currentView="business-profile"
+              includeProfile
+            />
           </div>
           <button type="button" className="link-button" onClick={() => onNavigate('dashboard', null, '/business')}>
             ← Back
