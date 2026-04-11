@@ -94,7 +94,7 @@ export default function SocialHub({ businessName = 'Business', onNavigate, onLog
       <div className="card card--wide stack-lg">
         <div className="dashboard-header">
           <h1 className="heading-xl">Social Hub</h1>
-          <BusinessAccountMenu businessName={businessName} onNavigate={onNavigate} onLogout={onLogout} />
+          <BusinessAccountMenu businessName={businessName} onNavigate={onNavigate} onLogout={onLogout} currentView="social-hub" />
         </div>
         <p className="subtitle">Connect accounts and publish posts with your Zernio integration.</p>
         {message ? <p className="muted-text">{message}</p> : null}

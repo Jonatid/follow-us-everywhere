@@ -1,6 +1,21 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-export default function BusinessAccountMenu({ businessName, onNavigate, onLogout }) {
+const menuItemBaseStyle = {
+  display: 'block',
+  width: '100%',
+  textAlign: 'left',
+  padding: '8px 10px',
+  borderRadius: '8px',
+};
+
+const getMenuItemStyle = (isActive) => ({
+  ...menuItemBaseStyle,
+  background: isActive ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
+  color: isActive ? 'var(--brand-blue)' : 'inherit',
+  fontWeight: isActive ? 700 : 500,
+});
+
+export default function BusinessAccountMenu({ businessName, onNavigate, onLogout, currentView = '' }) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -57,7 +72,7 @@ export default function BusinessAccountMenu({ businessName, onNavigate, onLogout
               setIsOpen(false);
               onNavigate('dashboard', null, '/business');
             }}
-            style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px' }}
+            style={getMenuItemStyle(currentView === 'dashboard')}
           >
             Dashboard
           </button>
@@ -69,7 +84,7 @@ export default function BusinessAccountMenu({ businessName, onNavigate, onLogout
               setIsOpen(false);
               onNavigate('social-hub', null, '/dashboard/social');
             }}
-            style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px' }}
+            style={getMenuItemStyle(currentView === 'social-hub')}
           >
             Social Hub
           </button>
@@ -81,7 +96,7 @@ export default function BusinessAccountMenu({ businessName, onNavigate, onLogout
               setIsOpen(false);
               onNavigate('business-profile', null, '/business/profile');
             }}
-            style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px' }}
+            style={getMenuItemStyle(currentView === 'business-profile')}
           >
             Profile
           </button>
@@ -93,7 +108,7 @@ export default function BusinessAccountMenu({ businessName, onNavigate, onLogout
               setIsOpen(false);
               onLogout();
             }}
-            style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px' }}
+            style={menuItemBaseStyle}
           >
             Logout
           </button>

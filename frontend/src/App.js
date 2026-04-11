@@ -2127,7 +2127,7 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
         <div className="card dashboard-card">
           <div className="dashboard-header">
             <h1 className="heading-lg">Dashboard</h1>
-            <BusinessAccountMenu businessName={business.name} onNavigate={onNavigate} onLogout={onLogout} />
+            <BusinessAccountMenu businessName={business.name} onNavigate={onNavigate} onLogout={onLogout} currentView="dashboard" />
           </div>
           <BackLink fallbackPath="/business" onFallbackNavigate={() => onNavigate('dashboard')} />
           {showComplianceBanner && (
@@ -3005,7 +3005,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
         <div className="card dashboard-card">
           <div className="dashboard-header">
             <h1 className="heading-lg">Business Profile</h1>
-            <BusinessAccountMenu businessName={business?.name || 'Business'} onNavigate={onNavigate} onLogout={onLogout} />
+            <BusinessAccountMenu businessName={business?.name || 'Business'} onNavigate={onNavigate} onLogout={onLogout} currentView="business-profile" />
           </div>
           <button type="button" className="link-button" onClick={() => onNavigate('dashboard', null, '/business')}>
             ← Back
