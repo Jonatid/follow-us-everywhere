@@ -15,7 +15,13 @@ const getMenuItemStyle = (isActive) => ({
   fontWeight: isActive ? 700 : 500,
 });
 
-export default function BusinessAccountMenu({ businessName, onNavigate, onLogout, currentView = '' }) {
+export default function BusinessAccountMenu({
+  businessName,
+  onNavigate,
+  onLogout,
+  currentView = '',
+  includeProfile = false,
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -88,18 +94,20 @@ export default function BusinessAccountMenu({ businessName, onNavigate, onLogout
           >
             Social Hub
           </button>
-          <button
-            type="button"
-            className="link-button"
-            role="menuitem"
-            onClick={() => {
-              setIsOpen(false);
-              onNavigate('business-profile', null, '/business/profile');
-            }}
-            style={getMenuItemStyle(currentView === 'business-profile')}
-          >
-            Profile
-          </button>
+          {includeProfile ? (
+            <button
+              type="button"
+              className="link-button"
+              role="menuitem"
+              onClick={() => {
+                setIsOpen(false);
+                onNavigate('business-profile', null, '/business/profile');
+              }}
+              style={getMenuItemStyle(currentView === 'business-profile')}
+            >
+              Profile
+            </button>
+          ) : null}
           <button
             type="button"
             className="link-button"
