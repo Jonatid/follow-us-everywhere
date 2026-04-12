@@ -42,8 +42,21 @@ export default function SocialHub({ businessName = 'Business', onNavigate, onLog
     }
   };
 
+  const refreshConnectedAccounts = async () => {
+    try {
+      const response = await api.get('/social/accounts');
+      setConnectedAccounts(Array.isArray(response.data?.accounts) ? response.data.accounts : []);
+    } catch (error) {
+      setMessage(error.response?.data?.error || 'Unable to load connected accounts.');
+    }
+  };
+
   useEffect(() => {
-    refreshPosts();
+    const loadData = async () => {
+      await Promise.all([refreshPosts(), refreshConnectedAccounts()]);
+    };
+
+    loadData();
   }, []);
 
   const handleConnect = async (payload) => {
