@@ -31,6 +31,14 @@ router.post('/connect', async (req, res) => {
       accountHandle,
     });
 
+    console.log('[social/connect] Saved social account to PostgreSQL', {
+      businessId: req.businessId,
+      accountId: result.id,
+      platform: result.platform,
+      accountHandle: result.accountHandle,
+      status: result.status,
+    });
+
     return res.status(201).json({ success: true, connection: result });
   } catch (error) {
     return res.status(error.status || 500).json({ error: error.message || 'Failed to connect account.' });
