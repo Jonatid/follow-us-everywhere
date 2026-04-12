@@ -7,10 +7,13 @@ const router = express.Router();
 router.use(authenticateToken);
 
 router.get('/status', async (req, res) => {
+  const hasApiKey = Boolean((process.env.ZERNIO_API_KEY || '').trim());
+
   res.json({
-    enabled: Boolean(process.env.ZERNIO_API_KEY),
+    enabled: hasApiKey,
     provider: 'zernio',
     businessId: req.businessId,
+    message: hasApiKey ? 'Zernio integration is configured.' : 'Missing ZERNIO_API_KEY. Set it in backend/.env to enable Zernio features.',
   });
 });
 
