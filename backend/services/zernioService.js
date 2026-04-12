@@ -1,3 +1,6 @@
+require('dotenv').config({ path: `${__dirname}/../.env` });
+console.log('ZERNIO KEY CHECK:', process.env.ZERNIO_API_KEY);
+
 const API_KEY_ENV_NAME = 'ZERNIO_API_KEY';
 
 class ZernioService {
