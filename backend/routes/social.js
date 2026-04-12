@@ -65,6 +65,15 @@ router.post('/posts', async (req, res) => {
   }
 });
 
+router.get('/accounts', async (req, res) => {
+  try {
+    const accounts = await zernioService.getConnectedAccounts({ businessId: req.businessId });
+    return res.json({ success: true, accounts });
+  } catch (error) {
+    return res.status(error.status || 500).json({ error: error.message || 'Failed to fetch connected accounts.' });
+  }
+});
+
 router.get('/posts/history', async (req, res) => {
   try {
     const posts = await zernioService.getPostHistory({ businessId: req.businessId });

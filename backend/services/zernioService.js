@@ -168,6 +168,30 @@ class ZernioService {
       scheduledFor: toIso(row.scheduled_for),
     }));
   }
+
+  async getConnectedAccounts({ businessId }) {
+    this.ensureConfigured();
+
+    const result = await db.query(
+      `SELECT id, business_id, platform, account_handle, status, connected_at, created_at, updated_at
+       FROM zernio_accounts
+       WHERE business_id = $1
+         AND status = 'connected'
+       ORDER BY connected_at DESC NULLS LAST, created_at DESC`,
+      [businessId]
+    );
+
+    return result.rows.map((row) => ({
+      id: row.id,
+      businessId: row.business_id,
+      platform: row.platform,
+      accountHandle: row.account_handle,
+      status: row.status,
+      connectedAt: toIso(row.connected_at),
+      createdAt: toIso(row.created_at),
+      updatedAt: toIso(row.updated_at),
+    }));
+  }
 }
 
 module.exports = new ZernioService();

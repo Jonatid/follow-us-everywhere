@@ -90,6 +90,35 @@ test('createPost persists scheduled post and returns normalized payload', async 
   assert.equal(post.status, 'queued');
 });
 
+test('getConnectedAccounts loads connected accounts by business id', async () => {
+  const calls = [];
+  queryStub = async (sql, params) => {
+    calls.push({ sql, params });
+    return {
+      rows: [{
+        id: 7,
+        business_id: 99,
+        platform: 'facebook',
+        account_handle: 'fuse101',
+        status: 'connected',
+        connected_at: new Date('2026-04-12T00:00:00.000Z'),
+        created_at: new Date('2026-04-12T00:00:00.000Z'),
+        updated_at: new Date('2026-04-12T00:00:00.000Z'),
+      }],
+    };
+  };
+
+  const accounts = await zernioService.getConnectedAccounts({ businessId: 99 });
+
+  assert.equal(accounts.length, 1);
+  assert.equal(accounts[0].businessId, 99);
+  assert.equal(accounts[0].platform, 'facebook');
+  assert.equal(accounts[0].accountHandle, 'fuse101');
+  assert.equal(calls.length, 1);
+  assert.match(calls[0].sql, /FROM zernio_accounts/);
+  assert.deepEqual(calls[0].params, [99]);
+});
+
 test('migration defines zernio model tables', async () => {
   const fs = require('node:fs');
   const path = require('node:path');
