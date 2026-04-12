@@ -1,12 +1,12 @@
 const API_KEY_ENV_NAME = 'ZERNIO_API_KEY';
 
 class ZernioService {
-  constructor() {
-    this.apiKey = process.env[API_KEY_ENV_NAME] || '';
+  getApiKey() {
+    return (process.env[API_KEY_ENV_NAME] || '').trim();
   }
 
   ensureConfigured() {
-    if (!this.apiKey) {
+    if (!this.getApiKey()) {
       const error = new Error(`Missing ${API_KEY_ENV_NAME}. Set it in backend/.env to enable Zernio features.`);
       error.status = 503;
       throw error;
