@@ -3683,7 +3683,8 @@ export default function App() {
     } finally {
       localStorage.removeItem('token');
       setCurrentBusiness(null);
-      setCurrentScreen('landing');
+      setCurrentScreen('marketing-landing');
+      window.history.pushState({}, '', '/');
     }
   };
 
