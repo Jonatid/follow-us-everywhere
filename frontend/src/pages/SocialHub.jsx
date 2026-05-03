@@ -59,25 +59,25 @@ export default function SocialHub({ businessName = 'Business', onNavigate, onLog
     loadData();
   }, []);
 
-  const handleConnect = async (payload) => {
+  const handleConnect = async (platform) => {
     setLoading(true);
     setMessage('');
     try {
-      const response = await api.post('/social/connect', payload);
-      const newConnection = response.data?.connection;
-      if (newConnection?.platform) {
-        setConnectedAccounts((prev) => {
-          const existing = prev.some(
-            (account) =>
-              account.platform?.toLowerCase() === newConnection.platform.toLowerCase() &&
-              account.accountHandle?.toLowerCase() === newConnection.accountHandle?.toLowerCase()
-          );
-          return existing ? prev : [...prev, newConnection];
-        });
+      const normalizedPlatform = String(platform || '').trim().toLowerCase();
+      if (!normalizedPlatform) {
+        setMessage('Please choose a platform to connect.');
+        return;
       }
-      setMessage('Account connected successfully.');
+
+      const response = await api.get(`/social/connect/${encodeURIComponent(normalizedPlatform)}`);
+      const oauthUrl = response.data?.oauthUrl;
+      if (!oauthUrl) {
+        throw new Error('OAuth URL was not returned by the server.');
+      }
+
+      window.location.assign(oauthUrl);
     } catch (error) {
-      setMessage(error.response?.data?.error || 'Failed to connect account.');
+      setMessage(error.response?.data?.error || error.message || 'Failed to start OAuth connect flow.');
     } finally {
       setLoading(false);
     }
