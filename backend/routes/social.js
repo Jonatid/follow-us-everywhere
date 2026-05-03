@@ -45,6 +45,19 @@ router.post('/connect', async (req, res) => {
   }
 });
 
+router.get('/connect/:platform', async (req, res) => {
+  try {
+    const result = zernioService.buildConnectUrl({
+      businessId: req.businessId,
+      platform: req.params.platform,
+    });
+
+    return res.json({ success: true, ...result });
+  } catch (error) {
+    return res.status(error.status || 500).json({ error: error.message || 'Failed to start OAuth connect flow.' });
+  }
+});
+
 router.post('/posts', async (req, res) => {
   try {
     const { content, platforms } = req.body || {};

@@ -4,6 +4,7 @@ const db = require('../config/db');
 
 const API_KEY_ENV_NAME = 'ZERNIO_API_KEY';
 const DEFAULT_PROVIDER = 'zernio';
+const SUPPORTED_PLATFORMS = new Set(['instagram', 'facebook', 'x', 'tiktok', 'linkedin', 'youtube']);
 
 const toIso = (value) => {
   if (!value) return null;
@@ -25,6 +26,42 @@ class ZernioService {
 
   normalizeInput(value) {
     return String(value || '').trim();
+  }
+
+  buildConnectUrl({ businessId, platform }) {
+    this.ensureConfigured();
+
+    const normalizedPlatform = this.normalizeInput(platform).toLowerCase();
+    if (!normalizedPlatform) {
+      const error = new Error('platform is required.');
+      error.status = 400;
+      throw error;
+    }
+
+    if (!SUPPORTED_PLATFORMS.has(normalizedPlatform)) {
+      const error = new Error(`Unsupported platform: ${platform}`);
+      error.status = 400;
+      throw error;
+    }
+
+    const baseUrl = (process.env.ZERNIO_OAUTH_BASE_URL || 'https://api.zernio.com').trim();
+    const redirectUri = (process.env.ZERNIO_OAUTH_REDIRECT_URI || '').trim();
+    if (!redirectUri) {
+      const error = new Error('Missing ZERNIO_OAUTH_REDIRECT_URI. Set it in backend/.env for OAuth callbacks.');
+      error.status = 503;
+      throw error;
+    }
+
+    const state = Buffer.from(JSON.stringify({ businessId, platform: normalizedPlatform })).toString('base64url');
+    const connectUrl = new URL('/oauth/authorize', baseUrl);
+    connectUrl.searchParams.set('provider', normalizedPlatform);
+    connectUrl.searchParams.set('redirect_uri', redirectUri);
+    connectUrl.searchParams.set('state', state);
+
+    return {
+      platform: normalizedPlatform,
+      oauthUrl: connectUrl.toString(),
+    };
   }
 
   async connectAccount({ businessId, platform, accountHandle }) {

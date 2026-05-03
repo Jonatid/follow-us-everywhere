@@ -2,13 +2,10 @@ import React, { useState } from 'react';
 
 export default function ConnectAccounts({ onConnect, loading }) {
   const [platform, setPlatform] = useState('Instagram');
-  const [accountHandle, setAccountHandle] = useState('');
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!accountHandle.trim()) return;
-    await onConnect({ platform, accountHandle: accountHandle.trim() });
-    setAccountHandle('');
+    await onConnect(platform);
   };
 
   return (
@@ -25,17 +22,8 @@ export default function ConnectAccounts({ onConnect, loading }) {
           <option>YouTube</option>
         </select>
 
-        <label className="label" htmlFor="accountHandle">Account handle</label>
-        <input
-          id="accountHandle"
-          className="input"
-          value={accountHandle}
-          onChange={(e) => setAccountHandle(e.target.value)}
-          placeholder="@yourbrand"
-        />
-
         <button type="submit" className="button button-primary" disabled={loading}>
-          {loading ? 'Connecting...' : 'Connect account'}
+          {loading ? 'Redirecting to OAuth...' : 'Connect account'}
         </button>
       </form>
     </section>
