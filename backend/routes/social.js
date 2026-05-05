@@ -47,7 +47,7 @@ router.post('/connect', async (req, res) => {
 
 router.get('/connect/:platform', async (req, res) => {
   try {
-    const result = zernioService.buildConnectUrl({
+    const result = await zernioService.buildConnectUrl({
       businessId: req.businessId,
       platform: req.params.platform,
     });
