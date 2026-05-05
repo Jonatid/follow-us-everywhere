@@ -129,3 +129,26 @@ test('migration defines zernio model tables', async () => {
   assert.match(sql, /CREATE TABLE IF NOT EXISTS zernio_accounts/i);
   assert.match(sql, /CREATE TABLE IF NOT EXISTS scheduled_posts/i);
 });
+
+test('buildConnectUrl requests OAuth URL from Zernio API', async () => {
+  process.env.ZERNIO_OAUTH_REDIRECT_URI = 'https://fuse101.com/api/social/oauth/callback';
+  process.env.ZERNIO_OAUTH_BASE_URL = 'https://api.zernio.com';
+  process.env.ZERNIO_OAUTH_CONNECT_ENDPOINT = '/oauth/connect';
+
+  const originalFetch = global.fetch;
+  let fetchCall;
+  global.fetch = async (url, options) => {
+    fetchCall = { url: String(url), options };
+    return {
+      ok: true,
+      json: async () => ({ oauthUrl: 'https://api.zernio.com/oauth/authorize?provider=facebook&state=abc123' }),
+    };
+  };
+
+  const result = await zernioService.buildConnectUrl({ businessId: 99, platform: 'facebook' });
+  assert.equal(result.oauthUrl, 'https://api.zernio.com/oauth/authorize?provider=facebook&state=abc123');
+  assert.equal(fetchCall.url, 'https://api.zernio.com/oauth/connect');
+  assert.equal(fetchCall.options.method, 'POST');
+
+  global.fetch = originalFetch;
+});

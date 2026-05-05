@@ -28,7 +28,7 @@ class ZernioService {
     return String(value || '').trim();
   }
 
-  buildConnectUrl({ businessId, platform }) {
+  async buildConnectUrl({ businessId, platform }) {
     this.ensureConfigured();
 
     const normalizedPlatform = this.normalizeInput(platform).toLowerCase();
@@ -57,10 +57,37 @@ class ZernioService {
     connectUrl.searchParams.set('provider', normalizedPlatform);
     connectUrl.searchParams.set('redirect_uri', redirectUri);
     connectUrl.searchParams.set('state', state);
+    const fallbackOauthUrl = connectUrl.toString();
+
+    const oauthApiPath = (process.env.ZERNIO_OAUTH_CONNECT_ENDPOINT || '/oauth/connect').trim();
+    const oauthApiUrl = new URL(oauthApiPath, baseUrl);
+
+    const response = await fetch(oauthApiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.getApiKey()}`,
+      },
+      body: JSON.stringify({
+        provider: normalizedPlatform,
+        redirect_uri: redirectUri,
+        state,
+      }),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      const error = new Error(`Zernio OAuth URL request failed (${response.status}). ${text}`.trim());
+      error.status = 502;
+      throw error;
+    }
+
+    const payload = await response.json();
+    const oauthUrl = payload?.oauthUrl || payload?.url || payload?.authorization_url || fallbackOauthUrl;
 
     return {
       platform: normalizedPlatform,
-      oauthUrl: connectUrl.toString(),
+      oauthUrl,
     };
   }
 
