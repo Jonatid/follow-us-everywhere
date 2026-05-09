@@ -22,20 +22,13 @@ router.post(
     const { name, email, business, reason, message } = req.body;
     const supportEmail =
       process.env.SUPPORT_EMAIL ||
-      process.env.RESEND_SUPPORT_EMAIL ||
-      process.env.RESEND_FROM_EMAIL ||
       'support@followuseverywhere.app';
 
     try {
       await sendEmail({
         to: supportEmail,
         subject: `Support request: ${reason}`,
-        text:
-          `Name: ${name}\n` +
-          `Email: ${email}\n` +
-          `Business: ${business}\n` +
-          `Reason: ${reason}\n\n` +
-          `${message}`,
+        html: `<p><strong>Name:</strong> ${name}</p><p><strong>Email:</strong> ${email}</p><p><strong>Business:</strong> ${business}</p><p><strong>Reason:</strong> ${reason}</p><p><strong>Message:</strong></p><p>${message}</p>`,
       });
 
       res.json({ message: 'Support request sent successfully' });

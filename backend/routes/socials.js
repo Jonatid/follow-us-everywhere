@@ -184,7 +184,7 @@ router.post(
           sendEmail({
             to: business.email,
             subject: NUDGE_SUBJECT,
-            text: nudgeMessage,
+            html: `<p>${nudgeMessage}</p>`,
           }).catch((emailError) => {
             console.error('Failed to send nudge email:', emailError);
           });
@@ -367,7 +367,7 @@ router.put(
           sendEmail({
             to: business.email,
             subject: NUDGE_SUBJECT,
-            text: nudgeMessage,
+            html: `<p>${nudgeMessage}</p>`,
           }).catch((emailError) => {
             console.error('Failed to send nudge email:', emailError);
           });

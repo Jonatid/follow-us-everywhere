@@ -26,6 +26,7 @@ const adminAuthRoutes = require('./routes/admin-auth');
 const adminRoutes = require('./routes/admin');
 const customerAuthRoutes = require('./routes/customers-auth');
 const customerRoutes = require('./routes/customers');
+const { sendEmail } = require('./utils/mailer');
 const publicRoutes = require('./routes/public');
 const badgesRoutes = require('./routes/badges');
 const r2Routes = require('./routes/r2Routes');
@@ -95,6 +96,21 @@ app.get('/files/:key', async (req, res, next) => {
 });
 
 // API Routes
+
+app.get('/api/test-email', async (req, res) => {
+  try {
+    await sendEmail({
+      to: 'test@example.com',
+      subject: 'Follow Us Everywhere SMTP test',
+      html: '<p>This is a test email from Follow Us Everywhere via SiteGround SMTP.</p>'
+    });
+    res.json({ message: 'Test email sent successfully' });
+  } catch (error) {
+    console.error('Test email route failed:', error);
+    res.status(500).json({ message: 'Failed to send test email' });
+  }
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/businesses', businessesRoutes);
 app.use('/api/socials', socialsRoutes);
