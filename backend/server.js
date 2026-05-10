@@ -100,9 +100,9 @@ app.get('/files/:key', async (req, res, next) => {
 app.get('/api/test-email', async (req, res) => {
   try {
     await sendEmail({
-      to: 'test@example.com',
+      to: 'jeanett@fuse101.com',
       subject: 'Follow Us Everywhere SMTP test',
-      html: '<p>This is a test email from Follow Us Everywhere via SiteGround SMTP.</p>'
+      html: '<p>This is a test email from Follow Us Everywhere via Microsoft 365 SMTP.</p>'
     });
     res.json({ message: 'Test email sent successfully' });
   } catch (error) {
