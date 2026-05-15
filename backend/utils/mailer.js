@@ -1,26 +1,38 @@
-const nodemailer = require('nodemailer');
-
-const transporter = nodemailer.createTransport({
-  host: 'smtp.office365.com',
-  port: 587,
-  secure: false,
-  requireTLS: true,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
-  }
-});
+const RESEND_API_URL = 'https://api.resend.com/emails';
 
 const sendEmail = async ({ to, subject, html }) => {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM;
+
+  if (!apiKey) {
+    throw new Error('Missing RESEND_API_KEY environment variable');
+  }
+
+  if (!from) {
+    throw new Error('Missing RESEND_FROM environment variable');
+  }
+
   try {
-    await transporter.sendMail({
-      from: 'Follow Us Everywhere <support@fuse101.com>',
-      to,
-      subject,
-      html
+    const response = await fetch(RESEND_API_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from,
+        to,
+        subject,
+        html
+      })
     });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(`Resend API request failed (${response.status}): ${errorBody}`);
+    }
   } catch (error) {
-    console.error('SMTP email send failed:', {
+    console.error('Resend email send failed:', {
       to,
       subject,
       error: error?.message || error
