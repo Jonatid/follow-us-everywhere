@@ -1,5 +1,12 @@
 const db = require('../config/db');
 
+const DEFAULT_RETENTION_DAYS = 180;
+
+const getRetentionDays = () => {
+  const parsed = Number.parseInt(process.env.QR_ANALYTICS_RETENTION_DAYS, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : DEFAULT_RETENTION_DAYS;
+};
+
 const detectDeviceType = (userAgent = '') => {
   const ua = String(userAgent).toLowerCase();
   const mobileKeywords = ['mobile', 'android', 'iphone', 'ipod', 'blackberry', 'windows phone'];
@@ -29,6 +36,21 @@ const logScan = async ({ businessSlug, ipAddress, userAgent }) => {
     // Never let analytics logging break QR redirect requests.
     console.error('Failed to log QR scan:', error.message);
   }
+};
+
+const cleanupOldScans = async ({ retentionDays = getRetentionDays() } = {}) => {
+  const days = Number.parseInt(retentionDays, 10);
+  if (!Number.isInteger(days) || days <= 0) {
+    throw new Error('retentionDays must be a positive integer');
+  }
+
+  const result = await db.query(
+    `DELETE FROM qr_scans
+     WHERE scanned_at < NOW() - ($1::int * INTERVAL '1 day')`,
+    [days]
+  );
+
+  return { deletedCount: result.rowCount || 0, retentionDays: days };
 };
 
 const getScanStats = async (businessSlug) => {
@@ -75,6 +97,9 @@ const getScanStats = async (businessSlug) => {
 };
 
 module.exports = {
+  DEFAULT_RETENTION_DAYS,
+  cleanupOldScans,
+  getRetentionDays,
   logScan,
   getScanStats
 };
