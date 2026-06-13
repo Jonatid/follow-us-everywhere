@@ -13,6 +13,7 @@ const { resolveUniqueBusinessSlug } = require('../utils/businessSlug');
 const {
   ACCOUNT_LOCKOUT_MINUTES,
   clearAccountFailedAttempts,
+  enforceForgotPasswordRateLimit,
   enforceIpRateLimit,
   getAccountAttempt,
   getFailedAttemptDelay,
@@ -360,6 +361,15 @@ router.post(
     const responseMessage = 'If that email exists, we sent a reset link.';
 
     try {
+      const isRateLimited = (await enforceForgotPasswordRateLimit({
+        routeScope: 'business-forgot-password',
+        ip: getRequestIp(req),
+        emailNormalized,
+      })).blocked;
+      if (isRateLimited) {
+        return res.json({ message: responseMessage });
+      }
+
       const businessResult = await pool.query(
         'SELECT id, name, email FROM businesses WHERE LOWER(email) = LOWER($1)',
         [emailNormalized]
