@@ -7,7 +7,7 @@ const pool = require('../config/db');
 const { authenticateToken } = require('../middleware/auth');
 const { resolveVerificationStatus, buildAccountRestrictionError } = require('../utils/verification');
 const { getPublicBusinessBySlug } = require('../utils/publicBusinessProfile');
-const { uploadBuffer, isR2Configured } = require('../services/r2');
+const { uploadBuffer, getSignedDownloadUrl, isR2Configured } = require('../services/r2');
 
 const router = express.Router();
 
@@ -37,7 +37,7 @@ const documentStorage = multer.diskStorage({
 });
 
 const documentUpload = multer({
-  storage: documentStorage,
+  storage: isR2Configured() ? multer.memoryStorage() : documentStorage,
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (!allowedMimeTypes.has(file.mimetype)) {
@@ -139,7 +139,7 @@ const handleDocumentUpload = (req, res) => {
       );
 
       if (existingDocument.rows.length > 0) {
-        if (fs.existsSync(req.file.path)) {
+        if (req.file.path && fs.existsSync(req.file.path)) {
           fs.unlink(req.file.path, () => {});
         }
 
@@ -157,7 +157,33 @@ const handleDocumentUpload = (req, res) => {
         return res.status(400).json({ error: 'Document number must be 255 characters or less' });
       }
 
-      const storagePath = path.relative(path.join(__dirname, '..'), req.file.path).replace(/\\/g, '/');
+      let storageProvider = 'local';
+      let storagePath = req.file.path
+        ? path.relative(path.join(__dirname, '..'), req.file.path).replace(/\\/g, '/')
+        : '';
+      let storedFileName = req.file.filename || '';
+
+      if (isR2Configured()) {
+        const extension = path.extname(req.file.originalname || '').toLowerCase();
+        const safeExtension = ['.pdf', '.jpg', '.jpeg', '.png', '.webp'].includes(extension) ? extension : '';
+        const timestamp = Date.now();
+        const safeName = path.basename(req.file.originalname || 'document', extension).replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 80) || 'document';
+        const objectKey = `business-documents/${req.businessId}/${timestamp}-${safeName}${safeExtension}`;
+
+        try {
+          await uploadBuffer({
+            key: objectKey,
+            buffer: req.file.buffer,
+            contentType: req.file.mimetype,
+          });
+          storageProvider = 'r2';
+          storagePath = objectKey;
+          storedFileName = path.basename(objectKey);
+        } catch (r2Error) {
+          console.error('Error uploading business document to R2:', r2Error);
+          return res.status(502).json({ error: 'Failed to upload document to object storage' });
+        }
+      }
 
       const result = await pool.query(
         `INSERT INTO business_documents (
@@ -173,7 +199,7 @@ const handleDocumentUpload = (req, res) => {
            status,
            notes
          )
-         VALUES ($1, $2, $3, $4, 'local', $5, $6, $7, $8, 'Pending', $9)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Pending', $10)
          RETURNING id,
                    business_id AS "businessId",
                    document_type AS "documentType",
@@ -194,7 +220,8 @@ const handleDocumentUpload = (req, res) => {
           req.businessId,
           document_type,
           req.file.originalname,
-          req.file.filename,
+          storedFileName,
+          storageProvider,
           storagePath,
           normalizedDocumentNumber || null,
           req.file.mimetype,
@@ -269,7 +296,7 @@ router.get('/documents/:id/download', authenticateToken, async (req, res) => {
     }
 
     const result = await pool.query(
-      `SELECT id, business_id AS "businessId", original_file_name AS "originalFileName", storage_path AS "storagePath", mime_type AS "mimeType"
+      `SELECT id, business_id AS "businessId", original_file_name AS "originalFileName", storage_provider AS "storageProvider", storage_path AS "storagePath", mime_type AS "mimeType"
        FROM business_documents
        WHERE id = $1 AND business_id = $2`,
       [documentId, req.businessId]
@@ -280,6 +307,18 @@ router.get('/documents/:id/download', authenticateToken, async (req, res) => {
     }
 
     const document = result.rows[0];
+
+    if (document.storageProvider === 'r2') {
+      const responseContentDisposition = document.originalFileName
+        ? `attachment; filename="${document.originalFileName.replace(/[\"\r\n]/g, '_')}"`
+        : undefined;
+      const downloadUrl = await getSignedDownloadUrl({
+        key: document.storagePath,
+        responseContentDisposition,
+      });
+      return res.redirect(downloadUrl);
+    }
+
     const absolutePath = path.join(__dirname, '..', document.storagePath);
 
     if (!fs.existsSync(absolutePath)) {
@@ -305,6 +344,7 @@ router.delete('/documents/:id', authenticateToken, async (req, res) => {
        WHERE id = $1 AND business_id = $2
        RETURNING id,
                  original_file_name AS "originalFileName",
+                 storage_provider AS "storageProvider",
                  storage_path AS "storagePath"`,
       [documentId, req.businessId]
     );
@@ -315,7 +355,7 @@ router.delete('/documents/:id', authenticateToken, async (req, res) => {
 
     const deletedDocument = result.rows[0];
     const absolutePath = path.join(__dirname, '..', deletedDocument.storagePath || '');
-    if (deletedDocument.storagePath && fs.existsSync(absolutePath)) {
+    if (deletedDocument.storageProvider !== 'r2' && deletedDocument.storagePath && fs.existsSync(absolutePath)) {
       fs.unlink(absolutePath, (unlinkErr) => {
         if (unlinkErr) {
           console.error('Error deleting stored business document file:', unlinkErr);

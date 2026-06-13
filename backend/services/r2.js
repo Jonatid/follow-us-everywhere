@@ -35,12 +35,13 @@ const getR2Client = () => {
   return r2Client;
 };
 
-const putObject = async ({ key, body, contentType }) => {
+const putObject = async ({ key, body, contentType, cacheControl }) => {
   const command = new PutObjectCommand({
     Bucket: process.env.R2_BUCKET,
     Key: key,
     Body: body,
-    ContentType: contentType
+    ContentType: contentType,
+    ...(cacheControl ? { CacheControl: cacheControl } : {})
   });
 
   await getR2Client().send(command);
@@ -69,7 +70,7 @@ const getSignedUploadUrl = async ({ key, contentType, expiresInSeconds = 60 * 10
 };
 
 // Backward-compatible aliases for existing callers.
-const uploadBuffer = async ({ key, buffer, contentType }) => putObject({ key, body: buffer, contentType });
+const uploadBuffer = async ({ key, buffer, contentType, cacheControl }) => putObject({ key, body: buffer, contentType, cacheControl });
 const getDownloadUrl = async (key, expiresInSeconds) => getSignedDownloadUrl({ key, expiresInSeconds });
 
 module.exports = {

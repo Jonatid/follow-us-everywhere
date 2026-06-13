@@ -192,6 +192,7 @@ router.delete('/documents/:id', async (req, res) => {
       `DELETE FROM business_documents
        WHERE id = $1
        RETURNING id,
+                 storage_provider AS "storageProvider",
                  storage_path AS "storagePath",
                  original_file_name AS "originalFileName"`,
       [documentId]
@@ -203,7 +204,7 @@ router.delete('/documents/:id', async (req, res) => {
 
     const deletedDocument = result.rows[0];
     const absolutePath = path.join(__dirname, '..', deletedDocument.storagePath || '');
-    if (deletedDocument.storagePath && fs.existsSync(absolutePath)) {
+    if (deletedDocument.storageProvider !== 'r2' && deletedDocument.storagePath && fs.existsSync(absolutePath)) {
       fs.unlink(absolutePath, (unlinkErr) => {
         if (unlinkErr) {
           console.error('Admin delete stored business document file error:', unlinkErr);
