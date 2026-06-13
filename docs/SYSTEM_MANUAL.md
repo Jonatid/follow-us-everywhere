@@ -399,6 +399,8 @@ The core value is **structured trust + discoverability**:
 - `FRONTEND_URL`: business reset link base URL.
 - `DATABASE_URL` or `DB_HOST/DB_PORT/DB_NAME/DB_USER/DB_PASSWORD`.
 - `DB_SSL`: SSL toggle.
+- `PG_POOL_MAX`, `PG_POOL_MIN`, `PG_IDLE_TIMEOUT_MS`, `PG_CONNECTION_TIMEOUT_MS`, `PG_MAX_USES`, `PG_ALLOW_EXIT_ON_IDLE`: explicit PostgreSQL pool tuning knobs. See `docs/OPERATIONAL_RUNBOOK.md`.
+- `QR_ANALYTICS_RETENTION_DAYS`: retention window used by `npm run cleanup:qr-analytics` from `backend/`; defaults to 180 days.
 - `RESEND_API_KEY`, `RESEND_FROM`, `RESEND_FROM_EMAIL`: outbound email.
 - `SUPPORT_EMAIL` / `RESEND_SUPPORT_EMAIL`: support recipient fallback chain.
 - `CUSTOMER_FRONTEND_URL`: customer reset link base.
@@ -442,8 +444,10 @@ The core value is **structured trust + discoverability**:
 - Security events are logged for failed logins/lockouts, admin 2FA enrollment + backup code usage, logout invalidation, blocked CORS origins, upload/rate-limit blocks, privileged access denials, and request/body size limit violations.
 - Sensitive values are redacted/omitted (passwords, JWT/token values, TOTP secrets/codes, backup codes, authorization values).
 
-## Backups and security considerations (inferred)
-- No explicit backup automation in repo.
+## Backups and security considerations
+- Database and object-storage backup strategy is documented in `docs/OPERATIONAL_RUNBOOK.md`; no managed-provider backup automation is embedded in the repo.
+- Admin 2FA recovery is available via `npm run reset:admin-2fa` from `backend/` after out-of-band identity verification.
+- QR analytics cleanup is available via `npm run cleanup:qr-analytics` from `backend/` and should be scheduled by operations.
 - Passwords hashed with bcrypt.
 - JWT auth used for protected endpoints.
 - File uploads stored on local disk (`backend/uploads`) suggest persistence considerations in ephemeral hosting.
@@ -480,7 +484,7 @@ The core value is **structured trust + discoverability**:
 4. Add pagination to admin-heavy list endpoints.
 5. Add centralized env validation and deployment runbook (required vars by environment).
 6. Add observability (request IDs, structured logs, error tracking).
-7. Clarify data retention/backups for uploads + DB.
+7. Clarify data retention/backups for uploads + DB. (Operational baseline now documented in `docs/OPERATIONAL_RUNBOOK.md`; production scheduling/provider configuration still required.)
 
 ---
 

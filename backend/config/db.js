@@ -2,6 +2,25 @@ const { Pool } = require('pg');
 require('dotenv').config();
 const { logger } = require('./logger');
 
+const parsePositiveInt = (value, fallback) => {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+};
+
+const parseNonNegativeInt = (value, fallback) => {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : fallback;
+};
+
+const poolTuning = {
+  max: parsePositiveInt(process.env.PG_POOL_MAX, 20),
+  min: parseNonNegativeInt(process.env.PG_POOL_MIN, 0),
+  idleTimeoutMillis: parsePositiveInt(process.env.PG_IDLE_TIMEOUT_MS, 30000),
+  connectionTimeoutMillis: parsePositiveInt(process.env.PG_CONNECTION_TIMEOUT_MS, 2000),
+  maxUses: parsePositiveInt(process.env.PG_MAX_USES, 7500),
+  allowExitOnIdle: process.env.PG_ALLOW_EXIT_ON_IDLE === 'true',
+};
+
 let pool;
 const useSsl = process.env.DB_SSL === 'true' || Boolean(process.env.DATABASE_URL);
 
@@ -23,13 +42,11 @@ const getConnectionInfo = () => {
 };
 
 if (process.env.DATABASE_URL) {
-  // For Render.com or other cloud services that provide DATABASE_URL
+  // For Render.com or other cloud services that provide DATABASE_URL.
   pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: useSsl ? { rejectUnauthorized: false } : false,
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
+    ...poolTuning,
   });
 } else {
   // For local development (defaults are intentionally dev-only).
@@ -40,11 +57,27 @@ if (process.env.DATABASE_URL) {
     port: process.env.DB_PORT || 5432,
     database: process.env.DB_NAME || 'followuseverywhere-db',
     ssl: useSsl ? { rejectUnauthorized: false } : false,
+    ...poolTuning,
   });
 }
 
 const connectionInfo = getConnectionInfo();
-logger.info({ host: connectionInfo.host, database: connectionInfo.database, user: connectionInfo.user }, 'Database connection configured');
+logger.info(
+  {
+    host: connectionInfo.host,
+    database: connectionInfo.database,
+    user: connectionInfo.user,
+    pool: {
+      max: poolTuning.max,
+      min: poolTuning.min,
+      idleTimeoutMillis: poolTuning.idleTimeoutMillis,
+      connectionTimeoutMillis: poolTuning.connectionTimeoutMillis,
+      maxUses: poolTuning.maxUses,
+      allowExitOnIdle: poolTuning.allowExitOnIdle,
+    },
+  },
+  'Database connection configured'
+);
 
 pool.on('error', (err) => {
   logger.error({ err }, 'Unexpected error on idle client');
@@ -55,3 +88,6 @@ pool.on('connect', () => {
 });
 
 module.exports = pool;
+module.exports.poolTuning = poolTuning;
+module.exports.parsePositiveInt = parsePositiveInt;
+module.exports.parseNonNegativeInt = parseNonNegativeInt;
