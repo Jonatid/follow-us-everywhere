@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { deleteAdminDocument, fetchAdminDocuments, reviewAdminDocument } from '../../utils/adminApi';
 import { toAdminDocumentUrl } from '../../utils/documentUrl';
+import AdminPagination from '../../components/AdminPagination';
 
 const STATUS_FILTERS = ['Pending', 'Verified', 'Rejected'];
 
@@ -12,13 +13,27 @@ const AdminDocuments = () => {
   const [savingId, setSavingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [rejectionReasons, setRejectionReasons] = useState({});
+  const [pagination, setPagination] = useState({ total: 0, limit: 25, offset: 0, hasMore: false });
 
   const loadDocuments = async () => {
     setLoading(true);
     setError('');
     try {
-      const data = await fetchAdminDocuments(statusFilter ? { status: statusFilter } : undefined);
-      setDocuments(Array.isArray(data) ? data : []);
+      const data = await fetchAdminDocuments({
+        ...(statusFilter ? { status: statusFilter } : {}),
+        limit: pagination.limit,
+        offset: pagination.offset,
+      });
+      setDocuments(Array.isArray(data) ? data : data?.documents || []);
+      if (!Array.isArray(data)) {
+        setPagination((prev) => ({
+          ...prev,
+          total: data?.total || 0,
+          limit: data?.limit || prev.limit,
+          offset: data?.offset || 0,
+          hasMore: Boolean(data?.hasMore),
+        }));
+      }
     } catch (err) {
       setError('Unable to load uploaded documents.');
     } finally {
@@ -28,7 +43,7 @@ const AdminDocuments = () => {
 
   useEffect(() => {
     loadDocuments();
-  }, [statusFilter]);
+  }, [statusFilter, pagination.limit, pagination.offset]);
 
   const pendingCount = useMemo(
     () => documents.filter((doc) => doc.status === 'Pending').length,
@@ -86,7 +101,10 @@ const AdminDocuments = () => {
             id="document-status-filter"
             className="admin-input"
             value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value)}
+            onChange={(event) => {
+              setStatusFilter(event.target.value);
+              setPagination((prev) => ({ ...prev, offset: 0 }));
+            }}
           >
             {STATUS_FILTERS.map((status) => (
               <option key={status} value={status}>
@@ -206,6 +224,13 @@ const AdminDocuments = () => {
           </tbody>
         </table>
       )}
+      {!loading ? (
+        <AdminPagination
+          {...pagination}
+          disabled={loading}
+          onPageChange={(nextOffset) => setPagination((prev) => ({ ...prev, offset: nextOffset }))}
+        />
+      ) : null}
     </div>
   );
 };

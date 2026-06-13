@@ -6,6 +6,7 @@ const { body, validationResult } = require('express-validator');
 const pool = require('../config/db');
 const { authenticateAdminToken } = require('../middleware/admin-auth');
 const { resolveVerificationStatus } = require('../utils/verification');
+const { buildPaginationMeta, parsePagination } = require('../utils/pagination');
 
 const router = express.Router();
 
@@ -20,6 +21,13 @@ router.get('/documents', async (req, res) => {
   const allowedStatuses = new Set(['Pending', 'Verified', 'Approved', 'Rejected']);
 
   try {
+    let pagination;
+    try {
+      pagination = parsePagination(req.query);
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
+    }
+
     const filters = [];
     const values = [];
 
@@ -38,11 +46,27 @@ router.get('/documents', async (req, res) => {
     }
 
     if (business_id) {
+      const businessId = Number(business_id);
+      if (!Number.isInteger(businessId) || businessId <= 0) {
+        return res.status(400).json({ message: 'Invalid business_id filter' });
+      }
       filters.push(`bd.business_id = $${values.length + 1}`);
-      values.push(Number(business_id));
+      values.push(businessId);
     }
 
     const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
+
+    const countResult = await pool.query(
+      `SELECT COUNT(*)::int AS total
+       FROM business_documents bd
+       JOIN businesses b ON b.id = bd.business_id
+       ${whereClause}`,
+      values
+    );
+
+    const listValues = [...values, pagination.limit, pagination.offset];
+    const limitParam = listValues.length - 1;
+    const offsetParam = listValues.length;
 
     const result = await pool.query(
       `SELECT bd.id,
@@ -66,11 +90,14 @@ router.get('/documents', async (req, res) => {
        FROM business_documents bd
        JOIN businesses b ON b.id = bd.business_id
        ${whereClause}
-       ORDER BY bd.submitted_at DESC`,
-      values
+       ORDER BY bd.submitted_at DESC
+       LIMIT $${limitParam}
+       OFFSET $${offsetParam}`,
+      listValues
     );
 
-    res.json(result.rows);
+    const paginationMeta = buildPaginationMeta(countResult.rows[0]?.total, pagination.limit, pagination.offset);
+    res.json({ documents: result.rows, ...paginationMeta });
   } catch (err) {
     console.error('Admin list business documents error:', err);
     res.status(500).json({ message: 'Server error' });
@@ -359,7 +386,15 @@ router.patch('/reviews/businesses/:id', async (req, res) => {
 // @desc    List businesses for admin
 // @access  Private (admin)
 router.get('/businesses', async (req, res) => {
+  let pagination;
   try {
+    pagination = parsePagination(req.query);
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+
+  try {
+    const countResult = await pool.query('SELECT COUNT(*)::int AS total FROM businesses');
     const result = await pool.query(
       `SELECT id,
               name,
@@ -369,7 +404,10 @@ router.get('/businesses', async (req, res) => {
               created_at AS "createdAt",
               updated_at AS "updatedAt"
        FROM businesses
-       ORDER BY created_at DESC`
+       ORDER BY created_at DESC
+       LIMIT $1
+       OFFSET $2`,
+      [pagination.limit, pagination.offset]
     );
 
     const businesses = result.rows.map((business) => ({
@@ -383,7 +421,8 @@ router.get('/businesses', async (req, res) => {
       updatedAt: business.updatedAt,
     }));
 
-    res.json(businesses);
+    const paginationMeta = buildPaginationMeta(countResult.rows[0]?.total, pagination.limit, pagination.offset);
+    res.json({ businesses, ...paginationMeta });
   } catch (err) {
     console.error('Admin list businesses error:', err);
     res.status(500).json({ message: 'Server error' });
