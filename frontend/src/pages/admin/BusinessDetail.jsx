@@ -47,8 +47,9 @@ const BusinessDetail = ({ businessId, onBack }) => {
 
   const loadBadgeRequests = async () => {
     try {
-      const requests = await fetchBadgeRequests();
-      const normalized = Array.isArray(requests) ? requests.filter((item) => Number(item.businessId) === Number(businessId)) : [];
+      const requests = await fetchBadgeRequests({ business_id: Number(businessId), limit: 100, offset: 0 });
+      const rows = Array.isArray(requests) ? requests : requests?.badgeRequests || [];
+      const normalized = rows.filter((item) => Number(item.businessId) === Number(businessId));
       setBadgeRequests(normalized);
     } catch (err) {
       setError('Unable to load badge requests.');
@@ -57,8 +58,8 @@ const BusinessDetail = ({ businessId, onBack }) => {
 
   const loadBusinessDocuments = async () => {
     try {
-      const data = await fetchAdminDocuments({ business_id: Number(businessId) });
-      setBusinessDocuments(Array.isArray(data) ? data : []);
+      const data = await fetchAdminDocuments({ business_id: Number(businessId), limit: 100, offset: 0 });
+      setBusinessDocuments(Array.isArray(data) ? data : data?.documents || []);
     } catch (err) {
       setError('Unable to load uploaded documents for this business.');
     }
