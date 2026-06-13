@@ -11,7 +11,13 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
+    const { onError } = this.props;
+
     console.error('Unexpected frontend render error:', error, errorInfo);
+
+    if (onError) {
+      onError(error, errorInfo);
+    }
   }
 
   handleRetry = () => {
@@ -23,11 +29,15 @@ class ErrorBoundary extends React.Component {
   };
 
   render() {
-    const { children } = this.props;
+    const { children, fallback } = this.props;
     const { hasError, error } = this.state;
 
     if (!hasError) {
       return children;
+    }
+
+    if (fallback) {
+      return fallback({ error, retry: this.handleRetry, reload: this.handleReload });
     }
 
     return (
@@ -40,10 +50,10 @@ class ErrorBoundary extends React.Component {
           </p>
           {error?.message ? <p className="error-boundary__detail">Error: {error.message}</p> : null}
           <div className="error-boundary__actions">
-            <button type="button" className="button-primary" onClick={this.handleRetry}>
+            <button type="button" className="button button-primary" onClick={this.handleRetry}>
               Try again
             </button>
-            <button type="button" className="button-secondary" onClick={this.handleReload}>
+            <button type="button" className="button button-secondary" onClick={this.handleReload}>
               Reload page
             </button>
           </div>
