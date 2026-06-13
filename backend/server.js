@@ -32,6 +32,7 @@ const badgesRoutes = require('./routes/badges');
 const r2Routes = require('./routes/r2Routes');
 const qrRoutes = require('./routes/qr');
 const uploadRoutes = require('./routes/uploadRoutes');
+const supportRoutes = require('./routes/support');
 const { authenticateToken } = require('./middleware/auth');
 
 const app = express();
@@ -123,6 +124,7 @@ app.use('/api/customers/auth', customerAuthRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/r2', r2Routes);
+app.use('/api/support', supportRoutes);
 app.use('/qr', qrRoutes);
 
 const candidateFrontendBuildDirs = [

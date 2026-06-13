@@ -5,7 +5,6 @@ const { logger } = require('./logger');
 const REQUIRED_TABLES = [
   'businesses',
   'social_links',
-  'email_verification_tokens',
   'password_reset_tokens',
   'admins',
   'customers',

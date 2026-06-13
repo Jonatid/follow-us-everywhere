@@ -2,7 +2,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const db = require('../config/db');
 const { authenticateToken } = require('../middleware/auth');
-const { autoDisableBusiness, NUDGE_SUBJECT } = require('../utils/businessVerification');
+const { NUDGE_SUBJECT } = require('../utils/businessVerification');
 const { sendEmail } = require('../utils/email');
 const { resolveVerificationStatus, buildAccountRestrictionError } = require('../utils/verification');
 
@@ -43,7 +43,7 @@ router.get('/business/:businessId', async (req, res) => {
       return res.status(404).json({ error: 'Business not found' });
     }
 
-    const business = await autoDisableBusiness(db, businessCheck.rows[0]);
+    const business = businessCheck.rows[0];
     if (business.verification_status === 'disabled') {
       return res.status(404).json({ error: 'Business not found' });
     }
@@ -77,7 +77,7 @@ router.get('/:slug', async (req, res) => {
       return res.status(404).json({ error: 'Business not found' });
     }
 
-    const business = await autoDisableBusiness(db, businessCheck.rows[0]);
+    const business = businessCheck.rows[0];
     if (business.verification_status === 'disabled') {
       return res.status(404).json({ error: 'Business not found' });
     }
