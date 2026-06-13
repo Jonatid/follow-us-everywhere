@@ -4,6 +4,7 @@ import './index.css';
 import './styles/admin.css';
 import App from './App';
 import AdminApp from './pages/admin/AdminApp';
+import ErrorBoundary from './components/ErrorBoundary';
 import reportWebVitals from './reportWebVitals';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
@@ -23,7 +24,9 @@ const isAdminRoute = isAdminHost || window.location.pathname.startsWith('/admin'
 
 root.render(
   <React.StrictMode>
-    {isAdminRoute ? <AdminApp /> : <App />}
+    <ErrorBoundary>
+      {isAdminRoute ? <AdminApp /> : <App />}
+    </ErrorBoundary>
   </React.StrictMode>
 );
 
