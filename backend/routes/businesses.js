@@ -605,6 +605,13 @@ router.put(
         paramCount++;
       }
 
+      const { show_qr } = req.body;
+      if (show_qr !== undefined) {
+        fields.push(`show_qr = $${paramCount}`);
+        values.push(Boolean(show_qr));
+        paramCount++;
+      }
+
       if (fields.length === 0) {
         return res.status(400).json({ error: 'No fields to update' });
       }
@@ -637,6 +644,7 @@ router.put(
                   vision_statement,
                   philanthropic_goals,
                   widget_settings,
+                  show_qr,
                   created_at,
                   updated_at
       `;

@@ -2339,6 +2339,50 @@ const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
 };
 
 // =============================================================================
+// SHAREABLE LINK BAR
+// =============================================================================
+
+const ShareableLinkBar = ({ url }) => {
+  const [copied, setCopied] = React.useState(false);
+  const handleCopy = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
+    }
+  };
+  return (
+    <div style={{
+      width: '100%', maxWidth: 320,
+      background: '#F4F7FF', border: '1.5px solid #E8EDF8',
+      borderRadius: 12, padding: '10px 14px',
+      display: 'flex', flexDirection: 'column', gap: 4,
+    }}>
+      <span style={{ fontSize: 10, fontWeight: 700, color: '#6B85B5', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+        Can't scan? Share this link
+      </span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ flex: 1, fontSize: 12, color: '#003594', fontWeight: 600, wordBreak: 'break-all', lineHeight: 1.4 }}>
+          {url}
+        </span>
+        <button
+          onClick={handleCopy}
+          style={{
+            flexShrink: 0, background: copied ? '#003594' : '#FDD001',
+            color: copied ? '#FDD001' : '#003594', border: 'none',
+            borderRadius: 8, padding: '7px 12px', fontSize: 11, fontWeight: 800,
+            cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap',
+          }}
+        >
+          {copied ? '✓ Copied' : 'Copy'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// =============================================================================
 // PUBLIC FOLLOW PAGE
 // =============================================================================
 
@@ -2473,6 +2517,8 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
   const publicQrSlug = normalizePublicBusinessKey(slug) || resolvePublicBusinessKey(business);
   const publicQrCardSize = publicQrMode === 'minimal' ? 120 : publicQrMode === 'full' ? 180 : 150;
   const publicQrCompact = publicQrMode === 'minimal';
+  const showQrSection = business.show_qr !== false;
+  const publicProfileUrl = `https://fuse101.com/b/${encodeURIComponent(publicQrSlug || 'your-business')}`;
 
   return (
     <div className="page page--gradient public-business-page">
@@ -2551,16 +2597,19 @@ const PublicFollowPage = ({ slug, onNavigate }) => {
                 {visibleSocials.length > 1 && <p className="public-follow-subtitle">{widgetSettings.ctaText}</p>}
               </>
             )}
-            <div className="public-section" style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
-              <QrCard
-                businessName={businessName || business.name}
-                slug={publicQrSlug || 'your-business'}
-                size={publicQrCardSize}
-                compact={publicQrCompact}
-                showBranding={widgetSettings.showBranding}
-                showBusinessName={widgetSettings.showBusinessName}
-              />
-            </div>
+            {showQrSection && (
+              <div className="public-section" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                <QrCard
+                  businessName={businessName || business.name}
+                  slug={publicQrSlug || 'your-business'}
+                  size={publicQrCardSize}
+                  compact={publicQrCompact}
+                  showBranding={widgetSettings.showBranding}
+                  showBusinessName={widgetSettings.showBusinessName}
+                />
+                <ShareableLinkBar url={publicProfileUrl} />
+              </div>
+            )}
             {hasApprovedImpactBadges ? (
               <div className="public-section">
                 <button
@@ -2645,6 +2694,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
   const [uploadLoading, setUploadLoading] = useState(false);
   const [requestLoading, setRequestLoading] = useState(false);
   const [widgetSettings, setWidgetSettings] = useState(() => normalizeWidgetSettings(business?.widget_settings));
+  const [showQr, setShowQr] = useState(() => business?.show_qr !== false);
   const documentFileInputRef = useRef(null);
   const logoAutosaveTimeoutRef = useRef(null);
 
@@ -2656,6 +2706,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
       laraNumber: business?.lara_number || '',
     });
     setWidgetSettings(normalizeWidgetSettings(business?.widget_settings));
+    setShowQr(business?.show_qr !== false);
     setLogoPreview(toAbsoluteAssetUrl(business?.logo_url));
     setLogoPreviewError(false);
 
@@ -2967,11 +3018,14 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
         logo_url: normalizedLogoUrl,
         lara_number: formData.laraNumber || null,
         widget_settings: widgetSettings,
+        show_qr: showQr,
       });
       const persistedLogoUrl = response.data?.business?.logo_url ?? normalizedLogoUrl ?? '';
       const persistedWidgetSettings = normalizeWidgetSettings(response.data?.business?.widget_settings ?? widgetSettings);
+      const persistedShowQr = response.data?.business?.show_qr !== false;
       setFormData((prev) => ({ ...prev, logo: persistedLogoUrl }));
       setWidgetSettings(persistedWidgetSettings);
+      setShowQr(persistedShowQr);
       setLogoPreview(toAbsoluteAssetUrl(persistedLogoUrl));
       setLogoPreviewError(false);
       onBusinessUpdated((prev) => ({
@@ -2981,6 +3035,7 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
         logo_url: persistedLogoUrl,
         lara_number: response.data?.business?.lara_number ?? (formData.laraNumber || null),
         widget_settings: persistedWidgetSettings,
+        show_qr: persistedShowQr,
       }));
       setSaveMessage('Profile saved successfully.');
     } catch (err) {
@@ -3122,6 +3177,14 @@ const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusinessUpdated
                         disabled={widgetSettings.layoutMode === 'minimal'}
                       />
                       Show social links
+                    </label>
+                    <label className="row" style={{ gap: '8px' }}>
+                      <input
+                        type="checkbox"
+                        checked={showQr}
+                        onChange={(e) => setShowQr(e.target.checked)}
+                      />
+                      Show QR code on public profile
                     </label>
                   </div>
                 </div>

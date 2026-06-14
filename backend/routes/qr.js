@@ -22,15 +22,12 @@ router.get('/:slug', (req, res) => {
     ? forwardedFor.split(',')[0].trim()
     : req.socket.remoteAddress;
   const userAgent = req.headers['user-agent'] || '';
+  const source = ['qr', 'nfc', 'link'].includes(req.query.src) ? req.query.src : 'qr';
 
-  logScan({
-    businessSlug: slug,
-    ipAddress,
-    userAgent
-  });
+  logScan({ businessSlug: slug, ipAddress, userAgent, source });
 
-  const landingPageUrl = process.env.LANDING_PAGE_URL || 'https://fuse101.com/business';
-  return res.redirect(302, `${landingPageUrl}/${slug}`);
+  const baseUrl = process.env.PUBLIC_SITE_URL || 'https://fuse101.com';
+  return res.redirect(302, `${baseUrl}/b/${encodeURIComponent(slug)}`);
 });
 
 module.exports = router;

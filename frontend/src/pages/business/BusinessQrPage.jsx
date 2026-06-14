@@ -272,9 +272,10 @@ function LandingPage({ businessName, tagline, links, fuse101Slug, animate }) {
 }
 
 // ── QR Panel ──────────────────────────────────────────────────────────────────
-function QRPanel({ qrValue, businessName }) {
+function QRPanel({ qrValue, businessName, profileUrl }) {
   const canvasRef = useRef(null);
   const [copied, setCopied] = useState(false);
+  const shareUrl = profileUrl || qrValue;
 
   const handleDownload = () => {
     const src = canvasRef.current?.querySelector("canvas");
@@ -297,7 +298,7 @@ function QRPanel({ qrValue, businessName }) {
   };
 
   const handleCopy = () => {
-    navigator.clipboard?.writeText(qrValue);
+    navigator.clipboard?.writeText(shareUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -335,6 +336,29 @@ function QRPanel({ qrValue, businessName }) {
         }}>{copied ? "✓ Copied!" : "🔗 Copy Link"}</button>
       </div>
 
+      {/* Can't scan fallback */}
+      <div style={{
+        width: "100%", background: BRAND.offWhite,
+        border: `1.5px solid ${BRAND.lightGray}`,
+        borderRadius: 12, padding: "12px 14px",
+      }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: BRAND.mutedLabel, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>
+          Can't scan? Share this link
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{
+            flex: 1, fontSize: 12, color: BRAND.blue, fontWeight: 600,
+            wordBreak: "break-all", lineHeight: 1.4,
+          }}>{shareUrl}</span>
+          <button onClick={handleCopy} style={{
+            flexShrink: 0, background: copied ? BRAND.blue : BRAND.yellow,
+            color: copied ? BRAND.white : BRAND.blue, border: "none",
+            borderRadius: 8, padding: "7px 12px", fontSize: 11, fontWeight: 800,
+            cursor: "pointer", transition: "all 0.2s", whiteSpace: "nowrap",
+          }}>{copied ? "✓ Copied" : "Copy"}</button>
+        </div>
+      </div>
+
       <div style={{ width: "100%" }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: BRAND.mutedLabel, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>
           Embed on any site
@@ -361,6 +385,7 @@ export default function App() {
   const [animateLP, setAnimateLP] = useState(false);
 
   const landingUrl = `https://fuse101.com/qr/${fuse101Slug || "your-business"}`;
+  const profileUrl = `https://fuse101.com/b/${fuse101Slug || "your-business"}`;
 
   const updateLink = (i, field, value) => {
     const u = [...links]; u[i] = { ...u[i], [field]: value }; setLinks(u);
@@ -508,7 +533,7 @@ export default function App() {
           {/* Right: Live QR */}
           <div style={{ width: "50%", padding: "32px 24px", background: BRAND.offWhite, overflowY: "auto", display: "flex", flexDirection: "column", alignItems: "center" }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: BRAND.mutedLabel, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 28 }}>Your QR Code · Updates Live</div>
-            <QRPanel qrValue={landingUrl} businessName={businessName} />
+            <QRPanel qrValue={landingUrl} businessName={businessName} profileUrl={profileUrl} />
 
             <div style={{ marginTop: 24, background: BRAND.white, border: `1.5px solid ${BRAND.lightGray}`, borderRadius: 14, padding: 18, width: "100%", maxWidth: 300 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: BRAND.blue, marginBottom: 10 }}>📲 How it works</div>
@@ -560,7 +585,7 @@ export default function App() {
             <div style={{ width: "100%", maxWidth: 300 }}>
               <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>Your QR Code is Ready</div>
               <div style={{ fontSize: 13, color: BRAND.midGray, marginBottom: 28 }}>Download, print, or embed this anywhere</div>
-              <QRPanel qrValue={landingUrl} businessName={businessName} />
+              <QRPanel qrValue={landingUrl} businessName={businessName} profileUrl={profileUrl} />
 
               <div style={{ marginTop: 24 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: BRAND.mutedLabel, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>Active Links</div>
