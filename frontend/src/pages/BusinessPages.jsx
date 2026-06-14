@@ -747,6 +747,8 @@ export const PublicFollowPage = ({ slug, onNavigate }) => {
   const publicQrSlug = normalizePublicBusinessKey(slug) || resolvePublicBusinessKey(business);
   const publicQrCardSize = publicQrMode === 'minimal' ? 120 : publicQrMode === 'full' ? 180 : 150;
   const publicQrCompact = publicQrMode === 'minimal';
+  const showQrSection = business.show_qr !== false;
+  const publicProfileUrl = `https://fuse101.com/b/${encodeURIComponent(publicQrSlug || 'your-business')}`;
 
   return (
     <div className="page page--gradient public-business-page">
@@ -825,16 +827,20 @@ export const PublicFollowPage = ({ slug, onNavigate }) => {
                 {visibleSocials.length > 1 && <p className="public-follow-subtitle">{widgetSettings.ctaText}</p>}
               </>
             )}
-            <div className="public-section" style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
-              <QrCard
-                businessName={businessName || business.name}
-                slug={publicQrSlug || 'your-business'}
-                size={publicQrCardSize}
-                compact={publicQrCompact}
-                showBranding={widgetSettings.showBranding}
-                showBusinessName={widgetSettings.showBusinessName}
-              />
-            </div>
+            {showQrSection && (
+              <div className="public-section" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                <QrCard
+                  businessName={businessName || business.name}
+                  slug={publicQrSlug || 'your-business'}
+                  size={publicQrCardSize}
+                  compact={publicQrCompact}
+                  showBranding={widgetSettings.showBranding}
+                  showBusinessName={widgetSettings.showBusinessName}
+                />
+                <ShareableLinkBar url={publicProfileUrl} />
+                <SaveContactButton slug={publicQrSlug} />
+              </div>
+            )}
             {hasApprovedImpactBadges ? (
               <div className="public-section">
                 <button
@@ -1725,6 +1731,312 @@ export const ContactSupport = ({ onNavigate, prefill }) => {
           <button type="button" onClick={handleSubmit} disabled={status.loading} className="button button-primary button-full">
             {status.loading ? 'Sending...' : 'Send message'}
           </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// =============================================================================
+// SHAREABLE LINK BAR
+// =============================================================================
+
+export const ShareableLinkBar = ({ url }) => {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
+    }
+  };
+  return (
+    <div style={{
+      width: '100%', maxWidth: 320,
+      background: '#F4F7FF', border: '1.5px solid #E8EDF8',
+      borderRadius: 12, padding: '10px 14px',
+      display: 'flex', flexDirection: 'column', gap: 4,
+    }}>
+      <span style={{ fontSize: 10, fontWeight: 700, color: '#6B85B5', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+        Can't scan? Share this link
+      </span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ flex: 1, fontSize: 12, color: '#003594', fontWeight: 600, wordBreak: 'break-all', lineHeight: 1.4 }}>
+          {url}
+        </span>
+        <button
+          type="button"
+          onClick={handleCopy}
+          style={{
+            flexShrink: 0, background: copied ? '#003594' : '#FDD001',
+            color: copied ? '#FDD001' : '#003594', border: 'none',
+            borderRadius: 8, padding: '7px 12px', fontSize: 11, fontWeight: 800,
+            cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap',
+          }}
+        >
+          {copied ? '✓ Copied' : 'Copy'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// =============================================================================
+// SAVE CONTACT BUTTON
+// =============================================================================
+
+export const SaveContactButton = ({ slug }) => {
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!slug) return;
+    setSaving(true);
+    try {
+      const res = await customerApi.get(
+        `/public/businesses/${encodeURIComponent(slug)}/vcard`,
+        { responseType: 'blob' }
+      );
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'text/vcard' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${slug}.vcf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      window.location.href = `${customerApi.defaults.baseURL}/public/businesses/${encodeURIComponent(slug)}/vcard`;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleSave}
+      disabled={saving}
+      style={{
+        width: '100%', maxWidth: 320,
+        background: '#003594', color: '#FDD001',
+        border: 'none', borderRadius: 12,
+        padding: '12px 20px', fontSize: 13, fontWeight: 800,
+        cursor: saving ? 'wait' : 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+        transition: 'opacity 0.2s', opacity: saving ? 0.7 : 1,
+      }}
+    >
+      <span style={{ fontSize: 16 }}>👤</span>
+      {saving ? 'Saving…' : 'Save Contact'}
+    </button>
+  );
+};
+
+// =============================================================================
+// NFC DEVICES PAGE
+// =============================================================================
+
+const CHIP_TYPES = ['NTAG213', 'NTAG215', 'NTAG216', 'MIFARE'];
+
+export const NfcDevicesPage = ({ business, onNavigate, onLogout }) => {
+  const [devices, setDevices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [label, setLabel] = useState('');
+  const [chipType, setChipType] = useState('NTAG213');
+  const [adding, setAdding] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [copiedId, setCopiedId] = useState(null);
+
+  const fetchDevices = React.useCallback(async () => {
+    try {
+      const res = await api.get('/nfc/devices');
+      setDevices(Array.isArray(res.data) ? res.data : []);
+    } catch {
+      setError('Failed to load NFC devices.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchDevices(); }, [fetchDevices]);
+
+  const handleAdd = async (e) => {
+    e.preventDefault();
+    if (!label.trim()) return;
+    setAdding(true);
+    setError('');
+    setSuccess('');
+    try {
+      const res = await api.post('/nfc/devices', { label: label.trim(), chip_type: chipType });
+      setDevices((prev) => [res.data, ...prev]);
+      setLabel('');
+      setSuccess('Device registered! Copy the URL below and program it onto your NFC chip.');
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Failed to register device.'));
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const handleToggleActive = async (device) => {
+    try {
+      const res = await api.put(`/nfc/devices/${device.id}`, { is_active: !device.is_active });
+      setDevices((prev) => prev.map((d) => d.id === device.id ? res.data : d));
+    } catch {
+      setError('Failed to update device.');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Remove this NFC device?')) return;
+    try {
+      await api.delete(`/nfc/devices/${id}`);
+      setDevices((prev) => prev.filter((d) => d.id !== id));
+    } catch {
+      setError('Failed to remove device.');
+    }
+  };
+
+  const handleCopy = (id, url) => {
+    navigator.clipboard?.writeText(url);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  return (
+    <div className="page">
+      <div className="card card--wide">
+        <BusinessAccountMenu
+          businessName={business.name}
+          onNavigate={onNavigate}
+          onLogout={onLogout}
+          currentView="nfc-devices"
+          includeProfile
+        />
+
+        <div className="stack-md" style={{ marginTop: '24px' }}>
+          <div>
+            <h1 className="heading-lg">NFC Devices</h1>
+            <p className="subtitle">
+              Register your NFC business cards or smart bracelets. Each device gets a URL to
+              program onto the chip — when someone taps it, they land on your profile and the
+              tap is tracked separately from QR scans.
+            </p>
+          </div>
+
+          <div className="card" style={{ border: '1px solid var(--border)', boxShadow: 'none' }}>
+            <h2 className="heading-md">Register a New Device</h2>
+            <form onSubmit={handleAdd} className="stack-sm" style={{ marginTop: '12px' }}>
+              <div className="field">
+                <label className="label">Device label</label>
+                <input
+                  className="input"
+                  type="text"
+                  placeholder='e.g. "Gold business card" or "Blue bracelet"'
+                  maxLength={100}
+                  value={label}
+                  onChange={(e) => setLabel(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="field">
+                <label className="label">Chip type</label>
+                <select className="input" value={chipType} onChange={(e) => setChipType(e.target.value)}>
+                  {CHIP_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+                <p className="helper-text">NTAG213 is the most common chip in business cards and bracelets.</p>
+              </div>
+              {error && <p className="alert alert-error">{error}</p>}
+              {success && <p className="alert alert-success">{success}</p>}
+              <button type="submit" className="button button-primary" disabled={adding || !label.trim()}>
+                {adding ? 'Registering…' : 'Register Device'}
+              </button>
+            </form>
+          </div>
+
+          <div>
+            <h2 className="heading-md">Your Devices</h2>
+            {loading ? (
+              <p className="subtitle">Loading…</p>
+            ) : devices.length === 0 ? (
+              <div className="empty-state">No NFC devices registered yet. Add one above.</div>
+            ) : (
+              <div className="stack-sm" style={{ marginTop: '12px' }}>
+                {devices.map((device) => (
+                  <div
+                    key={device.id}
+                    className="card"
+                    style={{
+                      border: `1px solid ${device.is_active ? 'var(--border)' : '#e5e7eb'}`,
+                      boxShadow: 'none',
+                      opacity: device.is_active ? 1 : 0.6,
+                    }}
+                  >
+                    <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: '15px' }}>{device.label}</div>
+                        <div className="muted-text" style={{ fontSize: '12px', marginTop: '2px' }}>
+                          {device.chip_type} · Registered {new Date(device.created_at).toLocaleDateString()}
+                          {' · '}
+                          <span style={{ color: device.is_active ? 'var(--success, #16a34a)' : '#9ca3af', fontWeight: 600 }}>
+                            {device.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="row" style={{ gap: '8px', flexShrink: 0 }}>
+                        <button type="button" className="button button-secondary button-sm" onClick={() => handleToggleActive(device)}>
+                          {device.is_active ? 'Deactivate' : 'Activate'}
+                        </button>
+                        <button
+                          type="button"
+                          className="button button-sm"
+                          style={{ background: '#fee2e2', color: '#dc2626', border: 'none' }}
+                          onClick={() => handleDelete(device.id)}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                    <div style={{ marginTop: '12px', background: '#F4F7FF', border: '1.5px solid #E8EDF8', borderRadius: '10px', padding: '10px 14px' }}>
+                      <div style={{ fontSize: '11px', fontWeight: 700, color: '#6B85B5', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '6px' }}>
+                        Program this URL onto the chip
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ flex: 1, fontSize: '12px', color: '#003594', fontWeight: 600, wordBreak: 'break-all', lineHeight: 1.4 }}>
+                          {device.encoded_url}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(device.id, device.encoded_url)}
+                          style={{
+                            flexShrink: 0,
+                            background: copiedId === device.id ? '#003594' : '#FDD001',
+                            color: copiedId === device.id ? '#FDD001' : '#003594',
+                            border: 'none', borderRadius: '8px',
+                            padding: '7px 12px', fontSize: '11px', fontWeight: 800,
+                            cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {copiedId === device.id ? '✓ Copied' : 'Copy'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="card" style={{ border: '1px solid #E8EDF8', background: '#F4F7FF', boxShadow: 'none' }}>
+            <h3 className="heading-sm" style={{ marginBottom: '8px' }}>How to program your NFC chip</h3>
+            <ol style={{ paddingLeft: '20px', margin: 0, lineHeight: 1.8, fontSize: '14px', color: '#003594' }}>
+              <li>Download a free NFC writer app — <strong>NFC Tools</strong> (iOS/Android) is recommended.</li>
+              <li>Copy the URL above for the device you want to program.</li>
+              <li>In NFC Tools: tap <strong>Write</strong> → <strong>Add a record</strong> → <strong>URL</strong>.</li>
+              <li>Paste the URL and tap <strong>Write</strong>, then hold your phone to the NFC chip.</li>
+              <li>Done — anyone who taps the card or bracelet lands on your profile.</li>
+            </ol>
+          </div>
         </div>
       </div>
     </div>

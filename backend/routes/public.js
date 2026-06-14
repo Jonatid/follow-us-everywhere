@@ -220,4 +220,52 @@ const handlePublicBusinessLookup = async (req, res) => {
 router.get('/businesses/by-slug/:key', handlePublicBusinessLookup);
 router.get('/businesses/slug/:key', handlePublicBusinessLookup);
 
+// GET /api/public/businesses/:slug/vcard
+// Returns a downloadable .vcf contact card for the business
+router.get('/businesses/:slug/vcard', async (req, res) => {
+  try {
+    const key = typeof req.params.slug === 'string' ? req.params.slug.trim() : '';
+    const business = await getPublicBusinessBySlug(key);
+
+    if (!business) {
+      return res.status(404).json({ error: 'Business not found' });
+    }
+
+    const publicSiteUrl = process.env.PUBLIC_SITE_URL || 'https://fuse101.com';
+    const profileUrl = `${publicSiteUrl}/b/${encodeURIComponent(business.slug)}`;
+
+    // Build vCard 3.0
+    const lines = [
+      'BEGIN:VCARD',
+      'VERSION:3.0',
+      `FN:${escapeVCard(business.name)}`,
+      `URL:${profileUrl}`,
+    ];
+
+    if (business.tagline) {
+      lines.push(`NOTE:${escapeVCard(business.tagline)}`);
+    }
+
+    lines.push('END:VCARD');
+
+    const vcf = lines.join('\r\n') + '\r\n';
+    const filename = `${(business.slug || 'contact').replace(/[^a-z0-9-]/gi, '-')}.vcf`;
+
+    res.setHeader('Content-Type', 'text/vcard; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(vcf);
+  } catch (error) {
+    console.error('vCard generation error:', error);
+    res.status(500).json({ error: 'Failed to generate contact card' });
+  }
+});
+
+function escapeVCard(str) {
+  return String(str || '')
+    .replace(/\\/g, '\\\\')
+    .replace(/,/g, '\\,')
+    .replace(/;/g, '\\;')
+    .replace(/\n/g, '\\n');
+}
+
 module.exports = router;

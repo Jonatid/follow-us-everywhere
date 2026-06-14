@@ -22,6 +22,7 @@ import {
   PublicFollowPage,
   BusinessProfilePage,
   ContactSupport,
+  NfcDevicesPage,
 } from './pages/BusinessPages';
 
 export default function App() {
