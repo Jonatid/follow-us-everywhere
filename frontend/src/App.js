@@ -62,6 +62,7 @@ export default function App() {
     if (pathname === '/business/signup') return 'signup';
     if (pathname === '/business/profile') return 'business-profile';
     if (pathname === '/business/qr') return 'business-qr';
+    if (pathname === '/business/nfc') return 'nfc-devices';
     if (pathname === '/business/social-hub') return 'social-hub';
     if (pathname === '/dashboard/social') return 'social-hub';
     if (pathname === '/reset-password') return 'reset';
@@ -148,7 +149,7 @@ export default function App() {
     try {
       const response = await api.get('/auth/me');
       setCurrentBusiness(response.data);
-      const businessScreens = new Set(['dashboard', 'business-profile', 'business-qr', 'social-hub']);
+      const businessScreens = new Set(['dashboard', 'business-profile', 'business-qr', 'social-hub', 'nfc-devices']);
       const pathnameScreen = getScreenFromPath(window.location.pathname);
       const resolvedScreen = businessScreens.has(targetScreen)
         ? targetScreen
@@ -233,7 +234,7 @@ export default function App() {
 
   const handleLoginSuccess = (business) => {
     setCurrentBusiness(business);
-    const businessScreens = new Set(['dashboard', 'business-profile', 'business-qr', 'social-hub']);
+    const businessScreens = new Set(['dashboard', 'business-profile', 'business-qr', 'social-hub', 'nfc-devices']);
     const pathnameScreen = getScreenFromPath(window.location.pathname);
     setCurrentScreen(businessScreens.has(pathnameScreen) ? pathnameScreen : 'dashboard');
   };
@@ -368,6 +369,16 @@ export default function App() {
         );
       case 'business-qr':
         return <BusinessQrPage />;
+      case 'nfc-devices':
+        return currentBusiness ? (
+          <NfcDevicesPage
+            business={currentBusiness}
+            onNavigate={handleNavigate}
+            onLogout={handleLogout}
+          />
+        ) : (
+          <BusinessLogin onNavigate={handleNavigate} onLoginSuccess={handleLoginSuccess} />
+        );
       case 'social-hub':
         return currentBusiness ? (
           <SocialHub

@@ -70,6 +70,7 @@ const ensureSchema = async () => {
         vision_statement TEXT,
         philanthropic_goals TEXT,
         widget_settings JSONB,
+        show_qr BOOLEAN NOT NULL DEFAULT true,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
@@ -91,6 +92,7 @@ const ensureSchema = async () => {
         ADD COLUMN IF NOT EXISTS vision_statement TEXT,
         ADD COLUMN IF NOT EXISTS philanthropic_goals TEXT,
         ADD COLUMN IF NOT EXISTS widget_settings JSONB,
+        ADD COLUMN IF NOT EXISTS show_qr BOOLEAN NOT NULL DEFAULT true,
         ADD COLUMN IF NOT EXISTS logo_url TEXT,
         ADD COLUMN IF NOT EXISTS lara_number TEXT,
         ADD COLUMN IF NOT EXISTS token_version INTEGER NOT NULL DEFAULT 0;
@@ -426,6 +428,36 @@ const ensureSchema = async () => {
     await pool.query('CREATE INDEX IF NOT EXISTS idx_scheduled_posts_business_id ON scheduled_posts(business_id);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_scheduled_posts_status ON scheduled_posts(status);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_scheduled_posts_created_at ON scheduled_posts(created_at DESC);');
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS qr_scans (
+        id SERIAL PRIMARY KEY,
+        business_slug VARCHAR(255) NOT NULL,
+        source VARCHAR(20) NOT NULL DEFAULT 'qr',
+        ip_address TEXT,
+        user_agent TEXT,
+        device_type VARCHAR(20),
+        scanned_at TIMESTAMP NOT NULL DEFAULT NOW()
+      );
+    `);
+
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_qr_scans_slug_scanned_at ON qr_scans(business_slug, scanned_at DESC);');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_qr_scans_source ON qr_scans(source);');
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS nfc_devices (
+        id SERIAL PRIMARY KEY,
+        business_id INTEGER NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+        label VARCHAR(100) NOT NULL,
+        chip_type VARCHAR(50) NOT NULL DEFAULT 'NTAG213',
+        encoded_url TEXT NOT NULL,
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+      );
+    `);
+
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_nfc_devices_business_id ON nfc_devices(business_id);');
   } catch (error) {
     if (error.code === '42501') {
       const dbUser = process.env.DATABASE_URL

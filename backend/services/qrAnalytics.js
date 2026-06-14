@@ -23,18 +23,21 @@ const detectDeviceType = (userAgent = '') => {
   return 'desktop';
 };
 
-const logScan = async ({ businessSlug, ipAddress, userAgent }) => {
+const VALID_SOURCES = new Set(['qr', 'nfc', 'link']);
+
+const logScan = async ({ businessSlug, ipAddress, userAgent, source = 'qr' }) => {
   try {
     const deviceType = detectDeviceType(userAgent);
+    const safeSource = VALID_SOURCES.has(source) ? source : 'qr';
 
     await db.query(
-      `INSERT INTO qr_scans (business_slug, ip_address, user_agent, device_type)
-       VALUES ($1, $2, $3, $4)`,
-      [businessSlug, ipAddress, userAgent, deviceType]
+      `INSERT INTO qr_scans (business_slug, source, ip_address, user_agent, device_type)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [businessSlug, safeSource, ipAddress, userAgent, deviceType]
     );
   } catch (error) {
-    // Never let analytics logging break QR redirect requests.
-    console.error('Failed to log QR scan:', error.message);
+    // Never let analytics logging break redirect requests.
+    console.error('Failed to log scan:', error.message);
   }
 };
 
@@ -88,11 +91,21 @@ const getScanStats = async (businessSlug) => {
     )
   ]);
 
+  const bySourceResult = await db.query(
+    `SELECT source, COUNT(*)::int AS count
+     FROM qr_scans
+     WHERE business_slug = $1
+     GROUP BY source
+     ORDER BY count DESC`,
+    [businessSlug]
+  );
+
   return {
     total: totalResult.rows[0]?.total || 0,
     weekly: weeklyResult.rows[0]?.weekly || 0,
     byDevice: byDeviceResult.rows,
-    byDay: byDayResult.rows
+    byDay: byDayResult.rows,
+    bySource: bySourceResult.rows,
   };
 };
 

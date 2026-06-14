@@ -94,6 +94,18 @@ export default function BusinessAccountMenu({
           >
             Social Hub
           </button>
+          <button
+            type="button"
+            className="link-button"
+            role="menuitem"
+            onClick={() => {
+              setIsOpen(false);
+              onNavigate('nfc-devices', null, '/business/nfc');
+            }}
+            style={getMenuItemStyle(currentView === 'nfc-devices')}
+          >
+            NFC Devices
+          </button>
           {includeProfile ? (
             <button
               type="button"
