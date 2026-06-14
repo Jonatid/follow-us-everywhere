@@ -417,6 +417,21 @@ const ensureSchema = async () => {
 
     await pool.query('CREATE INDEX IF NOT EXISTS idx_qr_scans_slug_scanned_at ON qr_scans(business_slug, scanned_at DESC);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_qr_scans_source ON qr_scans(source);');
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS nfc_devices (
+        id SERIAL PRIMARY KEY,
+        business_id INTEGER NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+        label VARCHAR(100) NOT NULL,
+        chip_type VARCHAR(50) NOT NULL DEFAULT 'NTAG213',
+        encoded_url TEXT NOT NULL,
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+      );
+    `);
+
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_nfc_devices_business_id ON nfc_devices(business_id);');
   } catch (error) {
     if (error.code === '42501') {
       const dbUser = process.env.DATABASE_URL
