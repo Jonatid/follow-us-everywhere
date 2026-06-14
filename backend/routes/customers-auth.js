@@ -10,6 +10,7 @@ const { requestLogger } = require('../config/logger');
 const {
   ACCOUNT_LOCKOUT_MINUTES,
   clearAccountFailedAttempts,
+  enforceForgotPasswordRateLimit,
   enforceIpRateLimit,
   getAccountAttempt,
   getFailedAttemptDelay,
@@ -34,12 +35,8 @@ const handleValidationErrors = (req, res) => {
   return null;
 };
 
-const FORGOT_PASSWORD_WINDOW_MS = 15 * 60 * 1000;
-const FORGOT_PASSWORD_MAX_ATTEMPTS = 5;
-const forgotPasswordAttemptTracker = new Map();
 
 const hashResetToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
-
 
 const customerLogoutHandler = async (req, res) => {
   try {
@@ -56,30 +53,6 @@ const customerLogoutHandler = async (req, res) => {
     requestLogger(req).error({ err }, 'Customer logout error');
     return res.status(500).json({ message: 'Server error' });
   }
-};
-
-const rateLimitForgotPassword = (ip, email) => {
-  const now = Date.now();
-  const ipKey = `ip:${ip}`;
-  const emailKey = `email:${normalizeEmail(email)}`;
-
-  const checkAndIncrement = (key) => {
-    const existing = forgotPasswordAttemptTracker.get(key);
-    if (!existing || now > existing.resetAt) {
-      forgotPasswordAttemptTracker.set(key, { count: 1, resetAt: now + FORGOT_PASSWORD_WINDOW_MS });
-      return false;
-    }
-
-    if (existing.count >= FORGOT_PASSWORD_MAX_ATTEMPTS) {
-      return true;
-    }
-
-    existing.count += 1;
-    forgotPasswordAttemptTracker.set(key, existing);
-    return false;
-  };
-
-  return checkAndIncrement(ipKey) || checkAndIncrement(emailKey);
 };
 
 // @route   POST /api/customers/auth/signup
@@ -247,7 +220,11 @@ router.post('/forgot-password', [body('email').isEmail()], async (req, res) => {
   const responseMessage = 'If an account exists for that email, we sent a reset link.';
 
   try {
-    const isRateLimited = rateLimitForgotPassword(getRequestIp(req), email);
+    const isRateLimited = (await enforceForgotPasswordRateLimit({
+      routeScope: 'customer-forgot-password',
+      ip: getRequestIp(req),
+      emailNormalized: email,
+    })).blocked;
     if (isRateLimited) {
       return res.json({ message: responseMessage });
     }

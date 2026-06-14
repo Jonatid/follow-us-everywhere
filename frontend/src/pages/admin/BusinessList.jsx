@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { deleteBusiness, fetchBusinesses } from '../../utils/adminApi';
+import AdminPagination from '../../components/AdminPagination';
 
 const statusLabelMap = {
   active: 'Active',
@@ -13,12 +14,23 @@ const BusinessList = ({ onSelectBusiness }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deletingId, setDeletingId] = useState(null);
+  const [pagination, setPagination] = useState({ total: 0, limit: 25, offset: 0, hasMore: false });
 
   useEffect(() => {
     const loadBusinesses = async () => {
+      setLoading(true);
       try {
-        const data = await fetchBusinesses();
+        const data = await fetchBusinesses({ limit: pagination.limit, offset: pagination.offset });
         setBusinesses(Array.isArray(data) ? data : data?.businesses || []);
+        if (!Array.isArray(data)) {
+          setPagination((prev) => ({
+            ...prev,
+            total: data?.total || 0,
+            limit: data?.limit || prev.limit,
+            offset: data?.offset || 0,
+            hasMore: Boolean(data?.hasMore),
+          }));
+        }
       } catch (err) {
         setError('Unable to load businesses.');
       } finally {
@@ -26,7 +38,7 @@ const BusinessList = ({ onSelectBusiness }) => {
       }
     };
     loadBusinesses();
-  }, []);
+  }, [pagination.limit, pagination.offset]);
 
   const formatDate = (value) => {
     if (!value) return '—';
@@ -104,6 +116,13 @@ const BusinessList = ({ onSelectBusiness }) => {
           </tbody>
         </table>
       )}
+      {!loading ? (
+        <AdminPagination
+          {...pagination}
+          disabled={loading}
+          onPageChange={(nextOffset) => setPagination((prev) => ({ ...prev, offset: nextOffset }))}
+        />
+      ) : null}
     </div>
   );
 };

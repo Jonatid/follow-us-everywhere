@@ -3,6 +3,7 @@ const { body, query, validationResult } = require('express-validator');
 const pool = require('../config/db');
 const { authenticateToken } = require('../middleware/auth');
 const { authenticateAdminToken } = require('../middleware/admin-auth');
+const { buildPaginationMeta, parsePagination } = require('../utils/pagination');
 
 const router = express.Router();
 
@@ -187,10 +188,20 @@ router.get('/business/badge-requests', authenticateToken, async (req, res) => {
 router.get(
   '/admin/badge-requests',
   authenticateAdminToken,
-  [query('status').optional().isIn(['Pending', 'Approved', 'Rejected'])],
+  [
+    query('status').optional().isIn(['Pending', 'Approved', 'Rejected']),
+    query('business_id').optional().isInt({ gt: 0 }),
+  ],
   async (req, res) => {
     if (!handleValidation(req, res)) {
       return;
+    }
+
+    let pagination;
+    try {
+      pagination = parsePagination(req.query);
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
     }
 
     const values = [];
@@ -201,9 +212,28 @@ router.get(
       where.push(`br.status = $${values.length}`);
     }
 
+    if (req.query.business_id) {
+      values.push(Number(req.query.business_id));
+      where.push(`br.business_id = $${values.length}`);
+    }
+
     const whereClause = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
 
     try {
+      const countResult = await pool.query(
+        `SELECT COUNT(*)::int AS total
+         FROM badge_requests br
+         JOIN businesses biz ON biz.id = br.business_id
+         JOIN badges b ON b.id = br.badge_id
+         LEFT JOIN business_documents bd ON bd.id = br.linked_document_id
+         ${whereClause}`,
+        values
+      );
+
+      const listValues = [...values, pagination.limit, pagination.offset];
+      const limitParam = listValues.length - 1;
+      const offsetParam = listValues.length;
+
       const result = await pool.query(
         `SELECT br.id,
                 br.business_id AS "businessId",
@@ -235,11 +265,14 @@ router.get(
          JOIN badges b ON b.id = br.badge_id
          LEFT JOIN business_documents bd ON bd.id = br.linked_document_id
          ${whereClause}
-         ORDER BY br.submitted_at DESC`,
-        values
+         ORDER BY br.submitted_at DESC
+         LIMIT $${limitParam}
+         OFFSET $${offsetParam}`,
+        listValues
       );
 
-      res.json(result.rows);
+      const paginationMeta = buildPaginationMeta(countResult.rows[0]?.total, pagination.limit, pagination.offset);
+      res.json({ badgeRequests: result.rows, ...paginationMeta });
     } catch (error) {
       console.error('Admin list badge requests error:', error);
       res.status(500).json({ message: 'Server error' });

@@ -41,8 +41,8 @@ export const adminLogin = async (payloadOrEmail, password) => {
   return response.data;
 };
 
-export const fetchBusinesses = async () => {
-  const response = await adminApi.get('/admin/businesses');
+export const fetchBusinesses = async (params) => {
+  const response = await adminApi.get('/admin/businesses', { params });
   return response.data;
 };
 

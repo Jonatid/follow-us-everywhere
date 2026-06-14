@@ -8,6 +8,8 @@ process.env.MAX_FAILED_ATTEMPTS = '5';
 process.env.WARN_AT_ATTEMPTS = '4';
 process.env.RATE_LIMIT_WINDOW_SECONDS = '600';
 process.env.RATE_LIMIT_MAX = '20';
+process.env.FORGOT_PASSWORD_RATE_LIMIT_WINDOW_SECONDS = '900';
+process.env.FORGOT_PASSWORD_RATE_LIMIT_MAX = '5';
 
 const pool = require('../config/db');
 const loginProtection = require('../services/loginProtection');
@@ -21,6 +23,10 @@ const makeIpKey = (routeScope, ip) => `${routeScope}:${ip}`;
 const makeEmailKey = (routeScope, email) => `${routeScope}:${email}`;
 
 const defaultQueryHandler = async (queryText, params = []) => {
+  if (queryText.includes('DELETE FROM auth_login_attempts') && queryText.includes('first_failed_at')) {
+    return { rows: [] };
+  }
+
   if (queryText.includes('ON CONFLICT (route_scope, ip)')) {
     const [routeScope, ip] = params;
     const key = makeIpKey(routeScope, ip);
@@ -138,7 +144,11 @@ test('fallback path keeps per-ip counting when ON CONFLICT target is missing', a
   const txIpState = new Map();
 
   pool.query = async (queryText) => {
-    if (queryText.includes('ON CONFLICT (route_scope, ip)')) {
+    if (queryText.includes('DELETE FROM auth_login_attempts') && queryText.includes('first_failed_at')) {
+    return { rows: [] };
+  }
+
+  if (queryText.includes('ON CONFLICT (route_scope, ip)')) {
       const err = new Error('there is no unique or exclusion constraint matching the ON CONFLICT specification');
       err.code = '42P10';
       throw err;
@@ -262,6 +272,58 @@ test('fallback path keeps per-email lockout counting when ON CONFLICT target is 
   pool.connect = async () => {
     throw new Error('pool.connect not expected for default test path');
   };
+});
+
+
+test('forgot-password persistent limiter blocks by email and survives module reload', async () => {
+  state.ip.clear();
+  state.account.clear();
+  const emailNormalized = 'forgot@example.com';
+  const ip = '203.0.113.10';
+
+  for (let i = 0; i < 5; i += 1) {
+    const result = await loginProtection.enforceForgotPasswordRateLimit({
+      routeScope: 'customer-forgot-password',
+      ip,
+      emailNormalized,
+    });
+    assert.equal(result.blocked, false);
+  }
+
+  delete require.cache[require.resolve('../services/loginProtection')];
+  const reloadedLoginProtection = require('../services/loginProtection');
+  const blocked = await reloadedLoginProtection.enforceForgotPasswordRateLimit({
+    routeScope: 'customer-forgot-password',
+    ip: '203.0.113.11',
+    emailNormalized,
+  });
+
+  assert.equal(blocked.blocked, true);
+  assert.equal(blocked.emailBlocked, true);
+});
+
+test('forgot-password persistent limiter records cleanup before incrementing', async () => {
+  let cleanupCalled = false;
+  const originalQuery = pool.query;
+
+  pool.query = async (queryText, params = []) => {
+    if (queryText.includes('DELETE FROM auth_login_attempts') && queryText.includes('first_failed_at')) {
+      cleanupCalled = true;
+      assert.deepEqual(params, ['business-forgot-password', 600, 900]);
+      return { rows: [] };
+    }
+    return defaultQueryHandler(queryText, params);
+  };
+
+  const result = await loginProtection.enforceForgotPasswordRateLimit({
+    routeScope: 'business-forgot-password',
+    ip: '198.51.100.20',
+    emailNormalized: 'business-forgot@example.com',
+  });
+
+  assert.equal(result.blocked, false);
+  assert.equal(cleanupCalled, true);
+  pool.query = originalQuery;
 });
 
 test('migration includes duplicate cleanup and unique index creation for conflict targets', async () => {

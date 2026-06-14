@@ -16,7 +16,8 @@ const REQUIRED_TABLES = [
   'business_documents',
   'zernio_profiles',
   'zernio_accounts',
-  'scheduled_posts'
+  'scheduled_posts',
+  'auth_login_attempts'
 ];
 
 const getMissingTables = async (client = pool) => {
@@ -183,6 +184,27 @@ const ensureSchema = async () => {
       );
     `);
 
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS auth_login_attempts (
+        id BIGSERIAL PRIMARY KEY,
+        route_scope VARCHAR(64) NOT NULL,
+        email_normalized TEXT,
+        ip TEXT NOT NULL,
+        fail_count INTEGER NOT NULL DEFAULT 0,
+        first_failed_at TIMESTAMPTZ,
+        locked_until TIMESTAMPTZ,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        CONSTRAINT auth_login_attempts_fail_count_nonnegative CHECK (fail_count >= 0)
+      );
+    `);
+
+    await pool.query(`
+      ALTER TABLE auth_login_attempts
+        ALTER COLUMN route_scope TYPE VARCHAR(64);
+    `);
+
     await pool.query(`
       CREATE TABLE IF NOT EXISTS badges (
         id SERIAL PRIMARY KEY,
@@ -319,6 +341,10 @@ const ensureSchema = async () => {
     await pool.query('CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_business_id ON password_reset_tokens(business_id);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_customer_password_resets_token_hash ON customer_password_resets(token_hash);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_customer_password_resets_customer_id ON customer_password_resets(customer_id);');
+    await pool.query('CREATE UNIQUE INDEX IF NOT EXISTS auth_login_attempts_scope_email_uq ON auth_login_attempts (route_scope, email_normalized) WHERE email_normalized IS NOT NULL;');
+    await pool.query('CREATE UNIQUE INDEX IF NOT EXISTS auth_login_attempts_scope_ip_uq ON auth_login_attempts (route_scope, ip) WHERE email_normalized IS NULL;');
+    await pool.query('CREATE INDEX IF NOT EXISTS auth_login_attempts_locked_until_idx ON auth_login_attempts (locked_until) WHERE email_normalized IS NOT NULL;');
+    await pool.query('CREATE INDEX IF NOT EXISTS auth_login_attempts_first_failed_at_idx ON auth_login_attempts (first_failed_at);');
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS business_documents (
