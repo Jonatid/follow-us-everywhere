@@ -276,6 +276,81 @@ export const FAQPage = ({ onNavigate }) => (
   </div>
 );
 
+export const PrivacyPage = ({ onNavigate }) => (
+  <div className="page page--gradient faq-page">
+    <div className="card card--wide faq-page__card" style={{ maxWidth: '780px' }}>
+      <BackLink fallbackPath="/" onFallbackNavigate={() => onNavigate('marketing-landing', null, '/')} label="← Back to home" />
+      <h1 className="heading-xl faq-page__title">Privacy Policy</h1>
+      <p className="admin-muted" style={{ marginBottom: 16 }}>Last updated: June 2025</p>
+
+      <section style={{ marginBottom: 24 }}>
+        <h2 className="heading-lg" style={{ marginBottom: 8 }}>Information We Collect</h2>
+        <p className="subtitle">We collect information you provide when registering a business account, including your business name, email address, and profile details. We also collect usage data such as QR code scan counts and page views to help you understand your audience.</p>
+      </section>
+
+      <section style={{ marginBottom: 24 }}>
+        <h2 className="heading-lg" style={{ marginBottom: 8 }}>How We Use Your Information</h2>
+        <p className="subtitle">Your information is used to operate and improve the Follow Us Everywhere platform, to send account-related communications, and to provide analytics about your public profile's performance. We do not sell your personal information to third parties.</p>
+      </section>
+
+      <section style={{ marginBottom: 24 }}>
+        <h2 className="heading-lg" style={{ marginBottom: 8 }}>Public Profile Data</h2>
+        <p className="subtitle">Business profile information you choose to display — including your name, tagline, social links, and logo — is publicly accessible at your profile URL. You control what appears on your public profile through your account settings.</p>
+      </section>
+
+      <section style={{ marginBottom: 24 }}>
+        <h2 className="heading-lg" style={{ marginBottom: 8 }}>Data Security</h2>
+        <p className="subtitle">We use industry-standard security practices including encrypted passwords, JWT-based authentication, and HTTPS to protect your account. Two-factor authentication is required for all business accounts.</p>
+      </section>
+
+      <section style={{ marginBottom: 24 }}>
+        <h2 className="heading-lg" style={{ marginBottom: 8 }}>Contact</h2>
+        <p className="subtitle">For privacy-related questions, please use the Contact Support form in your account dashboard.</p>
+      </section>
+    </div>
+  </div>
+);
+
+export const TermsPage = ({ onNavigate }) => (
+  <div className="page page--gradient faq-page">
+    <div className="card card--wide faq-page__card" style={{ maxWidth: '780px' }}>
+      <BackLink fallbackPath="/" onFallbackNavigate={() => onNavigate('marketing-landing', null, '/')} label="← Back to home" />
+      <h1 className="heading-xl faq-page__title">Terms of Service</h1>
+      <p className="admin-muted" style={{ marginBottom: 16 }}>Last updated: June 2025</p>
+
+      <section style={{ marginBottom: 24 }}>
+        <h2 className="heading-lg" style={{ marginBottom: 8 }}>Eligibility</h2>
+        <p className="subtitle">Follow Us Everywhere is available to registered businesses only. By creating an account you confirm that you are authorized to represent the business you register.</p>
+      </section>
+
+      <section style={{ marginBottom: 24 }}>
+        <h2 className="heading-lg" style={{ marginBottom: 8 }}>Acceptable Use</h2>
+        <p className="subtitle">You agree to provide accurate business information and not to misrepresent your business identity, services, or community affiliations. Accounts found to contain misleading information may be suspended or removed.</p>
+      </section>
+
+      <section style={{ marginBottom: 24 }}>
+        <h2 className="heading-lg" style={{ marginBottom: 8 }}>Platform Governance</h2>
+        <p className="subtitle">Follow Us Everywhere reserves the right to review, approve, or remove any business profile. Badge verifications are discretionary and may be revoked if eligibility criteria are no longer met.</p>
+      </section>
+
+      <section style={{ marginBottom: 24 }}>
+        <h2 className="heading-lg" style={{ marginBottom: 8 }}>Intellectual Property</h2>
+        <p className="subtitle">You retain ownership of the content you upload. By posting content on Follow Us Everywhere you grant us a limited license to display that content as part of your public profile.</p>
+      </section>
+
+      <section style={{ marginBottom: 24 }}>
+        <h2 className="heading-lg" style={{ marginBottom: 8 }}>Limitation of Liability</h2>
+        <p className="subtitle">Follow Us Everywhere is provided "as is." We are not liable for indirect or consequential damages arising from your use of the platform.</p>
+      </section>
+
+      <section style={{ marginBottom: 24 }}>
+        <h2 className="heading-lg" style={{ marginBottom: 8 }}>Changes to Terms</h2>
+        <p className="subtitle">We may update these terms from time to time. Continued use of the platform after changes constitutes acceptance of the updated terms.</p>
+      </section>
+    </div>
+  </div>
+);
+
 // =============================================================================
 // BUSINESS SIGNUP
 // =============================================================================

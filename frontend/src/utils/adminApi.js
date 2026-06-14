@@ -159,4 +159,9 @@ export const deleteAdminDocument = async (documentId) => {
   return response.data;
 };
 
+export const regenerateBackupCodes = async () => {
+  const response = await adminApi.post('/admin/auth/backup-codes/regenerate');
+  return response.data;
+};
+
 export default adminApi;

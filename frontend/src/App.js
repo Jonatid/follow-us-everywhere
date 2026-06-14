@@ -5,7 +5,7 @@ import SocialHub from './pages/SocialHub';
 import RoleChooserModal from './components/RoleChooserModal';
 import { api, customerApi, normalizePublicBusinessKey } from './services/appApi';
 import { LandingPage } from './pages/MarketingPages';
-import { AboutPage, FAQPage } from './pages/MarketingInfoPages';
+import { AboutPage, FAQPage, PrivacyPage, TermsPage } from './pages/MarketingInfoPages';
 import {
   BusinessSignup,
   BusinessLogin,
@@ -22,6 +22,7 @@ import {
   PublicFollowPage,
   BusinessProfilePage,
   ContactSupport,
+  NfcDevicesPage,
 } from './pages/BusinessPages';
 
 export default function App() {
@@ -56,6 +57,8 @@ export default function App() {
     if (pathname === '/') return 'marketing-landing';
     if (pathname === '/about') return 'about';
     if (pathname === '/faq') return 'faq';
+    if (pathname === '/privacy') return 'privacy';
+    if (pathname === '/terms') return 'terms';
     if (pathname === '/business') return 'dashboard';
     if (pathname === '/dashboard') return 'dashboard';
     if (pathname === '/business/login') return 'login';
@@ -299,6 +302,10 @@ export default function App() {
         return <AboutPage onNavigate={handleNavigate} />;
       case 'faq':
         return <FAQPage onNavigate={handleNavigate} />;
+      case 'privacy':
+        return <PrivacyPage onNavigate={handleNavigate} />;
+      case 'terms':
+        return <TermsPage onNavigate={handleNavigate} />;
       case 'landing':
         return <LandingPage onNavigate={handleNavigate} />;
       case 'signup':
@@ -445,8 +452,8 @@ export default function App() {
           </div>
           <div className="site-footer__column">
             <h4 className="site-footer__heading">Legal</h4>
-            <span className="site-footer__text">Privacy (coming soon)</span>
-            <span className="site-footer__text">Terms (coming soon)</span>
+            <button type="button" className="site-footer__link" onClick={() => handleNavigate('privacy', null, '/privacy')}>Privacy Policy</button>
+            <button type="button" className="site-footer__link" onClick={() => handleNavigate('terms', null, '/terms')}>Terms of Service</button>
           </div>
         </div>
       </footer>

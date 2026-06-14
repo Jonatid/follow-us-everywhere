@@ -335,6 +335,47 @@ const adminLoginHandler = async (req, res) => {
 router.post('/login', adminLoginHandler);
 
 
+// @route   POST /api/admin/auth/backup-codes/regenerate
+// @desc    Generate a fresh set of backup codes for the authenticated admin
+// @access  Private (admin)
+router.post('/backup-codes/regenerate', authenticateAdminToken, async (req, res) => {
+  try {
+    const adminResult = await pool.query(
+      'SELECT id, totp_enrolled_at FROM admins WHERE id = $1',
+      [req.adminId]
+    );
+
+    if (adminResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Admin not found' });
+    }
+
+    if (!adminResult.rows[0].totp_enrolled_at) {
+      return res.status(400).json({ message: '2FA is not enrolled. Enroll first before regenerating backup codes.' });
+    }
+
+    const { plainCodes, hashedCodes } = makeBackupCodes();
+
+    await pool.query(
+      `UPDATE admins
+       SET backup_codes_hashed = $2::jsonb,
+           backup_codes_generated_at = CURRENT_TIMESTAMP
+       WHERE id = $1`,
+      [req.adminId, JSON.stringify(hashedCodes)]
+    );
+
+    requestLogger(req).info({ adminId: req.adminId }, 'Admin backup codes regenerated');
+
+    res.json({
+      backupCodes: plainCodes,
+      backupCodesCount: BACKUP_CODES_COUNT,
+      message: 'New backup codes generated. Save these now — your old codes are no longer valid.',
+    });
+  } catch (err) {
+    requestLogger(req).error({ err }, 'Admin backup codes regeneration error');
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   POST /api/admin/auth/logout
 // @desc    Invalidate current admin session tokens via token version bump
 // @access  Private

@@ -1,9 +1,27 @@
 import React, { useEffect, useState } from 'react';
-import { fetchDashboardSummary } from '../../utils/adminApi';
+import { fetchDashboardSummary, regenerateBackupCodes } from '../../utils/adminApi';
 
 const AdminDashboard = () => {
   const [summary, setSummary] = useState({ totalBusinesses: 0, activeBusinesses: 0, inactiveBusinesses: 0, admins: 0, pendingDocuments: 0 });
   const [loading, setLoading] = useState(true);
+  const [backupCodes, setBackupCodes] = useState(null);
+  const [backupLoading, setBackupLoading] = useState(false);
+  const [backupError, setBackupError] = useState(null);
+
+  const handleRegenerateBackupCodes = async () => {
+    if (!window.confirm('This will invalidate all existing backup codes. Continue?')) return;
+    setBackupLoading(true);
+    setBackupError(null);
+    setBackupCodes(null);
+    try {
+      const data = await regenerateBackupCodes();
+      setBackupCodes(data.backupCodes);
+    } catch (err) {
+      setBackupError(err?.response?.data?.message || 'Failed to regenerate backup codes.');
+    } finally {
+      setBackupLoading(false);
+    }
+  };
 
   useEffect(() => {
     const loadSummary = async () => {
@@ -57,6 +75,27 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+
+      <div className="admin-card" style={{ marginTop: 24 }}>
+        <h2 style={{ marginBottom: 8 }}>Security</h2>
+        <p className="admin-muted" style={{ marginBottom: 12 }}>Regenerate your two-factor authentication backup codes. Your old codes will be invalidated immediately.</p>
+        {backupError && <p style={{ color: '#dc2626', marginBottom: 8 }}>{backupError}</p>}
+        {backupCodes ? (
+          <div>
+            <p style={{ fontWeight: 600, marginBottom: 8, color: '#16a34a' }}>New backup codes — save these now:</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, fontFamily: 'monospace', fontSize: 14, marginBottom: 12 }}>
+              {backupCodes.map((code, i) => (
+                <span key={i} style={{ background: '#f1f5f9', padding: '4px 8px', borderRadius: 4 }}>{code}</span>
+              ))}
+            </div>
+            <button className="admin-btn admin-btn-secondary" onClick={() => setBackupCodes(null)}>Done</button>
+          </div>
+        ) : (
+          <button className="admin-btn admin-btn-danger" onClick={handleRegenerateBackupCodes} disabled={backupLoading}>
+            {backupLoading ? 'Regenerating...' : 'Regenerate Backup Codes'}
+          </button>
+        )}
+      </div>
     </div>
   );
 };
