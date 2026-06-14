@@ -112,7 +112,7 @@ router.patch('/documents/:id', async (req, res) => {
   const allowedStatuses = new Set(['Verified', 'Approved', 'Rejected']);
   const normalizedStatus = status === 'Approved' ? 'Verified' : status;
 
-  if (!normalizedStatus || !allowedStatuses.has(status)) {
+  if (!normalizedStatus || !allowedStatuses.has(normalizedStatus)) {
     return res.status(400).json({ message: 'Invalid status' });
   }
 

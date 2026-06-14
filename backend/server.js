@@ -115,11 +115,11 @@ app.get('/api/test-email', async (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/businesses', businessesRoutes);
+app.use('/api/business', businessesRoutes);
 app.use('/api/socials', socialsRoutes);
 app.use('/api/social', authenticateToken, socialRoutes);
 app.use('/api/admin/auth', adminAuthRoutes);
 app.use('/api', badgesRoutes);
-app.use('/api/business', businessesRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/customers/auth', customerAuthRoutes);
 app.use('/api/customers', customerRoutes);
