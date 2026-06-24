@@ -34,7 +34,6 @@ const qrRoutes = require('./routes/qr');
 const uploadRoutes = require('./routes/uploadRoutes');
 const supportRoutes = require('./routes/support');
 const nfcRoutes = require('./routes/nfc');
-const foodRoutes = require('./routes/food');
 const { authenticateToken } = require('./middleware/auth');
 
 const app = express();
@@ -127,7 +126,6 @@ app.use('/api/customers', customerRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/r2', r2Routes);
 app.use('/api/support', supportRoutes);
-app.use('/api/food', foodRoutes);
 app.use('/api/nfc', authenticateToken, nfcRoutes);
 app.use('/qr', qrRoutes);
 
