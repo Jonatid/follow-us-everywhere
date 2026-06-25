@@ -1,8 +1,8 @@
 const pool = require('../config/db');
 
 const ACCOUNT_LOCKOUT_MINUTES = Number(process.env.LOCKOUT_MINUTES || 15);
-const ACCOUNT_LOCK_THRESHOLD = Number(process.env.MAX_FAILED_ATTEMPTS || 5);
-const ACCOUNT_WARNING_THRESHOLD = Number(process.env.WARN_AT_ATTEMPTS || 4);
+const ACCOUNT_LOCK_THRESHOLD = Number(process.env.MAX_FAILED_ATTEMPTS || 10);
+const ACCOUNT_WARNING_THRESHOLD = Number(process.env.WARN_AT_ATTEMPTS || 9);
 const RATE_LIMIT_WINDOW_SECONDS = Number(process.env.RATE_LIMIT_WINDOW_SECONDS || 600);
 const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX || 20);
 

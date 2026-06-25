@@ -2027,15 +2027,18 @@ export const NfcDevicesPage = ({ business, onNavigate, onLogout }) => {
             )}
           </div>
 
-          <div className="card" style={{ border: '1px solid #E8EDF8', background: '#F4F7FF', boxShadow: 'none' }}>
-            <h3 className="heading-sm" style={{ marginBottom: '8px' }}>How to program your NFC chip</h3>
-            <ol style={{ paddingLeft: '20px', margin: 0, lineHeight: 1.8, fontSize: '14px', color: '#003594' }}>
-              <li>Download a free NFC writer app — <strong>NFC Tools</strong> (iOS/Android) is recommended.</li>
-              <li>Copy the URL above for the device you want to program.</li>
-              <li>In NFC Tools: tap <strong>Write</strong> → <strong>Add a record</strong> → <strong>URL</strong>.</li>
-              <li>Paste the URL and tap <strong>Write</strong>, then hold your phone to the NFC chip.</li>
-              <li>Done — anyone who taps the card or bracelet lands on your profile.</li>
-            </ol>
+          <div className="card" style={{ border: '1px solid #E8EDF8', background: '#F4F7FF', boxShadow: 'none', textAlign: 'center', padding: '32px 24px' }}>
+            <h3 className="heading-sm" style={{ marginBottom: '8px' }}>Order NFC Cards &amp; Bracelets</h3>
+            <p style={{ fontSize: '14px', color: '#475569', marginBottom: '20px' }}>
+              Order pre-programmed NFC business cards and smart bracelets directly through Follow Us Everywhere. Coming soon.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
+              {['TapTag', 'Tagstand', 'MoreRFID'].map(vendor => (
+                <div key={vendor} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px 24px', fontSize: '14px', fontWeight: 600, color: '#64748b' }}>
+                  {vendor}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
