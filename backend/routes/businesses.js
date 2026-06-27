@@ -815,4 +815,124 @@ router.post('/logo/upload', authenticateToken, (req, res) => {
   });
 });
 
+// ─── Products & Services ─────────────────────────────────────────────────────
+
+// @route   GET /api/businesses/services
+// @desc    List all active services for the authenticated business
+// @access  Private
+router.get('/services', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, name, description, price, category, display_order, is_active, created_at
+       FROM business_services
+       WHERE business_id = $1
+       ORDER BY display_order ASC, created_at ASC`,
+      [req.businessId]
+    );
+    return res.json({ services: result.rows });
+  } catch (err) {
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/businesses/services
+// @desc    Add a new service
+// @access  Private
+router.post('/services', authenticateToken, async (req, res) => {
+  const { name, description, price, category, display_order } = req.body;
+  if (!name || !String(name).trim()) {
+    return res.status(400).json({ message: 'Service name is required.' });
+  }
+  if (String(name).trim().length > 100) {
+    return res.status(400).json({ message: 'Service name must be 100 characters or fewer.' });
+  }
+  try {
+    const countResult = await pool.query(
+      'SELECT COUNT(*) FROM business_services WHERE business_id = $1',
+      [req.businessId]
+    );
+    if (Number(countResult.rows[0].count) >= 20) {
+      return res.status(400).json({ message: 'Maximum of 20 services allowed.' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO business_services (business_id, name, description, price, category, display_order)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, name, description, price, category, display_order, is_active, created_at`,
+      [
+        req.businessId,
+        String(name).trim(),
+        description ? String(description).trim() : null,
+        price ? String(price).trim() : null,
+        category ? String(category).trim() : null,
+        Number(display_order) || 0,
+      ]
+    );
+    return res.status(201).json({ service: result.rows[0] });
+  } catch (err) {
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/businesses/services/:id
+// @desc    Update a service
+// @access  Private
+router.put('/services/:id', authenticateToken, async (req, res) => {
+  const { name, description, price, category, display_order, is_active } = req.body;
+  if (name !== undefined && !String(name).trim()) {
+    return res.status(400).json({ message: 'Service name cannot be empty.' });
+  }
+  try {
+    const existing = await pool.query(
+      'SELECT id FROM business_services WHERE id = $1 AND business_id = $2',
+      [req.params.id, req.businessId]
+    );
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ message: 'Service not found.' });
+    }
+    const result = await pool.query(
+      `UPDATE business_services
+       SET name          = COALESCE($2, name),
+           description   = COALESCE($3, description),
+           price         = COALESCE($4, price),
+           category      = COALESCE($5, category),
+           display_order = COALESCE($6, display_order),
+           is_active     = COALESCE($7, is_active),
+           updated_at    = NOW()
+       WHERE id = $1
+       RETURNING id, name, description, price, category, display_order, is_active, created_at`,
+      [
+        req.params.id,
+        name ? String(name).trim() : null,
+        description !== undefined ? (String(description).trim() || null) : null,
+        price !== undefined ? (String(price).trim() || null) : null,
+        category !== undefined ? (String(category).trim() || null) : null,
+        display_order !== undefined ? Number(display_order) : null,
+        is_active !== undefined ? Boolean(is_active) : null,
+      ]
+    );
+    return res.json({ service: result.rows[0] });
+  } catch (err) {
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   DELETE /api/businesses/services/:id
+// @desc    Delete a service
+// @access  Private
+router.delete('/services/:id', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'DELETE FROM business_services WHERE id = $1 AND business_id = $2 RETURNING id',
+      [req.params.id, req.businessId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Service not found.' });
+    }
+    return res.json({ message: 'Service deleted.' });
+  } catch (err) {
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;

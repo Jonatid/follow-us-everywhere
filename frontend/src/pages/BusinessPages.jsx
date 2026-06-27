@@ -182,6 +182,58 @@ export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh })
   const [warning, setWarning] = useState(null);
   const [actionError, setActionError] = useState('');
 
+  const [services, setServices] = useState([]);
+  const [servicesLoaded, setServicesLoaded] = useState(false);
+  const [serviceForm, setServiceForm] = useState({ name: '', description: '', price: '', category: '' });
+  const [serviceFormError, setServiceFormError] = useState('');
+  const [serviceSaving, setServiceSaving] = useState(false);
+  const [editingServiceId, setEditingServiceId] = useState(null);
+
+  const loadServices = async () => {
+    try {
+      const { api } = await import('../services/appApi');
+      const res = await api.get('/businesses/services');
+      setServices(res.data.services || []);
+    } catch (_) {}
+    setServicesLoaded(true);
+  };
+
+  const handleServiceSubmit = async (e) => {
+    e.preventDefault();
+    if (!serviceForm.name.trim()) { setServiceFormError('Service name is required.'); return; }
+    setServiceFormError('');
+    setServiceSaving(true);
+    try {
+      const { api } = await import('../services/appApi');
+      if (editingServiceId) {
+        const res = await api.put(`/businesses/services/${editingServiceId}`, serviceForm);
+        setServices(prev => prev.map(s => s.id === editingServiceId ? res.data.service : s));
+        setEditingServiceId(null);
+      } else {
+        const res = await api.post('/businesses/services', serviceForm);
+        setServices(prev => [...prev, res.data.service]);
+      }
+      setServiceForm({ name: '', description: '', price: '', category: '' });
+    } catch (err) {
+      setServiceFormError(err?.response?.data?.message || 'Failed to save service.');
+    }
+    setServiceSaving(false);
+  };
+
+  const handleServiceDelete = async (id) => {
+    if (!window.confirm('Remove this service?')) return;
+    try {
+      const { api } = await import('../services/appApi');
+      await api.delete(`/businesses/services/${id}`);
+      setServices(prev => prev.filter(s => s.id !== id));
+    } catch (_) {}
+  };
+
+  const startEditService = (service) => {
+    setEditingServiceId(service.id);
+    setServiceForm({ name: service.name, description: service.description || '', price: service.price || '', category: service.category || '' });
+  };
+
   const verificationStatus = business.verification_status;
   const nudgeMessage = business.nudge_message;
   const policyText = business.policy_violation_text;
@@ -234,7 +286,8 @@ export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh })
       vision_statement: business.vision_statement || '',
       philanthropic_goals: business.philanthropic_goals || '',
     });
-  }, [business]);
+    if (!servicesLoaded) loadServices();
+  }, [business]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const publicBusinessKey = resolvePublicBusinessKey(business);
 
@@ -558,6 +611,55 @@ export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh })
           </div>
           <div className="section-divider" />
           <div className="stack-sm">
+            <h2 className="heading-md">Products &amp; Services</h2>
+            <p className="subtitle">List what your business offers. These appear on your public profile.</p>
+            {services.length > 0 && (
+              <div className="stack-sm">
+                {services.map(service => (
+                  <div key={service.id} className="social-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontWeight: 600, marginBottom: 2 }}>{service.name}</p>
+                      {service.price && <p className="muted-text" style={{ fontSize: 13 }}>{service.price}</p>}
+                      {service.description && <p className="muted-text" style={{ fontSize: 13 }}>{service.description}</p>}
+                      {service.category && <p className="muted-text" style={{ fontSize: 12 }}>{service.category}</p>}
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                      <button type="button" className="button button-secondary button-sm" onClick={() => startEditService(service)}>Edit</button>
+                      <button type="button" className="button button-danger button-sm" onClick={() => handleServiceDelete(service.id)}>Remove</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {services.length < 20 && canEditBusiness && (
+              <form onSubmit={handleServiceSubmit} className="stack-sm" style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '16px' }}>
+                <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{editingServiceId ? 'Edit Service' : 'Add a Service'}</p>
+                {serviceFormError && <p className="error-text">{serviceFormError}</p>}
+                <div className="field">
+                  <label className="label">Service / Product name *</label>
+                  <input className="input" type="text" maxLength={100} placeholder='e.g. "Wedding Photography" or "Custom Cakes"' value={serviceForm.name} onChange={e => setServiceForm(p => ({ ...p, name: e.target.value }))} />
+                </div>
+                <div className="field">
+                  <label className="label">Price (optional)</label>
+                  <input className="input" type="text" maxLength={50} placeholder='e.g. "Starting at $150" or "Free consultation"' value={serviceForm.price} onChange={e => setServiceForm(p => ({ ...p, price: e.target.value }))} />
+                </div>
+                <div className="field">
+                  <label className="label">Short description (optional)</label>
+                  <textarea className="input" rows={2} maxLength={300} placeholder="Brief description of this offering" value={serviceForm.description} onChange={e => setServiceForm(p => ({ ...p, description: e.target.value }))} />
+                </div>
+                <div className="field">
+                  <label className="label">Category (optional)</label>
+                  <input className="input" type="text" maxLength={50} placeholder='e.g. "Photography", "Food & Beverage"' value={serviceForm.category} onChange={e => setServiceForm(p => ({ ...p, category: e.target.value }))} />
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button type="submit" className="button button-primary button-sm" disabled={serviceSaving}>{serviceSaving ? 'Saving...' : editingServiceId ? 'Save Changes' : 'Add Service'}</button>
+                  {editingServiceId && <button type="button" className="button button-secondary button-sm" onClick={() => { setEditingServiceId(null); setServiceForm({ name: '', description: '', price: '', category: '' }); }}>Cancel</button>}
+                </div>
+              </form>
+            )}
+          </div>
+          <div className="section-divider" />
+          <div className="stack-sm">
             <h2 className="heading-md">Philanthropic</h2>
             {!canEditPhilanthropic && (
               <div className="alert alert-error">
@@ -856,6 +958,22 @@ export const PublicFollowPage = ({ slug, onNavigate }) => {
               </div>
             ) : null}
           </section>
+
+          {Array.isArray(business.services) && business.services.length > 0 && (
+            <section className="card public-business-column" aria-label="Products and Services" style={{ gridColumn: '1 / -1' }}>
+              <h2 className="heading-md" style={{ marginBottom: '16px' }}>Products &amp; Services</h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
+                {business.services.map(service => (
+                  <div key={service.id} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px 16px' }}>
+                    <p style={{ fontWeight: 600, fontSize: '15px', marginBottom: service.price || service.description ? '4px' : 0 }}>{service.name}</p>
+                    {service.price && <p style={{ fontSize: '13px', color: '#6366f1', fontWeight: 600, marginBottom: service.description ? '4px' : 0 }}>{service.price}</p>}
+                    {service.description && <p style={{ fontSize: '13px', color: '#64748b' }}>{service.description}</p>}
+                    {service.category && <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '6px', textTransform: 'uppercase', letterSpacing: '.04em' }}>{service.category}</p>}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           <section className="card public-business-column public-business-right" aria-label="Statements">
             {statementCards.length === 0 ? (
