@@ -17,7 +17,8 @@ const REQUIRED_TABLES = [
   'zernio_profiles',
   'zernio_accounts',
   'scheduled_posts',
-  'auth_login_attempts'
+  'auth_login_attempts',
+  'business_services'
 ];
 
 const getMissingTables = async (client = pool) => {
@@ -458,6 +459,22 @@ const ensureSchema = async () => {
     `);
 
     await pool.query('CREATE INDEX IF NOT EXISTS idx_nfc_devices_business_id ON nfc_devices(business_id);');
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS business_services (
+        id SERIAL PRIMARY KEY,
+        business_id INTEGER NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+        name VARCHAR(100) NOT NULL,
+        description TEXT,
+        price VARCHAR(50),
+        category VARCHAR(50),
+        display_order INTEGER NOT NULL DEFAULT 0,
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+      );
+    `);
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_business_services_business_id ON business_services(business_id);');
   } catch (error) {
     if (error.code === '42501') {
       const dbUser = process.env.DATABASE_URL

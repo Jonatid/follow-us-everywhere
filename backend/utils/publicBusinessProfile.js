@@ -187,6 +187,15 @@ const getPublicBusinessBySlug = async (slug) => {
     business.message = 'This page is temporarily unavailable due to technical difficulties.';
   }
 
+  const servicesResult = await pool.query(
+    `SELECT id, name, description, price, category, display_order
+     FROM business_services
+     WHERE business_id = $1 AND is_active = true
+     ORDER BY display_order ASC, created_at ASC`,
+    [business.id]
+  ).catch(() => ({ rows: [] }));
+  business.services = isRestricted ? [] : servicesResult.rows;
+
   if (canLoadBadges) {
     const hasBadgeStatusColumn = await checkBusinessBadgeStatusColumn();
     const badgesResult = await pool.query(
