@@ -958,26 +958,41 @@ export const PublicFollowPage = ({ slug, onNavigate }) => {
             ) : null}
           </section>
 
-          {Array.isArray(business.services) && business.services.length > 0 && (
-            <section className="card public-business-column" aria-label="Products and Services" style={{ gridColumn: '1 / -1' }}>
-              <h2 className="heading-md" style={{ marginBottom: '16px' }}>Products &amp; Services</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
-                {business.services.map(service => (
-                  <div key={service.id} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px 16px' }}>
-                    <p style={{ fontWeight: 600, fontSize: '15px', marginBottom: service.description ? '4px' : 0 }}>{service.name}</p>
-                    {service.description && <p style={{ fontSize: '13px', color: '#64748b' }}>{service.description}</p>}
-                    {service.category && <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '6px', textTransform: 'uppercase', letterSpacing: '.04em' }}>{service.category}</p>}
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          <section className="card public-business-column public-business-right" aria-label="Statements">
-            {statementCards.length === 0 ? (
-              <div className="statement-card statement-card--placeholder">No statements provided yet.</div>
+          {/* Right column — Products & Services */}
+          <section className="card public-business-column" aria-label="Products and Services">
+            {Array.isArray(business.services) && business.services.length > 0 ? (
+              <>
+                <h2 className="heading-md" style={{ marginBottom: '12px' }}>Products &amp; Services</h2>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {business.services.map(service => (
+                    <div key={service.id} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px 14px' }}>
+                      <p style={{ fontWeight: 600, fontSize: '14px', marginBottom: service.description ? '3px' : 0 }}>{service.name}</p>
+                      {service.description && <p style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.4 }}>{service.description}</p>}
+                      {service.category && <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '.04em' }}>{service.category}</p>}
+                    </div>
+                  ))}
+                </div>
+              </>
             ) : (
-              <div className={`statement-cards statement-cards--${statementCards.length === 1 ? 'single' : 'stacked'}`}>
+              statementCards.length > 0 ? (
+                <div className={`statement-cards statement-cards--${statementCards.length === 1 ? 'single' : 'stacked'}`}>
+                  {statementCards.map((card) => (
+                    <article key={card.title} className="statement-card">
+                      <h2 className="heading-md">{card.title}</h2>
+                      <p className="muted-text">{card.value}</p>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <div className="statement-card statement-card--placeholder">No statements provided yet.</div>
+              )
+            )}
+          </section>
+
+          {/* Statements — full width, only shown when services are also present */}
+          {Array.isArray(business.services) && business.services.length > 0 && statementCards.length > 0 && (
+            <section className="card" aria-label="Statements" style={{ gridColumn: '1 / -1' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
                 {statementCards.map((card) => (
                   <article key={card.title} className="statement-card">
                     <h2 className="heading-md">{card.title}</h2>
@@ -985,8 +1000,8 @@ export const PublicFollowPage = ({ slug, onNavigate }) => {
                   </article>
                 ))}
               </div>
-            )}
-          </section>
+            </section>
+          )}
         </div>
       </div>
       {impactOpen && hasApprovedImpactBadges ? (
