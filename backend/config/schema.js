@@ -466,7 +466,6 @@ const ensureSchema = async () => {
         business_id INTEGER NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
         name VARCHAR(100) NOT NULL,
         description TEXT,
-        price VARCHAR(50),
         category VARCHAR(50),
         display_order INTEGER NOT NULL DEFAULT 0,
         is_active BOOLEAN NOT NULL DEFAULT true,

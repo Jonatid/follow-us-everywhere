@@ -188,7 +188,7 @@ const getPublicBusinessBySlug = async (slug) => {
   }
 
   const servicesResult = await pool.query(
-    `SELECT id, name, description, price, category, display_order
+    `SELECT id, name, description, category, display_order
      FROM business_services
      WHERE business_id = $1 AND is_active = true
      ORDER BY display_order ASC, created_at ASC`,
