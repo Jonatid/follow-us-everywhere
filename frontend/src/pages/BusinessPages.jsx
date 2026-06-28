@@ -959,16 +959,16 @@ export const PublicFollowPage = ({ slug, onNavigate }) => {
           </section>
 
           {/* Right column — Products & Services */}
-          <section className="card public-business-column" aria-label="Products and Services">
+          <section className="card public-business-column" aria-label="Products and Services" style={{ display: 'flex', flexDirection: 'column' }}>
             {Array.isArray(business.services) && business.services.length > 0 ? (
               <>
-                <h2 className="heading-md" style={{ marginBottom: '12px' }}>Products &amp; Services</h2>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <h2 className="heading-md" style={{ marginBottom: '16px' }}>Products &amp; Services</h2>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
                   {business.services.map(service => (
-                    <div key={service.id} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px 14px' }}>
-                      <p style={{ fontWeight: 600, fontSize: '14px', marginBottom: service.description ? '3px' : 0 }}>{service.name}</p>
-                      {service.description && <p style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.4 }}>{service.description}</p>}
-                      {service.category && <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '.04em' }}>{service.category}</p>}
+                    <div key={service.id} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '18px 20px', flex: 1 }}>
+                      <p style={{ fontWeight: 700, fontSize: '16px', marginBottom: service.description ? '6px' : 0 }}>{service.name}</p>
+                      {service.description && <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.55, marginBottom: service.category ? '8px' : 0 }}>{service.description}</p>}
+                      {service.category && <p style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', fontWeight: 600 }}>{service.category}</p>}
                     </div>
                   ))}
                 </div>
