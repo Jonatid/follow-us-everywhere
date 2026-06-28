@@ -184,7 +184,7 @@ export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh })
 
   const [services, setServices] = useState([]);
   const [servicesLoaded, setServicesLoaded] = useState(false);
-  const [serviceForm, setServiceForm] = useState({ name: '', description: '', price: '', category: '' });
+  const [serviceForm, setServiceForm] = useState({ name: '', description: '', category: '' });
   const [serviceFormError, setServiceFormError] = useState('');
   const [serviceSaving, setServiceSaving] = useState(false);
   const [editingServiceId, setEditingServiceId] = useState(null);
@@ -213,7 +213,7 @@ export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh })
         const res = await api.post('/businesses/services', serviceForm);
         setServices(prev => [...prev, res.data.service]);
       }
-      setServiceForm({ name: '', description: '', price: '', category: '' });
+      setServiceForm({ name: '', description: '', category: '' });
     } catch (err) {
       setServiceFormError(err?.response?.data?.message || 'Failed to save service.');
     }
@@ -231,7 +231,7 @@ export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh })
 
   const startEditService = (service) => {
     setEditingServiceId(service.id);
-    setServiceForm({ name: service.name, description: service.description || '', price: service.price || '', category: service.category || '' });
+    setServiceForm({ name: service.name, description: service.description || '', category: service.category || '' });
   };
 
   const verificationStatus = business.verification_status;
@@ -619,7 +619,6 @@ export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh })
                   <div key={service.id} className="social-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontWeight: 600, marginBottom: 2 }}>{service.name}</p>
-                      {service.price && <p className="muted-text" style={{ fontSize: 13 }}>{service.price}</p>}
                       {service.description && <p className="muted-text" style={{ fontSize: 13 }}>{service.description}</p>}
                       {service.category && <p className="muted-text" style={{ fontSize: 12 }}>{service.category}</p>}
                     </div>
@@ -640,10 +639,6 @@ export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh })
                   <input className="input" type="text" maxLength={100} placeholder='e.g. "Wedding Photography" or "Custom Cakes"' value={serviceForm.name} onChange={e => setServiceForm(p => ({ ...p, name: e.target.value }))} />
                 </div>
                 <div className="field">
-                  <label className="label">Price (optional)</label>
-                  <input className="input" type="text" maxLength={50} placeholder='e.g. "Starting at $150" or "Free consultation"' value={serviceForm.price} onChange={e => setServiceForm(p => ({ ...p, price: e.target.value }))} />
-                </div>
-                <div className="field">
                   <label className="label">Short description (optional)</label>
                   <textarea className="input" rows={2} maxLength={300} placeholder="Brief description of this offering" value={serviceForm.description} onChange={e => setServiceForm(p => ({ ...p, description: e.target.value }))} />
                 </div>
@@ -653,7 +648,7 @@ export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh })
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button type="submit" className="button button-primary button-sm" disabled={serviceSaving}>{serviceSaving ? 'Saving...' : editingServiceId ? 'Save Changes' : 'Add Service'}</button>
-                  {editingServiceId && <button type="button" className="button button-secondary button-sm" onClick={() => { setEditingServiceId(null); setServiceForm({ name: '', description: '', price: '', category: '' }); }}>Cancel</button>}
+                  {editingServiceId && <button type="button" className="button button-secondary button-sm" onClick={() => { setEditingServiceId(null); setServiceForm({ name: '', description: '', category: '' }); }}>Cancel</button>}
                 </div>
               </form>
             )}
@@ -965,8 +960,7 @@ export const PublicFollowPage = ({ slug, onNavigate }) => {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
                 {business.services.map(service => (
                   <div key={service.id} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px 16px' }}>
-                    <p style={{ fontWeight: 600, fontSize: '15px', marginBottom: service.price || service.description ? '4px' : 0 }}>{service.name}</p>
-                    {service.price && <p style={{ fontSize: '13px', color: '#6366f1', fontWeight: 600, marginBottom: service.description ? '4px' : 0 }}>{service.price}</p>}
+                    <p style={{ fontWeight: 600, fontSize: '15px', marginBottom: service.description ? '4px' : 0 }}>{service.name}</p>
                     {service.description && <p style={{ fontSize: '13px', color: '#64748b' }}>{service.description}</p>}
                     {service.category && <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '6px', textTransform: 'uppercase', letterSpacing: '.04em' }}>{service.category}</p>}
                   </div>

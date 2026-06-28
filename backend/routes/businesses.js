@@ -839,7 +839,7 @@ router.get('/services', authenticateToken, async (req, res) => {
 // @desc    Add a new service
 // @access  Private
 router.post('/services', authenticateToken, async (req, res) => {
-  const { name, description, price, category, display_order } = req.body;
+  const { name, description, category, display_order } = req.body;
   if (!name || !String(name).trim()) {
     return res.status(400).json({ message: 'Service name is required.' });
   }
@@ -856,14 +856,13 @@ router.post('/services', authenticateToken, async (req, res) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO business_services (business_id, name, description, price, category, display_order)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id, name, description, price, category, display_order, is_active, created_at`,
+      `INSERT INTO business_services (business_id, name, description, category, display_order)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, name, description, category, display_order, is_active, created_at`,
       [
         req.businessId,
         String(name).trim(),
         description ? String(description).trim() : null,
-        price ? String(price).trim() : null,
         category ? String(category).trim() : null,
         Number(display_order) || 0,
       ]
@@ -878,7 +877,7 @@ router.post('/services', authenticateToken, async (req, res) => {
 // @desc    Update a service
 // @access  Private
 router.put('/services/:id', authenticateToken, async (req, res) => {
-  const { name, description, price, category, display_order, is_active } = req.body;
+  const { name, description, category, display_order, is_active } = req.body;
   if (name !== undefined && !String(name).trim()) {
     return res.status(400).json({ message: 'Service name cannot be empty.' });
   }
@@ -894,18 +893,16 @@ router.put('/services/:id', authenticateToken, async (req, res) => {
       `UPDATE business_services
        SET name          = COALESCE($2, name),
            description   = COALESCE($3, description),
-           price         = COALESCE($4, price),
-           category      = COALESCE($5, category),
-           display_order = COALESCE($6, display_order),
-           is_active     = COALESCE($7, is_active),
+           category      = COALESCE($4, category),
+           display_order = COALESCE($5, display_order),
+           is_active     = COALESCE($6, is_active),
            updated_at    = NOW()
        WHERE id = $1
-       RETURNING id, name, description, price, category, display_order, is_active, created_at`,
+       RETURNING id, name, description, category, display_order, is_active, created_at`,
       [
         req.params.id,
         name ? String(name).trim() : null,
         description !== undefined ? (String(description).trim() || null) : null,
-        price !== undefined ? (String(price).trim() || null) : null,
         category !== undefined ? (String(category).trim() || null) : null,
         display_order !== undefined ? Number(display_order) : null,
         is_active !== undefined ? Boolean(is_active) : null,
