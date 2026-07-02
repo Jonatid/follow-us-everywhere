@@ -717,6 +717,27 @@ export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh })
 // PUBLIC FOLLOW PAGE
 // =============================================================================
 
+const PLATFORM_TILE = {
+  Instagram:  { bg: 'linear-gradient(135deg,#f59e0b,#ef4444,#ec4899)', color: '#fff' },
+  Facebook:   { bg: '#1877f2', color: '#fff' },
+  LinkedIn:   { bg: '#0a66c2', color: '#fff' },
+  Twitter:    { bg: '#000', color: '#fff' },
+  X:          { bg: '#000', color: '#fff' },
+  YouTube:    { bg: '#ff0000', color: '#fff' },
+  TikTok:     { bg: '#010101', color: '#fff' },
+  Pinterest:  { bg: '#e60023', color: '#fff' },
+  Snapchat:   { bg: '#fffc00', color: '#000' },
+  Website:    { bg: '#f1f5f9', color: '#0f172a', border: '1px solid #e2e8f0' },
+};
+const getPlatformTile = (platform) => PLATFORM_TILE[platform] || { bg: '#f1f5f9', color: '#0f172a', border: '1px solid #e2e8f0' };
+const getSocialVerb = (platform) => {
+  if (platform === 'YouTube') return 'Subscribe on';
+  if (platform === 'Facebook') return 'Like on';
+  if (platform === 'LinkedIn') return 'Connect on';
+  if (platform === 'Website') return 'Visit';
+  return 'Follow on';
+};
+
 export const PublicFollowPage = ({ slug, onNavigate }) => {
   const [business, setBusiness] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -890,43 +911,70 @@ export const PublicFollowPage = ({ slug, onNavigate }) => {
 
       <div className="public-business-shell">
         <div className="public-business-layout">
-          <section className="card public-business-column" aria-label="Follow links">
-            <p className="public-follow-helper">{widgetSettings.ctaText}</p>
+          <section className="card public-business-column" aria-label="Follow links" style={{ padding: '20px' }}>
+            <p className="public-follow-helper" style={{ marginBottom: '14px' }}>{widgetSettings.ctaText}</p>
             {visibleSocials.length === 0 ? (
               <div className="empty-state">This business hasn't added their social links yet.</div>
             ) : (
-              <>
-                <div className="stack-sm">
-                  {visibleSocials.map((social, index) =>
-                    social.url ? (
-                      <button
-                        key={social.id || index}
-                        type="button"
-                        onClick={() => handlePlatformClick(social.platform, social.url)}
-                        className="button button-muted button-full button-justify"
-                      >
-                        <span className="row">
-                          <span className="social-icon">{social.icon}</span>
-                          <span>
-                            {social.platform === 'YouTube'
-                              ? 'Subscribe on'
-                              : social.platform === 'Facebook'
-                              ? 'Like on'
-                              : social.platform === 'LinkedIn'
-                              ? 'Connect on'
-                              : social.platform === 'Website'
-                              ? 'Visit'
-                              : 'Follow on'}{' '}
-                            {social.platform}
-                          </span>
-                        </span>
-                        <span className="muted-text">→</span>
-                      </button>
-                    ) : null
-                  )}
-                </div>
-                {visibleSocials.length > 1 && <p className="public-follow-subtitle">{widgetSettings.ctaText}</p>}
-              </>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {/* Featured tile — first link gets full-width bold treatment */}
+                {(() => {
+                  const s = visibleSocials[0];
+                  const tile = getPlatformTile(s.platform);
+                  return (
+                    <button
+                      key={s.id || 0}
+                      type="button"
+                      onClick={() => handlePlatformClick(s.platform, s.url)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '14px',
+                        width: '100%', border: tile.border || 'none', cursor: 'pointer',
+                        background: tile.bg, color: tile.color,
+                        borderRadius: '14px', padding: '16px 18px',
+                        boxShadow: '0 4px 16px rgba(0,0,0,.13)',
+                        transition: 'transform .15s, box-shadow .15s',
+                        textAlign: 'left',
+                      }}
+                    >
+                      <span style={{ fontSize: '26px', lineHeight: 1 }}>{s.icon}</span>
+                      <span style={{ flex: 1 }}>
+                        <span style={{ display: 'block', fontSize: '15px', fontWeight: 700 }}>{getSocialVerb(s.platform)} {s.platform}</span>
+                        <span style={{ fontSize: '12px', opacity: .72 }}>Tap to open</span>
+                      </span>
+                      <span style={{ fontSize: '18px', opacity: .65 }}>→</span>
+                    </button>
+                  );
+                })()}
+                {/* Remaining links — 2-column bento grid */}
+                {visibleSocials.length > 1 && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    {visibleSocials.slice(1).map((s, i) => {
+                      const tile = getPlatformTile(s.platform);
+                      return (
+                        <button
+                          key={s.id || i + 1}
+                          type="button"
+                          onClick={() => handlePlatformClick(s.platform, s.url)}
+                          style={{
+                            display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+                            border: tile.border || 'none', cursor: 'pointer',
+                            background: tile.bg, color: tile.color,
+                            borderRadius: '14px', padding: '16px',
+                            minHeight: '88px',
+                            boxShadow: '0 2px 8px rgba(0,0,0,.07)',
+                            transition: 'transform .15s',
+                            textAlign: 'left',
+                          }}
+                        >
+                          <span style={{ fontSize: '22px', marginBottom: '8px', lineHeight: 1 }}>{s.icon}</span>
+                          <span style={{ fontSize: '13px', fontWeight: 700 }}>{s.platform}</span>
+                          <span style={{ fontSize: '11px', opacity: .7, marginTop: '2px' }}>{getSocialVerb(s.platform)}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             )}
             {showQrSection && (
               <div className="public-section" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
@@ -959,16 +1007,34 @@ export const PublicFollowPage = ({ slug, onNavigate }) => {
           </section>
 
           {/* Right column — Products & Services */}
-          <section className="card public-business-column" aria-label="Products and Services" style={{ display: 'flex', flexDirection: 'column' }}>
+          <section className="card public-business-column" aria-label="Products and Services" style={{ display: 'flex', flexDirection: 'column', padding: '20px' }}>
             {Array.isArray(business.services) && business.services.length > 0 ? (
               <>
-                <h2 className="heading-md" style={{ marginBottom: '16px' }}>Products &amp; Services</h2>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
-                  {business.services.map(service => (
-                    <div key={service.id} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '18px 20px', flex: 1 }}>
-                      <p style={{ fontWeight: 700, fontSize: '16px', marginBottom: service.description ? '6px' : 0 }}>{service.name}</p>
-                      {service.description && <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.55, marginBottom: service.category ? '8px' : 0 }}>{service.description}</p>}
-                      {service.category && <p style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', fontWeight: 600 }}>{service.category}</p>}
+                <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: '#94a3b8', marginBottom: '14px' }}>Products &amp; Services</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0', flex: 1 }}>
+                  {business.services.map((service, idx) => (
+                    <div
+                      key={service.id}
+                      style={{
+                        display: 'flex', alignItems: 'flex-start', gap: '12px',
+                        padding: '13px 0',
+                        borderBottom: idx < business.services.length - 1 ? '1px solid #f1f5f9' : 'none',
+                      }}
+                    >
+                      <div style={{
+                        width: '36px', height: '36px', flexShrink: 0,
+                        borderRadius: '9px',
+                        background: ['#dbeafe','#fef3c7','#f0fdf4','#fae8ff','#fff7ed','#f0f9ff'][idx % 6],
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '16px',
+                      }}>
+                        {['🔹','⭐','✅','💡','🚀','🎯'][idx % 6]}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: service.description ? '3px' : 0 }}>{service.name}</p>
+                        {service.description && <p style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.45 }}>{service.description}</p>}
+                        {service.category && <p style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', fontWeight: 600, marginTop: '4px' }}>{service.category}</p>}
+                      </div>
                     </div>
                   ))}
                 </div>
