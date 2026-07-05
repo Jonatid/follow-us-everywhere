@@ -442,6 +442,11 @@ const ensureSchema = async () => {
       );
     `);
 
+    // Add source column to pre-existing qr_scans tables that were created before this column existed
+    await pool.query(`
+      ALTER TABLE qr_scans ADD COLUMN IF NOT EXISTS source VARCHAR(20) NOT NULL DEFAULT 'qr';
+    `);
+
     await pool.query('CREATE INDEX IF NOT EXISTS idx_qr_scans_slug_scanned_at ON qr_scans(business_slug, scanned_at DESC);');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_qr_scans_source ON qr_scans(source);');
 
