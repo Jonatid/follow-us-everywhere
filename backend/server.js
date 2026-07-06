@@ -99,25 +99,11 @@ app.get('/files/:key', async (req, res, next) => {
 
 // API Routes
 
-app.get('/api/test-email', async (req, res) => {
-  try {
-    await sendEmail({
-      to: 'jeanett@fuse101.com',
-      subject: 'Follow Us Everywhere SMTP test',
-      html: '<p>This is a test email from Follow Us Everywhere via Microsoft 365 SMTP.</p>'
-    });
-    res.json({ message: 'Test email sent successfully' });
-  } catch (error) {
-    console.error('Test email route failed:', error);
-    res.status(500).json({ message: 'Failed to send test email' });
-  }
-});
-
 app.use('/api/auth', authRoutes);
 app.use('/api/businesses', businessesRoutes);
 app.use('/api/business', businessesRoutes);
 app.use('/api/socials', socialsRoutes);
-app.use('/api/social', authenticateToken, socialRoutes);
+app.use('/api/social', socialRoutes); // socialRoutes applies authenticateToken internally
 app.use('/api/admin/auth', adminAuthRoutes);
 app.use('/api', badgesRoutes);
 app.use('/api/admin', adminRoutes);
@@ -165,22 +151,17 @@ app.use((err, req, res, next) => {
 });
 
 const startServer = async () => {
-  let startupInitializationOk = true;
-
   try {
     await runMigrations();
     await ensureSchema();
   } catch (error) {
-    startupInitializationOk = false;
-    logger.error({ err: error }, 'Startup initialization error. Server will continue in degraded mode.');
+    logger.error({ err: error }, 'Startup initialization failed — exiting.');
+    process.exit(1);
   }
 
   app.listen(PORT, () => {
     logger.info({ port: PORT }, 'Server is running');
     logger.info({ env: process.env.NODE_ENV || 'development' }, 'Environment loaded');
-    if (!startupInitializationOk) {
-      logger.warn('Startup completed in degraded mode due to initialization errors.');
-    }
   });
 };
 

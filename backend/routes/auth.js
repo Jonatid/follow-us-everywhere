@@ -102,8 +102,8 @@ router.post(
       // Create logo from initials
       const logo = name.substring(0, 2).toUpperCase();
 
-      // Insert business
-      const result = await pool.query(
+      // Insert business (must use client to stay within the transaction)
+      const result = await client.query(
         `INSERT INTO businesses (name, slug, tagline, logo, email, password_hash)
          VALUES ($1, $2, $3, $4, $5, $6)
          RETURNING id,

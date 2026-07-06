@@ -1959,15 +1959,15 @@ export const ShareableLinkBar = ({ url }) => {
         Can't scan? Share this link
       </span>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ flex: 1, fontSize: 12, color: '#003594', fontWeight: 600, wordBreak: 'break-all', lineHeight: 1.4 }}>
+        <span style={{ flex: 1, fontSize: 12, color: '#0047cc', fontWeight: 600, wordBreak: 'break-all', lineHeight: 1.4 }}>
           {url}
         </span>
         <button
           type="button"
           onClick={handleCopy}
           style={{
-            flexShrink: 0, background: copied ? '#003594' : '#FDD001',
-            color: copied ? '#FDD001' : '#003594', border: 'none',
+            flexShrink: 0, background: copied ? '#0047cc' : '#f59e0b',
+            color: copied ? '#f59e0b' : '#0047cc', border: 'none',
             borderRadius: 8, padding: '7px 12px', fontSize: 11, fontWeight: 800,
             cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap',
           }}
@@ -2014,7 +2014,7 @@ export const SaveContactButton = ({ slug }) => {
       disabled={saving}
       style={{
         width: '100%', maxWidth: 320,
-        background: '#003594', color: '#FDD001',
+        background: '#0047cc', color: '#f59e0b',
         border: 'none', borderRadius: 12,
         padding: '12px 20px', fontSize: 13, fontWeight: 800,
         cursor: saving ? 'wait' : 'pointer',
@@ -2199,7 +2199,7 @@ export const NfcDevicesPage = ({ business, onNavigate, onLogout }) => {
                         Program this URL onto the chip
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ flex: 1, fontSize: '12px', color: '#003594', fontWeight: 600, wordBreak: 'break-all', lineHeight: 1.4 }}>
+                        <span style={{ flex: 1, fontSize: '12px', color: '#0047cc', fontWeight: 600, wordBreak: 'break-all', lineHeight: 1.4 }}>
                           {device.encoded_url}
                         </span>
                         <button
@@ -2207,8 +2207,8 @@ export const NfcDevicesPage = ({ business, onNavigate, onLogout }) => {
                           onClick={() => handleCopy(device.id, device.encoded_url)}
                           style={{
                             flexShrink: 0,
-                            background: copiedId === device.id ? '#003594' : '#FDD001',
-                            color: copiedId === device.id ? '#FDD001' : '#003594',
+                            background: copiedId === device.id ? '#0047cc' : '#f59e0b',
+                            color: copiedId === device.id ? '#f59e0b' : '#0047cc',
                             border: 'none', borderRadius: '8px',
                             padding: '7px 12px', fontSize: '11px', fontWeight: 800,
                             cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap',

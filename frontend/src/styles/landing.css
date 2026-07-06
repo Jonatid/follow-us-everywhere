@@ -11,21 +11,24 @@
 
 .landing-hero {
   width: 100%;
-  background-image:
-    linear-gradient(120deg, rgba(4, 20, 58, 0.9) 0%, rgba(8, 34, 90, 0.78) 48%, rgba(7, 25, 72, 0.88) 100%),
-    url('../assets/hero.png');
-  background-repeat: no-repeat, no-repeat;
-  background-size: cover, cover;
-  background-position: center, center;
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 48% 28%, #1e4fd8 0%, #1239b8 38%, #0a2590 72%, #071c70 100%);
   color: #fff;
   padding: 3rem 24px;
 }
 
-.landing-hero .subtitle-lg {
-  color: #fff;
+.landing-hero__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 
 .landing-hero__inner {
+  position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 1080px;
   margin: 0 auto;
@@ -33,6 +36,10 @@
   grid-template-columns: minmax(0, 700px);
   gap: 2rem;
   align-items: center;
+}
+
+.landing-hero .subtitle-lg {
+  color: #fff;
 }
 
 .landing-hero__eyebrow {

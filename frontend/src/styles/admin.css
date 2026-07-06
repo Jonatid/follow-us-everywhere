@@ -9,7 +9,7 @@
 .admin-sidebar {
   width: 240px;
   padding: var(--space-6);
-  background: var(--color-navy-strong);
+  background: var(--hero);
   color: #f8fafc;
   display: flex;
   flex-direction: column;
