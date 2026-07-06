@@ -410,7 +410,7 @@ export default function App() {
       <header className="site-header">
         <div className="site-header__inner">
           <button type="button" className="link-button site-header__logo" onClick={() => { handleNavigate('marketing-landing', null, '/'); closeMobileNav(); }}>
-            Follow Us Everywhere
+            <img src="/logo1.png" alt="FUSE101" style={{ height: 36, width: 'auto', display: 'block' }} />
           </button>
           <button
             type="button"

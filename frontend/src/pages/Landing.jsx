@@ -72,6 +72,78 @@ const badgeCards = [
 ];
 
 export default function Landing({ onNavigate, onOpenRoleModal }) {
+  const canvasRef = React.useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return undefined;
+    const ctx = canvas.getContext('2d');
+    let animId;
+    const nodes = [];
+
+    function resize() {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    }
+
+    function initNodes() {
+      nodes.length = 0;
+      const n = Math.floor((canvas.width * canvas.height) / 14000);
+      for (let i = 0; i < n; i++) {
+        nodes.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          vx: (Math.random() - 0.5) * 0.18,
+          vy: (Math.random() - 0.5) * 0.18,
+        });
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[i].x - nodes[j].x;
+          const dy = nodes[i].y - nodes[j].y;
+          const d = Math.sqrt(dx * dx + dy * dy);
+          if (d < 130) {
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            ctx.strokeStyle = `rgba(255,255,255,${(1 - d / 130) * 0.32})`;
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          }
+        }
+      }
+      for (let i = 0; i < nodes.length; i++) {
+        const g = ctx.createRadialGradient(nodes[i].x, nodes[i].y, 0, nodes[i].x, nodes[i].y, 5);
+        g.addColorStop(0, 'rgba(255,255,255,0.95)');
+        g.addColorStop(1, 'rgba(180,220,255,0)');
+        ctx.beginPath();
+        ctx.arc(nodes[i].x, nodes[i].y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = g;
+        ctx.fill();
+        nodes[i].x += nodes[i].vx;
+        nodes[i].y += nodes[i].vy;
+        if (nodes[i].x < 0 || nodes[i].x > canvas.width) nodes[i].vx *= -1;
+        if (nodes[i].y < 0 || nodes[i].y > canvas.height) nodes[i].vy *= -1;
+      }
+      animId = requestAnimationFrame(draw);
+    }
+
+    resize();
+    initNodes();
+    draw();
+
+    const handleResize = () => { resize(); initNodes(); };
+    window.addEventListener('resize', handleResize);
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
   useEffect(() => {
     const revealTargets = Array.from(document.querySelectorAll('.landing-reveal'));
     if (!revealTargets.length || !('IntersectionObserver' in window)) {
@@ -100,6 +172,7 @@ export default function Landing({ onNavigate, onOpenRoleModal }) {
   return (
     <div className="landing-page page page--gradient">
       <section className="landing-hero landing-reveal" aria-label="Home hero section">
+        <canvas ref={canvasRef} className="landing-hero__canvas" aria-hidden="true" />
         <div className="landing-hero__inner">
           <div className="landing-hero__text">
             <p className="landing-hero__eyebrow">BUILT FOR BUSINESSES THAT SHOW UP.</p>

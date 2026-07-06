@@ -4,19 +4,27 @@
     'Droid Sans', 'Helvetica Neue', sans-serif;
 
   /* Design tokens */
-  --color-navy-strong: #0f172a;
+  --color-navy-strong: #001a6e;
   --bg: #f8fafc;
-  --bg-gradient: linear-gradient(135deg, #f4f3ff 0%, #eef2ff 100%);
+  --bg-gradient: linear-gradient(135deg, #f0f6ff 0%, #e8f0fe 100%);
   --text: var(--color-navy-strong);
-  --muted: #6b7280;
-  --border: #e2e8f0;
-  --primary: #6d28d9;
-  --primary-dark: #5b21b6;
-  --secondary: #2563eb;
-  --secondary-dark: #1d4ed8;
+  --muted: #4a6491;
+  --border: #dde8f5;
+  --primary: #0047cc;
+  --primary-dark: #003aaa;
+  --secondary: #1a73e8;
+  --secondary-dark: #1565c0;
   --surface: #ffffff;
-  --shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
-  --shadow-soft: 0 10px 24px rgba(15, 23, 42, 0.08);
+  --shadow: 0 16px 40px rgba(0, 26, 110, 0.10);
+  --shadow-soft: 0 10px 24px rgba(0, 26, 110, 0.08);
+
+  /* Brand palette */
+  --hero: #0047cc;
+  --nav: #1a73e8;
+  --cyan: #29b6f6;
+  --gold: #f59e0b;
+  --ice: #f0f6ff;
+  --brand-blue: #0047cc;
 
   --radius-sm: 10px;
   --radius-md: 12px;
@@ -103,9 +111,9 @@ body {
   width: 100vw;
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
-  background-color: #0442b3;
+  background-color: var(--hero);
   background-image:
-    linear-gradient(180deg, rgba(4, 66, 179, 0.94) 0%, rgba(4, 66, 179, 0.88) 100%),
+    linear-gradient(180deg, rgba(0, 71, 204, 0.94) 0%, rgba(0, 58, 170, 0.90) 100%),
     url('./assets/vector-network.png');
   background-size: cover, cover;
   background-position: center, center;
@@ -207,8 +215,8 @@ body {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: #fff;
-  border-bottom: 1px solid var(--color-border, #E2DED6);
+  background: var(--nav);
+  border-bottom: none;
 }
 
 .site-header__inner {
@@ -226,7 +234,24 @@ body {
   align-items: center;
   font-weight: 700;
   font-size: 1.1rem;
-  color: var(--text);
+  color: #fff;
+}
+
+.site-header .link-button {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.site-header .link-button:hover {
+  color: #fff;
+}
+
+.site-header .button-primary {
+  background: #fff;
+  color: var(--hero);
+}
+
+.site-header .button-primary:hover {
+  background: rgba(255, 255, 255, 0.92);
 }
 
 
@@ -369,13 +394,13 @@ body {
   width: fit-content;
   padding: 0.45rem 0.9rem;
   border-radius: 999px;
-  border: 1px solid #d4af37;
-  background: #ffd700;
+  border: 1px solid #d97706;
+  background: var(--gold, #f59e0b);
   text-align: center;
   font-size: 0.9rem;
   font-weight: 700;
   letter-spacing: 0.01em;
-  color: #0b3ea9;
+  color: var(--hero, #0047cc);
   box-shadow: var(--shadow-soft);
 }
 
@@ -573,8 +598,8 @@ body {
 }
 
 .callout {
-  border: 1px solid #ddd6fe;
-  background: #f5f3ff;
+  border: 1px solid #c7deff;
+  background: #eef5ff;
   padding: 16px;
   border-radius: 16px;
   margin: 20px 0;
@@ -639,7 +664,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #7c3aed, #2563eb);
+  background: linear-gradient(135deg, #0047cc, #29b6f6);
   color: #fff;
   font-size: 2rem;
   font-weight: 700;
@@ -735,7 +760,10 @@ body {
   margin: 0 calc(50% - 50vw);
   min-height: 280px;
   border-radius: 0;
-  background-color: #0b2f95;
+  background-color: var(--hero);
+  background-image:
+    linear-gradient(180deg, rgba(0, 71, 204, 0.10) 0%, rgba(0, 30, 110, 0.12) 100%),
+    url('./assets/vector-network.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -748,7 +776,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(180deg, rgba(3, 10, 46, 0.72) 0%, rgba(10, 47, 154, 0.74) 100%);
+  background: transparent;
 }
 
 .public-business-hero__content {
@@ -785,7 +813,7 @@ body {
 }
 
 .public-business-hero__avatar {
-  background: linear-gradient(135deg, #7c3aed, #2563eb);
+  background: linear-gradient(135deg, #0047cc, #29b6f6);
 }
 
 .public-business-hero__title,
@@ -966,7 +994,7 @@ body {
 .site-footer {
   width: 100%;
   margin-top: 24px;
-  background: #0442b3;
+  background: var(--hero);
   color: #fff;
 }
 
@@ -1128,8 +1156,8 @@ body {
   margin-top: 0;
   overflow: hidden;
   position: relative;
-  background: linear-gradient(140deg, #030a2e 0%, #0a2f9a 100%);
-  box-shadow: 0 20px 45px rgba(2, 8, 32, 0.34);
+  background: var(--hero);
+  box-shadow: 0 20px 45px rgba(0, 26, 110, 0.30);
 }
 
 .platform-main {
@@ -1160,7 +1188,7 @@ body {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  opacity: 0.2;
+  opacity: 0.35;
   pointer-events: none;
 }
 
@@ -1302,7 +1330,7 @@ body {
   margin-top: 0;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(140deg, #030a2e 0%, #0a2f9a 100%);
+  background: var(--hero);
 }
 
 .discover-hero::before {
@@ -1375,8 +1403,9 @@ body {
 }
 
 .badge--verified {
-  background: #eff6ff;
-  color: #1d4ed8;
+  background: #fff8e7;
+  color: #92400e;
+  border-color: #d97706;
 }
 
 .badge__icon {
