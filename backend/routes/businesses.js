@@ -823,7 +823,7 @@ router.post('/logo/upload', authenticateToken, (req, res) => {
 router.get('/services', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, name, description, price, category, display_order, is_active, created_at
+      `SELECT id, name, description, category, display_order, is_active, created_at
        FROM business_services
        WHERE business_id = $1
        ORDER BY display_order ASC, created_at ASC`,

@@ -1,22 +1,16 @@
 import axios from 'axios';
 
-const configuredApiBaseUrl =
-  (typeof process !== 'undefined' && process.env?.REACT_APP_API_BASE_URL) ||
-  import.meta.env.VITE_API_BASE_URL ||
-  '';
+const configuredApiBaseUrl = process.env.REACT_APP_API_BASE_URL || '';
 
 export const DEFAULT_API_BASE_URL = 'https://followuseverywhere-api.onrender.com/api';
 
 export const API_BASE_URL =
   configuredApiBaseUrl ||
-  (import.meta.env.DEV
+  (process.env.NODE_ENV === 'development'
     ? 'http://localhost:5000/api'
     : DEFAULT_API_BASE_URL);
 
-const configuredPublicWebUrl =
-  (typeof process !== 'undefined' && process.env?.REACT_APP_PUBLIC_WEB_URL) ||
-  import.meta.env.VITE_PUBLIC_WEB_URL ||
-  '';
+const configuredPublicWebUrl = process.env.REACT_APP_PUBLIC_WEB_URL || '';
 
 const publicBase = (configuredPublicWebUrl || window.location.origin).replace(/\/$/, '');
 
