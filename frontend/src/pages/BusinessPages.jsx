@@ -889,7 +889,14 @@ export const PublicFollowPage = ({ slug, onNavigate }) => {
                 <div className="avatar public-business-hero__avatar">{initials}</div>
               )}
               <h1 className="heading-xl public-business-hero__title">{business.name}</h1>
-              <p className="subtitle public-business-hero__subtitle">Follow this business everywhere.</p>
+              {business.business_type && (
+                <p style={{ fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--cyan, #29b6f6)', margin: '4px 0 0' }}>
+                  {business.business_type}
+                </p>
+              )}
+              {business.tagline && (
+                <p className="subtitle public-business-hero__subtitle" style={{ marginTop: '6px' }}>{business.tagline}</p>
+              )}
               <div className="row row-wrap" style={{ justifyContent: 'center', gap: '8px', marginTop: '10px' }}>
                 {isBusinessVerified ? (
                   <span className="badge badge--verified">
@@ -1103,6 +1110,8 @@ export const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusiness
   const [formData, setFormData] = useState({
     name: business?.name || '',
     tagline: business?.tagline || '',
+    businessType: business?.business_type || '',
+    businessTypeCustom: '',
     logo: business?.logo_url || '',
     laraNumber: business?.lara_number || '',
   });
@@ -1129,6 +1138,8 @@ export const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusiness
     setFormData({
       name: business?.name || '',
       tagline: business?.tagline || '',
+      businessType: business?.business_type || '',
+      businessTypeCustom: '',
       logo: business?.logo_url || '',
       laraNumber: business?.lara_number || '',
     });
@@ -1438,9 +1449,13 @@ export const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusiness
     setSaveError('');
     try {
       const normalizedLogoUrl = normalizeLogoUrlValue(formData.logo);
+      const resolvedBusinessType = formData.businessType === 'Other'
+        ? (formData.businessTypeCustom.trim() || null)
+        : (formData.businessType || null);
       const response = await api.put('/business/profile/update', {
         name: formData.name,
         tagline: formData.tagline,
+        business_type: resolvedBusinessType,
         logo_url: normalizedLogoUrl,
         lara_number: formData.laraNumber || null,
         widget_settings: widgetSettings,
@@ -1455,6 +1470,7 @@ export const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusiness
         ...prev,
         name: response.data?.business?.name ?? formData.name,
         tagline: response.data?.business?.tagline ?? formData.tagline,
+        business_type: response.data?.business?.business_type ?? resolvedBusinessType,
         logo_url: persistedLogoUrl,
         lara_number: response.data?.business?.lara_number ?? (formData.laraNumber || null),
         widget_settings: persistedWidgetSettings,
@@ -1506,6 +1522,47 @@ export const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusiness
               <div className="field">
                 <label className="label">Tagline</label>
                 <input className="input" type="text" value={formData.tagline} onChange={(e) => handleChange('tagline', e.target.value)} />
+              </div>
+              <div className="field">
+                <label className="label">Business Type</label>
+                <select
+                  className="input"
+                  value={formData.businessType}
+                  onChange={(e) => handleChange('businessType', e.target.value)}
+                >
+                  <option value="">Select a type…</option>
+                  <option>Automotive</option>
+                  <option>Beauty &amp; Personal Care</option>
+                  <option>Cleaning &amp; Home Services</option>
+                  <option>Construction &amp; Contracting</option>
+                  <option>Consulting &amp; Professional Services</option>
+                  <option>Education &amp; Tutoring</option>
+                  <option>Entertainment &amp; Events</option>
+                  <option>Financial Services</option>
+                  <option>Food &amp; Beverage</option>
+                  <option>Health &amp; Wellness</option>
+                  <option>Legal Services</option>
+                  <option>Marketing &amp; Media</option>
+                  <option>Nonprofit &amp; Community</option>
+                  <option>Oral Health Care</option>
+                  <option>Real Estate</option>
+                  <option>Restaurant &amp; Catering</option>
+                  <option>Retail &amp; E-commerce</option>
+                  <option>Technology</option>
+                  <option>Transportation</option>
+                  <option>Other</option>
+                </select>
+                {formData.businessType === 'Other' && (
+                  <input
+                    className="input"
+                    type="text"
+                    style={{ marginTop: '8px' }}
+                    placeholder="Describe your business type"
+                    maxLength={100}
+                    value={formData.businessTypeCustom}
+                    onChange={(e) => handleChange('businessTypeCustom', e.target.value)}
+                  />
+                )}
               </div>
               <div className="field">
                 <label className="label">Logo URL</label>

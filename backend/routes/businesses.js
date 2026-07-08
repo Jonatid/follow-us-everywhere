@@ -513,6 +513,11 @@ router.put(
       .trim()
       .isLength({ max: 255 })
       .withMessage('Tagline must be 255 characters or less'),
+    body('business_type')
+      .optional({ nullable: true })
+      .trim()
+      .isLength({ max: 100 })
+      .withMessage('Business type must be 100 characters or less'),
     body('logo')
       .optional()
       .trim()
@@ -555,6 +560,7 @@ router.put(
       const {
         name,
         tagline,
+        business_type,
         logo,
         logo_url,
         lara_number,
@@ -600,6 +606,12 @@ router.put(
       if (tagline !== undefined) {
         fields.push(`tagline = $${paramCount}`);
         values.push(tagline);
+        paramCount++;
+      }
+
+      if (business_type !== undefined) {
+        fields.push(`business_type = $${paramCount}`);
+        values.push(business_type === null ? null : business_type);
         paramCount++;
       }
 
@@ -685,6 +697,7 @@ router.put(
                   philanthropic_goals,
                   widget_settings,
                   show_qr,
+                  business_type,
                   created_at,
                   updated_at
       `;
