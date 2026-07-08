@@ -96,7 +96,8 @@ const ensureSchema = async () => {
         ADD COLUMN IF NOT EXISTS show_qr BOOLEAN NOT NULL DEFAULT true,
         ADD COLUMN IF NOT EXISTS logo_url TEXT,
         ADD COLUMN IF NOT EXISTS lara_number TEXT,
-        ADD COLUMN IF NOT EXISTS token_version INTEGER NOT NULL DEFAULT 0;
+        ADD COLUMN IF NOT EXISTS token_version INTEGER NOT NULL DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS business_type VARCHAR(100);
     `);
 
     await pool.query(`
