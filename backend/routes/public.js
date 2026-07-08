@@ -37,7 +37,8 @@ const loadSchemaCapabilities = async () => {
              'is_public',
              'is_published',
              'is_active',
-             'community_support_text'
+             'community_support_text',
+             'business_type'
            )`
       ),
       pool.query(
@@ -86,6 +87,9 @@ router.get('/businesses', async (req, res) => {
     const selectCommunitySupport = availableColumns.has('community_support_text')
       ? 'b.community_support_text'
       : 'NULL::text AS community_support_text';
+    const selectBusinessType = availableColumns.has('business_type')
+      ? 'b.business_type'
+      : 'NULL::text AS business_type';
     const selectBadges = includeBadges
       ? `COALESCE(
            json_agg(
@@ -156,6 +160,7 @@ router.get('/businesses', async (req, res) => {
               b.tagline,
               ${selectVerificationStatus},
               ${selectCommunitySupport},
+              ${selectBusinessType},
               ${selectBadges}
        FROM businesses b
        ${badgesJoins}
