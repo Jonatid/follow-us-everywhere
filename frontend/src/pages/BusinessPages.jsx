@@ -187,6 +187,7 @@ export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh })
   const [serviceForm, setServiceForm] = useState({ name: '', description: '', category: '' });
   const [serviceFormError, setServiceFormError] = useState('');
   const [serviceSaving, setServiceSaving] = useState(false);
+  const [serviceDeleteError, setServiceDeleteError] = useState('');
   const [editingServiceId, setEditingServiceId] = useState(null);
 
   const loadServices = async () => {
@@ -199,6 +200,7 @@ export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh })
 
   const handleServiceSubmit = async (e) => {
     e.preventDefault();
+    if (serviceSaving) return;
     if (!serviceForm.name.trim()) { setServiceFormError('Service name is required.'); return; }
     setServiceFormError('');
     setServiceSaving(true);
@@ -214,16 +216,20 @@ export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh })
       setServiceForm({ name: '', description: '', category: '' });
     } catch (err) {
       setServiceFormError(err?.response?.data?.message || 'Failed to save service.');
+    } finally {
+      setServiceSaving(false);
     }
-    setServiceSaving(false);
   };
 
   const handleServiceDelete = async (id) => {
     if (!window.confirm('Remove this service?')) return;
+    setServiceDeleteError('');
     try {
       await api.delete(`/businesses/services/${id}`);
       setServices(prev => prev.filter(s => s.id !== id));
-    } catch (_) {}
+    } catch (err) {
+      setServiceDeleteError(err?.response?.data?.message || 'Could not delete this service. Please try again.');
+    }
   };
 
   const startEditService = (service) => {
@@ -618,6 +624,7 @@ export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh })
                 {servicesLoaded && services.length === 0 && (
                   <p className="muted-text" style={{ fontSize: 13 }}>No services added yet.</p>
                 )}
+                {serviceDeleteError && <p style={{ color: '#ef4444', fontSize: 12, marginBottom: 6 }}>{serviceDeleteError}</p>}
                 {services.map(service => (
                   <div key={service.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '8px 0', borderBottom: '1px solid #f1f5f9', gap: 8 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
