@@ -287,12 +287,31 @@ export const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
                   const isVerified = business.verified === true || business.verification === 'verified';
                   const hasApprovedImpactBadges = Array.isArray(business.badges) && business.badges.length > 0;
                   return (
-                    <div key={business.id} className="card discover-result-card" style={{ border: '1px solid var(--border)', boxShadow: 'none', padding: '20px' }}>
-                      <div className="row space-between row-wrap" style={{ alignItems: 'flex-start' }}>
-                        <div>
-                          <p className="heading-md">{business.name}</p>
-                          <p className="subtitle">{business.tagline || 'No tagline available.'}</p>
-                          <div className="row row-wrap" style={{ marginTop: '8px', gap: '8px' }}>
+                    <div key={business.id} className="card discover-result-card" style={{ border: '1px solid var(--border)', boxShadow: 'none', padding: '20px', position: 'relative' }}>
+                      {/* Favorite heart — top right */}
+                      <button
+                        type="button"
+                        aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+                        onClick={() => toggleFavorite(business.id, isFavorited)}
+                        style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '22px', lineHeight: 1, color: isFavorited ? '#e11d48' : '#cbd5e1', padding: '4px' }}
+                      >
+                        {isFavorited ? '♥' : '♡'}
+                      </button>
+
+                      {/* Business name + tagline */}
+                      <p className="heading-md" style={{ paddingRight: '36px' }}>{business.name}</p>
+                      {business.tagline ? <p className="subtitle" style={{ marginTop: '2px' }}>{business.tagline}</p> : null}
+
+                      {/* Two-column body */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '14px', alignItems: 'start' }}>
+                        {/* Left — business type + badges + status */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {business.business_type ? (
+                            <p style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--cyan, #29b6f6)', margin: 0 }}>
+                              {business.business_type}
+                            </p>
+                          ) : null}
+                          <div className="row row-wrap" style={{ gap: '6px' }}>
                             {isActive ? <span className="badge badge--active">Active</span> : null}
                             {isVerified ? (
                               <span className="badge badge--verified">
@@ -307,12 +326,15 @@ export const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
                               </span>
                             ) : null}
                           </div>
-                          <p className="muted-text">Status: {business.verification_status || 'unknown'}</p>
+                          <p className="muted-text" style={{ fontSize: '0.78rem', margin: 0 }}>Status: {business.verification_status || 'active'}</p>
                         </div>
-                        <div className="row" style={{ gap: '8px' }}>
+
+                        {/* Right — action buttons */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-start' }}>
                           <button
                             type="button"
-                            className="button button-muted button-sm"
+                            className="button button-primary button-sm"
+                            style={{ width: '100%' }}
                             onClick={() => {
                               if (!localStorage.getItem('customer_token')) {
                                 setShowSoftGate(true);
@@ -327,21 +349,15 @@ export const DiscoverPage = ({ onNavigate, onLogout, customer }) => {
                             <button
                               type="button"
                               className="button button-secondary button-sm"
+                              style={{ width: '100%' }}
                               onClick={() => openImpactModal(business)}
                             >
-                              <span className="row" style={{ gap: '6px', alignItems: 'center' }}>
+                              <span className="row" style={{ gap: '6px', alignItems: 'center', justifyContent: 'center' }}>
                                 <img src={communityImpactIcon} alt="" className="badge__icon" aria-hidden="true" />
                                 View Community Impact
                               </span>
                             </button>
                           ) : null}
-                          <button
-                            type="button"
-                            className={`button button-sm ${isFavorited ? 'button-secondary' : 'button-primary'}`}
-                            onClick={() => toggleFavorite(business.id, isFavorited)}
-                          >
-                            {isFavorited ? 'Unfavorite' : 'Favorite'}
-                          </button>
                         </div>
                       </div>
                     </div>
