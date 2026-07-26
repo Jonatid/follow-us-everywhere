@@ -48,7 +48,8 @@ const checkBusinessColumns = async () => {
          'philanthropic_goals',
          'widget_settings',
          'show_qr',
-         'business_type'
+         'business_type',
+         'featured_label'
        )`
   );
 
@@ -122,7 +123,8 @@ const getPublicBusinessBySlug = async (slug) => {
             ${availableBusinessColumns.has('philanthropic_goals') ? 'philanthropic_goals' : 'NULL::text AS philanthropic_goals'},
             ${availableBusinessColumns.has('widget_settings') ? 'widget_settings' : 'NULL::jsonb AS widget_settings'},
             ${availableBusinessColumns.has('show_qr') ? 'show_qr' : 'true::boolean AS show_qr'},
-            ${availableBusinessColumns.has('business_type') ? 'business_type' : 'NULL::text AS business_type'}
+            ${availableBusinessColumns.has('business_type') ? 'business_type' : 'NULL::text AS business_type'},
+            ${availableBusinessColumns.has('featured_label') ? 'featured_label' : "'Featured Product & Service'::text AS featured_label"}
      FROM businesses`;
 
   let result = await pool.query(
@@ -190,7 +192,7 @@ const getPublicBusinessBySlug = async (slug) => {
   }
 
   const servicesResult = await pool.query(
-    `SELECT id, name, description, category, display_order
+    `SELECT id, name, description, category, display_order, icon_key, image_url
      FROM business_services
      WHERE business_id = $1 AND is_active = true
      ORDER BY display_order ASC, created_at ASC`,
