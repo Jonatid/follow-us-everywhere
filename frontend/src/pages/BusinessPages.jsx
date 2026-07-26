@@ -616,53 +616,127 @@ export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh })
           <div>
             <h2 className="heading-md" style={{ marginBottom: 4 }}>Products &amp; Services</h2>
             <p className="subtitle" style={{ marginBottom: 12 }}>List what your business offers. These appear on your public profile.</p>
-            <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
 
-              {/* Left — saved services list */}
-              <div style={{ flex: '1 1 200px', minWidth: 160 }}>
-                {!servicesLoaded && <p className="muted-text" style={{ fontSize: 13 }}>Loading...</p>}
-                {servicesLoaded && services.length === 0 && (
-                  <p className="muted-text" style={{ fontSize: 13 }}>No services added yet.</p>
-                )}
-                {serviceDeleteError && <p style={{ color: '#ef4444', fontSize: 12, marginBottom: 6 }}>{serviceDeleteError}</p>}
-                {services.map(service => (
-                  <div key={service.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '8px 0', borderBottom: '1px solid #f1f5f9', gap: 8 }}>
+            {serviceDeleteError && <p style={{ color: '#ef4444', fontSize: 12, marginBottom: 8 }}>{serviceDeleteError}</p>}
+
+            {/* Service list — all entries */}
+            {!servicesLoaded && <p className="muted-text" style={{ fontSize: 13 }}>Loading...</p>}
+            {servicesLoaded && services.length === 0 && (
+              <p className="muted-text" style={{ fontSize: 13 }}>No services added yet.</p>
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 0, marginBottom: 16 }}>
+              {services.map((service, index) => (
+                <div key={service.id}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '10px 0', borderBottom: '1px solid #f1f5f9', gap: 8 }}>
+                    {/* Reorder arrows */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 0, flexShrink: 0 }}>
+                      <button
+                        type="button"
+                        aria-label="Move up"
+                        disabled={index === 0 || serviceSaving}
+                        style={{ background: 'none', border: 'none', cursor: index === 0 ? 'default' : 'pointer', color: index === 0 ? '#e2e8f0' : '#94a3b8', fontSize: 12, lineHeight: 1, padding: '2px 4px' }}
+                        onClick={async () => {
+                          if (index === 0) return;
+                          const updated = [...services];
+                          [updated[index - 1], updated[index]] = [updated[index], updated[index - 1]];
+                          setServices(updated);
+                          try {
+                            await Promise.all([
+                              api.put(`/businesses/services/${updated[index - 1].id}`, { display_order: index - 1 }),
+                              api.put(`/businesses/services/${updated[index].id}`, { display_order: index }),
+                            ]);
+                          } catch (_) { loadServices(); }
+                        }}
+                      >▲</button>
+                      <button
+                        type="button"
+                        aria-label="Move down"
+                        disabled={index === services.length - 1 || serviceSaving}
+                        style={{ background: 'none', border: 'none', cursor: index === services.length - 1 ? 'default' : 'pointer', color: index === services.length - 1 ? '#e2e8f0' : '#94a3b8', fontSize: 12, lineHeight: 1, padding: '2px 4px' }}
+                        onClick={async () => {
+                          if (index === services.length - 1) return;
+                          const updated = [...services];
+                          [updated[index], updated[index + 1]] = [updated[index + 1], updated[index]];
+                          setServices(updated);
+                          try {
+                            await Promise.all([
+                              api.put(`/businesses/services/${updated[index].id}`, { display_order: index }),
+                              api.put(`/businesses/services/${updated[index + 1].id}`, { display_order: index + 1 }),
+                            ]);
+                          } catch (_) { loadServices(); }
+                        }}
+                      >▼</button>
+                    </div>
+
+                    {/* Service info */}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 1 }}>{service.name}</p>
+                      {service.description && <p style={{ fontSize: 12, color: '#64748b', marginBottom: 2, lineHeight: 1.4 }}>{service.description}</p>}
                       {service.category && <p style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.04em' }}>{service.category}</p>}
                     </div>
+
+                    {/* Edit / Delete */}
                     <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-                      <button type="button" style={{ fontSize: 12, background: 'none', border: 'none', color: '#6366f1', cursor: 'pointer', padding: '2px 4px' }} onClick={() => startEditService(service)}>Edit</button>
-                      <button type="button" style={{ fontSize: 12, background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '2px 4px' }} onClick={() => handleServiceDelete(service.id)}>✕</button>
+                      <button
+                        type="button"
+                        style={{ fontSize: 12, background: 'none', border: 'none', color: 'var(--secondary, #1a73e8)', cursor: 'pointer', padding: '2px 6px' }}
+                        onClick={() => startEditService(service)}
+                      >Edit</button>
+                      <button
+                        type="button"
+                        style={{ fontSize: 12, background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '2px 6px' }}
+                        onClick={() => handleServiceDelete(service.id)}
+                      >✕</button>
                     </div>
                   </div>
-                ))}
-              </div>
 
-              {/* Right — compact add/edit form */}
-              {services.length < 20 && canEditBusiness && (
-                <form onSubmit={handleServiceSubmit} style={{ flex: '1 1 200px', minWidth: 160, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '12px' }}>
-                  <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>{editingServiceId ? 'Edit' : 'Add'}</p>
-                  {serviceFormError && <p style={{ color: '#ef4444', fontSize: 12, marginBottom: 6 }}>{serviceFormError}</p>}
-                  <div style={{ marginBottom: 8 }}>
-                    <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 3 }}>Name *</label>
-                    <input className="input" style={{ fontSize: 13, padding: '6px 10px' }} type="text" maxLength={100} placeholder="e.g. Rideshare, Catering" value={serviceForm.name} onChange={e => setServiceForm(p => ({ ...p, name: e.target.value }))} />
-                  </div>
-                  <div style={{ marginBottom: 8 }}>
-                    <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 3 }}>Description (optional)</label>
-                    <textarea className="input" style={{ fontSize: 13, padding: '6px 10px' }} rows={2} maxLength={300} placeholder="Brief description" value={serviceForm.description} onChange={e => setServiceForm(p => ({ ...p, description: e.target.value }))} />
-                  </div>
-                  <div style={{ marginBottom: 10 }}>
-                    <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 3 }}>Category (optional)</label>
-                    <input className="input" style={{ fontSize: 13, padding: '6px 10px' }} type="text" maxLength={50} placeholder="e.g. Transportation" value={serviceForm.category} onChange={e => setServiceForm(p => ({ ...p, category: e.target.value }))} />
-                  </div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button type="submit" className="button button-primary button-sm" style={{ fontSize: 13 }} disabled={serviceSaving}>{serviceSaving ? 'Saving...' : editingServiceId ? 'Save' : 'Add'}</button>
-                    {editingServiceId && <button type="button" className="button button-secondary button-sm" style={{ fontSize: 13 }} onClick={() => { setEditingServiceId(null); setServiceForm({ name: '', description: '', category: '' }); }}>Cancel</button>}
-                  </div>
-                </form>
-              )}
+                  {/* Inline edit form — appears below the selected service */}
+                  {editingServiceId === service.id && (
+                    <form onSubmit={handleServiceSubmit} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '12px', margin: '8px 0' }}>
+                      <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>Edit service</p>
+                      {serviceFormError && <p style={{ color: '#ef4444', fontSize: 12, marginBottom: 6 }}>{serviceFormError}</p>}
+                      <div style={{ marginBottom: 8 }}>
+                        <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 3 }}>Name *</label>
+                        <input className="input" style={{ fontSize: 13, padding: '6px 10px' }} type="text" maxLength={100} value={serviceForm.name} onChange={e => setServiceForm(p => ({ ...p, name: e.target.value }))} />
+                      </div>
+                      <div style={{ marginBottom: 8 }}>
+                        <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 3 }}>Description (optional)</label>
+                        <textarea className="input" style={{ fontSize: 13, padding: '6px 10px' }} rows={3} maxLength={300} value={serviceForm.description} onChange={e => setServiceForm(p => ({ ...p, description: e.target.value }))} />
+                      </div>
+                      <div style={{ marginBottom: 10 }}>
+                        <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 3 }}>Category (optional)</label>
+                        <input className="input" style={{ fontSize: 13, padding: '6px 10px' }} type="text" maxLength={50} placeholder="e.g. Transportation" value={serviceForm.category} onChange={e => setServiceForm(p => ({ ...p, category: e.target.value }))} />
+                      </div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button type="submit" className="button button-primary button-sm" style={{ fontSize: 13 }} disabled={serviceSaving}>{serviceSaving ? 'Saving...' : 'Save'}</button>
+                        <button type="button" className="button button-secondary button-sm" style={{ fontSize: 13 }} onClick={() => { setEditingServiceId(null); setServiceForm({ name: '', description: '', category: '' }); }}>Cancel</button>
+                      </div>
+                    </form>
+                  )}
+                </div>
+              ))}
             </div>
+
+            {/* Add new service form — only shown when not editing an existing one */}
+            {!editingServiceId && services.length < 20 && canEditBusiness && (
+              <form onSubmit={handleServiceSubmit} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '12px' }}>
+                <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>Add a service</p>
+                {serviceFormError && <p style={{ color: '#ef4444', fontSize: 12, marginBottom: 6 }}>{serviceFormError}</p>}
+                <div style={{ marginBottom: 8 }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 3 }}>Name *</label>
+                  <input className="input" style={{ fontSize: 13, padding: '6px 10px' }} type="text" maxLength={100} placeholder="e.g. Pre-Scheduled Rides" value={serviceForm.name} onChange={e => setServiceForm(p => ({ ...p, name: e.target.value }))} />
+                </div>
+                <div style={{ marginBottom: 8 }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 3 }}>Description (optional)</label>
+                  <textarea className="input" style={{ fontSize: 13, padding: '6px 10px' }} rows={2} maxLength={300} placeholder="Brief description of what you offer" value={serviceForm.description} onChange={e => setServiceForm(p => ({ ...p, description: e.target.value }))} />
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 3 }}>Category (optional)</label>
+                  <input className="input" style={{ fontSize: 13, padding: '6px 10px' }} type="text" maxLength={50} placeholder="e.g. Transportation" value={serviceForm.category} onChange={e => setServiceForm(p => ({ ...p, category: e.target.value }))} />
+                </div>
+                <button type="submit" className="button button-primary button-sm" style={{ fontSize: 13 }} disabled={serviceSaving}>{serviceSaving ? 'Saving...' : 'Add service'}</button>
+              </form>
+            )}
           </div>
           <div className="section-divider" />
           <div className="stack-sm">
