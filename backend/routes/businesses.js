@@ -382,7 +382,7 @@ router.delete('/documents/:id', authenticateToken, async (req, res) => {
 router.get('/services', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, name, description, category, display_order, is_active, created_at
+      `SELECT id, name, description, category, display_order, icon_key, image_url, is_active, created_at
        FROM business_services
        WHERE business_id = $1
        ORDER BY display_order ASC, created_at ASC`,
@@ -398,12 +398,15 @@ router.get('/services', authenticateToken, async (req, res) => {
 // @desc    Add a new service
 // @access  Private
 router.post('/services', authenticateToken, async (req, res) => {
-  const { name, description, category, display_order } = req.body;
+  const { name, description, category, display_order, icon_key, image_url } = req.body;
   if (!name || !String(name).trim()) {
     return res.status(400).json({ message: 'Service name is required.' });
   }
   if (String(name).trim().length > 100) {
     return res.status(400).json({ message: 'Service name must be 100 characters or fewer.' });
+  }
+  if (description && String(description).trim().length > 500) {
+    return res.status(400).json({ message: 'Description must be 500 characters or fewer.' });
   }
   try {
     const countResult = await pool.query(
@@ -415,15 +418,17 @@ router.post('/services', authenticateToken, async (req, res) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO business_services (business_id, name, description, category, display_order)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, name, description, category, display_order, is_active, created_at`,
+      `INSERT INTO business_services (business_id, name, description, category, display_order, icon_key, image_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING id, name, description, category, display_order, icon_key, image_url, is_active, created_at`,
       [
         req.businessId,
         String(name).trim(),
         description ? String(description).trim() : null,
         category ? String(category).trim() : null,
         Number(display_order) || 0,
+        icon_key ? String(icon_key).trim() : null,
+        image_url ? String(image_url).trim() : null,
       ]
     );
     return res.status(201).json({ service: result.rows[0] });
@@ -436,9 +441,12 @@ router.post('/services', authenticateToken, async (req, res) => {
 // @desc    Update a service
 // @access  Private
 router.put('/services/:id', authenticateToken, async (req, res) => {
-  const { name, description, category, display_order, is_active } = req.body;
+  const { name, description, category, display_order, is_active, icon_key, image_url } = req.body;
   if (name !== undefined && !String(name).trim()) {
     return res.status(400).json({ message: 'Service name cannot be empty.' });
+  }
+  if (description !== undefined && String(description).trim().length > 500) {
+    return res.status(400).json({ message: 'Description must be 500 characters or fewer.' });
   }
   try {
     const existing = await pool.query(
@@ -455,9 +463,11 @@ router.put('/services/:id', authenticateToken, async (req, res) => {
            category      = COALESCE($4, category),
            display_order = COALESCE($5, display_order),
            is_active     = COALESCE($6, is_active),
+           icon_key      = COALESCE($7, icon_key),
+           image_url     = COALESCE($8, image_url),
            updated_at    = NOW()
        WHERE id = $1
-       RETURNING id, name, description, category, display_order, is_active, created_at`,
+       RETURNING id, name, description, category, display_order, icon_key, image_url, is_active, created_at`,
       [
         req.params.id,
         name ? String(name).trim() : null,
@@ -465,6 +475,8 @@ router.put('/services/:id', authenticateToken, async (req, res) => {
         category !== undefined ? (String(category).trim() || null) : null,
         display_order !== undefined ? Number(display_order) : null,
         is_active !== undefined ? Boolean(is_active) : null,
+        icon_key !== undefined ? (String(icon_key).trim() || null) : null,
+        image_url !== undefined ? (String(image_url).trim() || null) : null,
       ]
     );
     return res.json({ service: result.rows[0] });
@@ -662,8 +674,21 @@ router.put(
       .withMessage('Vision statement must be 300 characters or less'),
     body('philanthropic_goals')
       .optional({ nullable: true })
-      .isLength({ max: 300 })
-      .withMessage('Philanthropic goals must be 300 characters or less'),
+      .isLength({ max: 250 })
+      .withMessage('Philanthropic goals must be 250 characters or less'),
+    body('mission_statement')
+      .optional({ nullable: true })
+      .isLength({ max: 250 })
+      .withMessage('Mission statement must be 250 characters or less'),
+    body('vision_statement')
+      .optional({ nullable: true })
+      .isLength({ max: 250 })
+      .withMessage('Vision statement must be 250 characters or less'),
+    body('featured_label')
+      .optional({ nullable: true })
+      .trim()
+      .isIn(['Featured Product & Service', 'Featured Product', 'Featured Service', ''])
+      .withMessage('Invalid featured label value'),
     body('widget_settings')
       .optional({ nullable: true })
       .custom((value) => value === null || (value && typeof value === 'object' && !Array.isArray(value)))
@@ -687,6 +712,7 @@ router.put(
         vision_statement,
         philanthropic_goals,
         widget_settings,
+        featured_label,
       } = req.body;
 
       const statusResult = await pool.query(
@@ -776,6 +802,12 @@ router.put(
         paramCount++;
       }
 
+      if (featured_label !== undefined) {
+        fields.push(`featured_label = $${paramCount}`);
+        values.push(featured_label || 'Featured Product & Service');
+        paramCount++;
+      }
+
       const { show_qr } = req.body;
       if (show_qr !== undefined) {
         fields.push(`show_qr = $${paramCount}`);
@@ -817,6 +849,7 @@ router.put(
                   widget_settings,
                   show_qr,
                   business_type,
+                  featured_label,
                   created_at,
                   updated_at
       `;

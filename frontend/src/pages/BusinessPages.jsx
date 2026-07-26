@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import BusinessAccountMenu from '../components/BusinessAccountMenu';
 import QrCard from './business/components/QrCard';
 import QrDisplayModeSelector from './business/components/QrDisplayModeSelector';
+import { PlatformIcon } from '../components/PlatformIcon';
+import { ServiceIcon, ServiceIconPicker } from '../components/ServiceIcon';
 import { api, customerApi, getApiErrorMessage, buildPublicBusinessUrl, normalizePublicBusinessKey, normalizePublicBusinessPayload, resolvePublicBusinessKey, toAbsoluteAssetUrl, normalizeLogoUrlValue, LOGO_UPLOAD_ACCEPT, LOGO_UPLOAD_MAX_BYTES, ALLOWED_LOGO_MIME_TYPES, normalizeWidgetSettings, PASSWORD_HELPER, PASSWORD_REGEX } from '../services/appApi';
 import { BackLink } from '../components/BackLink';
 import businessVerifiedIcon from '../assets/business-verified.svg';
@@ -165,7 +167,7 @@ export const BusinessResetPassword = ({ onNavigate, token, initialMessage = '' }
 // =============================================================================
 
 export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
-  const PHILANTHROPIC_MAX_LENGTH = 300;
+  const PHILANTHROPIC_MAX_LENGTH = 250;
   const [socials, setSocials] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
   const [tempUrl, setTempUrl] = useState('');
@@ -184,11 +186,12 @@ export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh })
 
   const [services, setServices] = useState([]);
   const [servicesLoaded, setServicesLoaded] = useState(false);
-  const [serviceForm, setServiceForm] = useState({ name: '', description: '', category: '' });
+  const [serviceForm, setServiceForm] = useState({ name: '', description: '', category: '', icon_key: '', image_url: '' });
   const [serviceFormError, setServiceFormError] = useState('');
   const [serviceSaving, setServiceSaving] = useState(false);
   const [serviceDeleteError, setServiceDeleteError] = useState('');
   const [editingServiceId, setEditingServiceId] = useState(null);
+  const [serviceImageUploading, setServiceImageUploading] = useState(false);
 
   const loadServices = async () => {
     try {
@@ -213,7 +216,7 @@ export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh })
         const res = await api.post('/businesses/services', serviceForm);
         setServices(prev => [...prev, res.data.service]);
       }
-      setServiceForm({ name: '', description: '', category: '' });
+      setServiceForm({ name: '', description: '', category: '', icon_key: '', image_url: '' });
     } catch (err) {
       setServiceFormError(err?.response?.data?.message || 'Failed to save service.');
     } finally {
@@ -234,7 +237,37 @@ export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh })
 
   const startEditService = (service) => {
     setEditingServiceId(service.id);
-    setServiceForm({ name: service.name, description: service.description || '', category: service.category || '' });
+    setServiceForm({
+      name: service.name,
+      description: service.description || '',
+      category: service.category || '',
+      icon_key: service.icon_key || '',
+      image_url: service.image_url || '',
+    });
+  };
+
+  const handleServiceImageUpload = async (file) => {
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setServiceFormError('Image must be JPG, PNG, or WebP.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setServiceFormError('Image must be under 5 MB.');
+      return;
+    }
+    setServiceImageUploading(true);
+    setServiceFormError('');
+    try {
+      const fd = new FormData();
+      fd.append('logo', file);
+      const res = await api.post('/businesses/logo/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setServiceForm(p => ({ ...p, image_url: res.data.logo_url || '' }));
+    } catch (err) {
+      setServiceFormError(err?.response?.data?.message || 'Image upload failed.');
+    } finally {
+      setServiceImageUploading(false);
+    }
   };
 
   const verificationStatus = business.verification_status;
@@ -429,7 +462,7 @@ export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh })
     }
     const selectedValue = philanthropicValues[philanthropicContentType] || '';
     if (selectedValue.length > PHILANTHROPIC_MAX_LENGTH) {
-      setActionError('Content must be 300 characters or fewer.');
+      setActionError('Content must be 250 characters or fewer.');
       return;
     }
     setSupportSaving(true);
@@ -443,7 +476,7 @@ export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh })
       onRefresh();
     } catch (err) {
       if (err?.response?.status === 400) {
-        setActionError('Content must be 300 characters or fewer.');
+        setActionError('Content must be 250 characters or fewer.');
         return;
       }
       setActionError(getApiErrorMessage(err, 'Failed to update philanthropic content. Please try again.'));
@@ -701,15 +734,31 @@ export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh })
                       </div>
                       <div style={{ marginBottom: 8 }}>
                         <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 3 }}>Description (optional)</label>
-                        <textarea className="input" style={{ fontSize: 13, padding: '6px 10px' }} rows={3} maxLength={300} value={serviceForm.description} onChange={e => setServiceForm(p => ({ ...p, description: e.target.value }))} />
+                        <textarea className="input" style={{ fontSize: 13, padding: '6px 10px' }} rows={3} maxLength={500} value={serviceForm.description} onChange={e => setServiceForm(p => ({ ...p, description: e.target.value }))} />
+                        <p style={{ fontSize: 11, color: serviceForm.description.length > 480 ? '#ef4444' : '#94a3b8', textAlign: 'right', margin: '2px 0 0' }}>{serviceForm.description.length} / 500</p>
                       </div>
-                      <div style={{ marginBottom: 10 }}>
+                      <div style={{ marginBottom: 8 }}>
                         <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 3 }}>Category (optional)</label>
                         <input className="input" style={{ fontSize: 13, padding: '6px 10px' }} type="text" maxLength={50} placeholder="e.g. Transportation" value={serviceForm.category} onChange={e => setServiceForm(p => ({ ...p, category: e.target.value }))} />
                       </div>
+                      <div style={{ marginBottom: 8 }}>
+                        <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 3 }}>Icon</label>
+                        <ServiceIconPicker value={serviceForm.icon_key} onChange={key => setServiceForm(p => ({ ...p, icon_key: key }))} />
+                      </div>
+                      <div style={{ marginBottom: 10 }}>
+                        <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 3 }}>Image (optional)</label>
+                        {serviceForm.image_url && (
+                          <div style={{ marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <img src={serviceForm.image_url} alt="Service preview" style={{ width: 64, height: 48, objectFit: 'cover', borderRadius: 6, border: '1px solid #e2e8f0' }} />
+                            <button type="button" style={{ fontSize: 11, color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => setServiceForm(p => ({ ...p, image_url: '' }))}>Remove</button>
+                          </div>
+                        )}
+                        <input type="file" accept=".jpg,.jpeg,.png,.webp" disabled={serviceImageUploading} onChange={e => handleServiceImageUpload(e.target.files[0])} style={{ fontSize: 12 }} />
+                        {serviceImageUploading && <p style={{ fontSize: 11, color: '#60719a', marginTop: 3 }}>Uploading…</p>}
+                      </div>
                       <div style={{ display: 'flex', gap: 6 }}>
-                        <button type="submit" className="button button-primary button-sm" style={{ fontSize: 13 }} disabled={serviceSaving}>{serviceSaving ? 'Saving...' : 'Save'}</button>
-                        <button type="button" className="button button-secondary button-sm" style={{ fontSize: 13 }} onClick={() => { setEditingServiceId(null); setServiceForm({ name: '', description: '', category: '' }); }}>Cancel</button>
+                        <button type="submit" className="button button-primary button-sm" style={{ fontSize: 13 }} disabled={serviceSaving || serviceImageUploading}>{serviceSaving ? 'Saving...' : 'Save'}</button>
+                        <button type="button" className="button button-secondary button-sm" style={{ fontSize: 13 }} onClick={() => { setEditingServiceId(null); setServiceForm({ name: '', description: '', category: '', icon_key: '', image_url: '' }); }}>Cancel</button>
                       </div>
                     </form>
                   )}
@@ -728,13 +777,29 @@ export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh })
                 </div>
                 <div style={{ marginBottom: 8 }}>
                   <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 3 }}>Description (optional)</label>
-                  <textarea className="input" style={{ fontSize: 13, padding: '6px 10px' }} rows={2} maxLength={300} placeholder="Brief description of what you offer" value={serviceForm.description} onChange={e => setServiceForm(p => ({ ...p, description: e.target.value }))} />
+                  <textarea className="input" style={{ fontSize: 13, padding: '6px 10px' }} rows={2} maxLength={500} placeholder="Brief description of what you offer" value={serviceForm.description} onChange={e => setServiceForm(p => ({ ...p, description: e.target.value }))} />
+                  <p style={{ fontSize: 11, color: serviceForm.description.length > 480 ? '#ef4444' : '#94a3b8', textAlign: 'right', margin: '2px 0 0' }}>{serviceForm.description.length} / 500</p>
                 </div>
-                <div style={{ marginBottom: 10 }}>
+                <div style={{ marginBottom: 8 }}>
                   <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 3 }}>Category (optional)</label>
                   <input className="input" style={{ fontSize: 13, padding: '6px 10px' }} type="text" maxLength={50} placeholder="e.g. Transportation" value={serviceForm.category} onChange={e => setServiceForm(p => ({ ...p, category: e.target.value }))} />
                 </div>
-                <button type="submit" className="button button-primary button-sm" style={{ fontSize: 13 }} disabled={serviceSaving}>{serviceSaving ? 'Saving...' : 'Add service'}</button>
+                <div style={{ marginBottom: 8 }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 3 }}>Icon</label>
+                  <ServiceIconPicker value={serviceForm.icon_key} onChange={key => setServiceForm(p => ({ ...p, icon_key: key }))} />
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 3 }}>Image (optional)</label>
+                  {serviceForm.image_url && (
+                    <div style={{ marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <img src={serviceForm.image_url} alt="Service preview" style={{ width: 64, height: 48, objectFit: 'cover', borderRadius: 6, border: '1px solid #e2e8f0' }} />
+                      <button type="button" style={{ fontSize: 11, color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => setServiceForm(p => ({ ...p, image_url: '' }))}>Remove</button>
+                    </div>
+                  )}
+                  <input type="file" accept=".jpg,.jpeg,.png,.webp" disabled={serviceImageUploading} onChange={e => handleServiceImageUpload(e.target.files[0])} style={{ fontSize: 12 }} />
+                  {serviceImageUploading && <p style={{ fontSize: 11, color: '#60719a', marginTop: 3 }}>Uploading…</p>}
+                </div>
+                <button type="submit" className="button button-primary button-sm" style={{ fontSize: 13 }} disabled={serviceSaving || serviceImageUploading}>{serviceSaving ? 'Saving...' : 'Add service'}</button>
               </form>
             )}
           </div>
@@ -942,10 +1007,48 @@ export const PublicFollowPage = ({ slug, onNavigate }) => {
   const missionStatement = business.mission_statement || '';
   const visionStatement = business.vision_statement || '';
   const philanthropicGoals = business.philanthropic_goals || '';
+  const communitySupportText = business.community_support_text || '';
   const statementCards = [
-    { title: 'Mission Statement', value: missionStatement },
-    { title: 'Vision Statement', value: visionStatement },
-    { title: 'Philanthropic Goals', value: philanthropicGoals },
+    {
+      title: 'What We Do',
+      key: 'what_we_do',
+      icon: (
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" style={{ width: 20, height: 20, display: 'block', flexShrink: 0 }}>
+          <path fill="currentColor" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+        </svg>
+      ),
+      value: missionStatement,
+    },
+    {
+      title: 'Mission & Vision',
+      key: 'mission_vision',
+      icon: (
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" style={{ width: 20, height: 20, display: 'block', flexShrink: 0 }}>
+          <path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+        </svg>
+      ),
+      value: visionStatement,
+    },
+    {
+      title: 'Philanthropic Goals',
+      key: 'philanthropic_goals',
+      icon: (
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" style={{ width: 20, height: 20, display: 'block', flexShrink: 0 }}>
+          <path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+        </svg>
+      ),
+      value: philanthropicGoals,
+    },
+    {
+      title: 'Community Impact',
+      key: 'community_impact',
+      icon: (
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" style={{ width: 20, height: 20, display: 'block', flexShrink: 0 }}>
+          <path fill="currentColor" d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-1 17.93A8.001 8.001 0 0 1 4.07 13H6c.33 2.526 1.887 4.67 4 5.93zm0-3.03A6.002 6.002 0 0 1 6.07 13H11v3.9zM11 11H6.07A6.002 6.002 0 0 1 11 7.1V11zm0-5.93C8.887 6.33 7.33 8.474 7 11H4.07A8.001 8.001 0 0 1 11 5.07v-.001zM13 5.07A8.001 8.001 0 0 1 19.93 11H17c-.33-2.526-1.887-4.67-4-5.93zm0 3.03A6.002 6.002 0 0 1 17.93 11H13V8.1zM13 13h4.93A6.002 6.002 0 0 1 13 16.9V13zm0 5.93V19A8.001 8.001 0 0 1 19.93 13H17c-.33 2.526-1.887 4.67-4 5.93z"/>
+        </svg>
+      ),
+      value: communitySupportText,
+    },
   ].filter((card) => card.value && card.value.trim().length > 0);
   const publicQrSlug = normalizePublicBusinessKey(slug) || resolvePublicBusinessKey(business);
   const publicQrCardSize = publicQrMode === 'minimal' ? 120 : publicQrMode === 'full' ? 180 : 150;
@@ -1024,12 +1127,14 @@ export const PublicFollowPage = ({ slug, onNavigate }) => {
                         textAlign: 'left',
                       }}
                     >
-                      <span style={{ fontSize: '26px', lineHeight: 1 }}>{s.icon}</span>
+                      <PlatformIcon platform={s.platform} size="26px" />
                       <span style={{ flex: 1 }}>
                         <span style={{ display: 'block', fontSize: '15px', fontWeight: 700 }}>{getSocialVerb(s.platform)} {s.platform}</span>
                         <span style={{ fontSize: '12px', opacity: .72 }}>Tap to open</span>
                       </span>
-                      <span style={{ fontSize: '18px', opacity: .65 }}>→</span>
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" style={{ width: '18px', height: '18px', display: 'block', flexShrink: 0, opacity: .65 }}>
+                        <path fill="currentColor" d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/>
+                      </svg>
                     </button>
                   );
                 })()}
@@ -1054,8 +1159,8 @@ export const PublicFollowPage = ({ slug, onNavigate }) => {
                             textAlign: 'left',
                           }}
                         >
-                          <span style={{ fontSize: '22px', marginBottom: '8px', lineHeight: 1 }}>{s.icon}</span>
-                          <span style={{ fontSize: '13px', fontWeight: 700 }}>{s.platform}</span>
+                          <PlatformIcon platform={s.platform} size="22px" />
+                          <span style={{ fontSize: '13px', fontWeight: 700, marginTop: '6px' }}>{s.platform}</span>
                           <span style={{ fontSize: '11px', opacity: .7, marginTop: '2px' }}>{getSocialVerb(s.platform)}</span>
                         </button>
                       );
@@ -1078,84 +1183,76 @@ export const PublicFollowPage = ({ slug, onNavigate }) => {
                 <SaveContactButton slug={publicQrSlug} />
               </div>
             )}
-            {hasApprovedImpactBadges ? (
-              <div className="public-section">
-                <button
-                  type="button"
-                  className="button button-secondary button-full"
-                  onClick={() => setImpactOpen(true)}
-                >
-                  <span className="row" style={{ gap: '8px', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
-                    <img src={communityImpactIcon} alt="" className="badge__icon" aria-hidden="true" />
-                    Community Impact
-                  </span>
-                </button>
-              </div>
-            ) : null}
           </section>
 
-          {/* Right column — Products & Services */}
-          <section className="card public-business-column" aria-label="Products and Services" style={{ display: 'flex', flexDirection: 'column', padding: '20px' }}>
-            {Array.isArray(business.services) && business.services.length > 0 ? (
-              <>
-                <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: '#94a3b8', marginBottom: '14px' }}>Products &amp; Services</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0', flex: 1 }}>
-                  {business.services.map((service, idx) => (
-                    <div
-                      key={service.id}
-                      style={{
-                        display: 'flex', alignItems: 'flex-start', gap: '12px',
-                        padding: '13px 0',
-                        borderBottom: idx < business.services.length - 1 ? '1px solid #f1f5f9' : 'none',
-                      }}
-                    >
-                      <div style={{
-                        width: '36px', height: '36px', flexShrink: 0,
-                        borderRadius: '9px',
-                        background: ['#dbeafe','#fef3c7','#f0fdf4','#fae8ff','#fff7ed','#f0f9ff'][idx % 6],
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '16px',
-                      }}>
-                        {['🔹','⭐','✅','💡','🚀','🎯'][idx % 6]}
+          {/* Right column — Featured + Statement grid */}
+          <section className="card public-business-column" aria-label="Products and Services" style={{ display: 'flex', flexDirection: 'column', padding: '20px', gap: '16px' }}>
+            {Array.isArray(business.services) && business.services.length > 0 && (() => {
+              const featured = business.services[0];
+              const featuredLabel = business.featured_label || 'Featured Product & Service';
+              const featuredImageUrl = featured.image_url ? toAbsoluteAssetUrl(featured.image_url) : null;
+              return (
+                <div>
+                  <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: '#94a3b8', marginBottom: '12px' }}>{featuredLabel}</p>
+                  <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                        <div style={{ width: 40, height: 40, flexShrink: 0, borderRadius: '10px', background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1d4ed8' }}>
+                          <ServiceIcon iconKey={featured.icon_key} size="22px" />
+                        </div>
+                        <h3 style={{ fontWeight: 700, fontSize: '15px', margin: 0, lineHeight: 1.3 }}>{featured.name}</h3>
                       </div>
-                      <div style={{ flex: 1 }}>
-                        <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: service.description ? '3px' : 0 }}>{service.name}</p>
-                        {service.description && <p style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.45 }}>{service.description}</p>}
-                        {service.category && <p style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', fontWeight: 600, marginTop: '4px' }}>{service.category}</p>}
-                      </div>
+                      {featured.description && <p style={{ fontSize: '13px', color: '#475569', lineHeight: 1.55, margin: '0 0 8px' }}>{featured.description}</p>}
+                      {featured.category && (
+                        <span style={{ display: 'inline-block', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: '#0047cc', background: '#eef4ff', borderRadius: '999px', padding: '3px 8px' }}>{featured.category}</span>
+                      )}
                     </div>
-                  ))}
+                    {featuredImageUrl && (
+                      <img
+                        src={featuredImageUrl}
+                        alt={featured.name}
+                        style={{ width: '120px', height: '90px', objectFit: 'cover', borderRadius: '10px', flexShrink: 0, border: '1px solid #f1f5f9' }}
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                    )}
+                  </div>
+                  {business.services.length > 1 && (
+                    <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: '0' }}>
+                      {business.services.slice(1).map((service, idx) => (
+                        <div key={service.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '10px 0', borderBottom: idx < business.services.length - 2 ? '1px solid #f8fafc' : 'none' }}>
+                          <div style={{ width: 30, height: 30, flexShrink: 0, borderRadius: '8px', background: ['#fef3c7','#f0fdf4','#fae8ff','#fff7ed','#f0f9ff'][(idx) % 5], display: 'flex', alignItems: 'center', justifyContent: 'center', color: ['#92400e','#166534','#7e22ce','#9a3412','#0c4a6e'][(idx) % 5] }}>
+                            <ServiceIcon iconKey={service.icon_key} size="16px" />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontWeight: 600, fontSize: '13px', margin: '0 0 2px' }}>{service.name}</p>
+                            {service.category && <p style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', fontWeight: 600, margin: 0 }}>{service.category}</p>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </>
-            ) : (
-              statementCards.length > 0 ? (
-                <div className={`statement-cards statement-cards--${statementCards.length === 1 ? 'single' : 'stacked'}`}>
-                  {statementCards.map((card) => (
-                    <article key={card.title} className="statement-card">
-                      <h2 className="heading-md">{card.title}</h2>
-                      <p className="muted-text">{card.value}</p>
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                <div className="statement-card statement-card--placeholder">No statements provided yet.</div>
-              )
-            )}
-          </section>
+              );
+            })()}
 
-          {/* Statements — full width, only shown when services are also present */}
-          {Array.isArray(business.services) && business.services.length > 0 && statementCards.length > 0 && (
-            <section className="card" aria-label="Statements" style={{ gridColumn: '1 / -1' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
+            {statementCards.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginTop: Array.isArray(business.services) && business.services.length > 0 ? '4px' : '0' }}>
                 {statementCards.map((card) => (
-                  <article key={card.title} className="statement-card">
-                    <h2 className="heading-md">{card.title}</h2>
-                    <p className="muted-text">{card.value}</p>
-                  </article>
+                  <div key={card.key} style={{ background: '#f8fafc', border: '1px solid #e9eef5', borderRadius: '12px', padding: '14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: '#0047cc' }}>
+                      {card.icon}
+                      <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: '#475569' }}>{card.title}</span>
+                    </div>
+                    <p style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.5, margin: 0 }}>{card.value}</p>
+                  </div>
                 ))}
               </div>
-            </section>
-          )}
+            )}
+
+            {(!Array.isArray(business.services) || business.services.length === 0) && statementCards.length === 0 && (
+              <div className="statement-card statement-card--placeholder">No information provided yet.</div>
+            )}
+          </section>
         </div>
       </div>
       {impactOpen && hasApprovedImpactBadges ? (
@@ -1195,6 +1292,7 @@ export const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusiness
     businessTypeCustom: '',
     logo: business?.logo_url || '',
     laraNumber: business?.lara_number || '',
+    featuredLabel: business?.featured_label || 'Featured Product & Service',
   });
   const [logoPreview, setLogoPreview] = useState(toAbsoluteAssetUrl(business?.logo_url));
   const [logoPreviewError, setLogoPreviewError] = useState(false);
@@ -1223,6 +1321,7 @@ export const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusiness
       businessTypeCustom: '',
       logo: business?.logo_url || '',
       laraNumber: business?.lara_number || '',
+      featuredLabel: business?.featured_label || 'Featured Product & Service',
     });
     setWidgetSettings(normalizeWidgetSettings(business?.widget_settings));
     setLogoPreview(toAbsoluteAssetUrl(business?.logo_url));
@@ -1540,6 +1639,7 @@ export const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusiness
         logo_url: normalizedLogoUrl,
         lara_number: formData.laraNumber || null,
         widget_settings: widgetSettings,
+        featured_label: formData.featuredLabel || 'Featured Product & Service',
       });
       const persistedLogoUrl = response.data?.business?.logo_url ?? normalizedLogoUrl ?? '';
       const persistedWidgetSettings = normalizeWidgetSettings(response.data?.business?.widget_settings ?? widgetSettings);
@@ -1552,6 +1652,7 @@ export const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusiness
         name: response.data?.business?.name ?? formData.name,
         tagline: response.data?.business?.tagline ?? formData.tagline,
         business_type: response.data?.business?.business_type ?? resolvedBusinessType,
+        featured_label: response.data?.business?.featured_label ?? formData.featuredLabel,
         logo_url: persistedLogoUrl,
         lara_number: response.data?.business?.lara_number ?? (formData.laraNumber || null),
         widget_settings: persistedWidgetSettings,
@@ -1644,6 +1745,19 @@ export const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusiness
                     onChange={(e) => handleChange('businessTypeCustom', e.target.value)}
                   />
                 )}
+              </div>
+              <div className="field">
+                <label className="label">Featured Section Label</label>
+                <select
+                  className="input"
+                  value={formData.featuredLabel}
+                  onChange={(e) => handleChange('featuredLabel', e.target.value)}
+                >
+                  <option value="Featured Product &amp; Service">Featured Product &amp; Service</option>
+                  <option value="Featured Product">Featured Product</option>
+                  <option value="Featured Service">Featured Service</option>
+                </select>
+                <p className="helper-text">This label appears above your top listing on your public profile.</p>
               </div>
               <div className="field">
                 <label className="label">Logo URL</label>

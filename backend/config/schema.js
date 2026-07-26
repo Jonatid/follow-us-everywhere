@@ -97,7 +97,8 @@ const ensureSchema = async () => {
         ADD COLUMN IF NOT EXISTS logo_url TEXT,
         ADD COLUMN IF NOT EXISTS lara_number TEXT,
         ADD COLUMN IF NOT EXISTS token_version INTEGER NOT NULL DEFAULT 0,
-        ADD COLUMN IF NOT EXISTS business_type VARCHAR(100);
+        ADD COLUMN IF NOT EXISTS business_type VARCHAR(100),
+        ADD COLUMN IF NOT EXISTS featured_label VARCHAR(60) NOT NULL DEFAULT 'Featured Product & Service';
     `);
 
     await pool.query(`
@@ -474,12 +475,20 @@ const ensureSchema = async () => {
         description TEXT,
         category VARCHAR(50),
         display_order INTEGER NOT NULL DEFAULT 0,
+        icon_key VARCHAR(32),
+        image_url TEXT,
         is_active BOOLEAN NOT NULL DEFAULT true,
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMP NOT NULL DEFAULT NOW()
       );
     `);
     await pool.query('CREATE INDEX IF NOT EXISTS idx_business_services_business_id ON business_services(business_id);');
+
+    await pool.query(`
+      ALTER TABLE business_services
+        ADD COLUMN IF NOT EXISTS icon_key VARCHAR(32),
+        ADD COLUMN IF NOT EXISTS image_url TEXT;
+    `);
   } catch (error) {
     if (error.code === '42501') {
       const dbUser = process.env.DATABASE_URL
