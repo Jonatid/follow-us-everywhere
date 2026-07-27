@@ -666,24 +666,16 @@ router.put(
       .withMessage('LARA number must be 255 characters or less'),
     body('mission_statement')
       .optional({ nullable: true })
-      .isLength({ max: 300 })
-      .withMessage('Mission statement must be 300 characters or less'),
+      .isLength({ max: 350 })
+      .withMessage('Mission statement must be 350 characters or less'),
     body('vision_statement')
       .optional({ nullable: true })
-      .isLength({ max: 300 })
-      .withMessage('Vision statement must be 300 characters or less'),
+      .isLength({ max: 350 })
+      .withMessage('Vision statement must be 350 characters or less'),
     body('philanthropic_goals')
       .optional({ nullable: true })
-      .isLength({ max: 250 })
-      .withMessage('Philanthropic goals must be 250 characters or less'),
-    body('mission_statement')
-      .optional({ nullable: true })
-      .isLength({ max: 250 })
-      .withMessage('Mission statement must be 250 characters or less'),
-    body('vision_statement')
-      .optional({ nullable: true })
-      .isLength({ max: 250 })
-      .withMessage('Vision statement must be 250 characters or less'),
+      .isLength({ max: 350 })
+      .withMessage('Philanthropic goals must be 350 characters or less'),
     body('featured_label')
       .optional({ nullable: true })
       .trim()
