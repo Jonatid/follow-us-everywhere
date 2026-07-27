@@ -167,7 +167,7 @@ export const BusinessResetPassword = ({ onNavigate, token, initialMessage = '' }
 // =============================================================================
 
 export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh }) => {
-  const PHILANTHROPIC_MAX_LENGTH = 250;
+  const PHILANTHROPIC_MAX_LENGTH = 350;
   const [socials, setSocials] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
   const [tempUrl, setTempUrl] = useState('');
@@ -462,7 +462,7 @@ export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh })
     }
     const selectedValue = philanthropicValues[philanthropicContentType] || '';
     if (selectedValue.length > PHILANTHROPIC_MAX_LENGTH) {
-      setActionError('Content must be 250 characters or fewer.');
+      setActionError('Content must be 350 characters or fewer.');
       return;
     }
     setSupportSaving(true);
@@ -476,7 +476,7 @@ export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh })
       onRefresh();
     } catch (err) {
       if (err?.response?.status === 400) {
-        setActionError('Content must be 250 characters or fewer.');
+        setActionError('Content must be 350 characters or fewer.');
         return;
       }
       setActionError(getApiErrorMessage(err, 'Failed to update philanthropic content. Please try again.'));
@@ -1235,19 +1235,76 @@ export const PublicFollowPage = ({ slug, onNavigate }) => {
               );
             })()}
 
-            {statementCards.length > 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginTop: Array.isArray(business.services) && business.services.length > 0 ? '4px' : '0' }}>
-                {statementCards.map((card) => (
-                  <div key={card.key} style={{ background: '#f8fafc', border: '1px solid #e9eef5', borderRadius: '12px', padding: '14px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: '#0047cc' }}>
-                      {card.icon}
-                      <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: '#475569' }}>{card.title}</span>
+            {statementCards.length > 0 && (() => {
+              const count = statementCards.length;
+              const cols = count === 1 ? '1fr' : 'repeat(2, 1fr)';
+              const CARD_ILLUSTRATIONS = {
+                what_we_do: (
+                  <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={{ width: 72, height: 72, display: 'block' }}>
+                    <path fill="currentColor" d="M42.7 29.3c4.4 0 8-3.6 8-8s-3.6-8-8-8c-4.4 0-8 3.6-8 8s3.6 8 8 8zm-21.4 0c4.4 0 8-3.6 8-8s-3.6-8-8-8c-4.4 0-8 3.6-8 8s3.6 8 8 8zm0 5.4C14.5 34.7 2.7 37.8 2.7 44.5V50h37.3v-5.5c0-6.7-11.8-9.8-18.7-9.8zm21.4 0c-.8 0-1.7.1-2.6.2 3.1 2.2 5.3 5.3 5.3 9.1V50H61.3v-5.5c0-6.7-11.8-9.8-18.6-9.8z"/>
+                  </svg>
+                ),
+                mission_vision: (
+                  <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={{ width: 72, height: 72, display: 'block' }}>
+                    <path fill="currentColor" d="M32 10.7C18.5 10.7 7.3 20.3 4 32c3.3 11.7 14.5 21.3 28 21.3S56.7 43.7 60 32C56.7 20.3 45.5 10.7 32 10.7zm0 35.6c-7.5 0-13.3-6-13.3-14.3S24.5 17.7 32 17.7s13.3 6 13.3 14.3S39.5 46.3 32 46.3zm0-22.9c-4.7 0-8 3.8-8 8.6s3.3 8.6 8 8.6 8-3.8 8-8.6-3.3-8.6-8-8.6z"/>
+                  </svg>
+                ),
+                philanthropic_goals: (
+                  <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={{ width: 72, height: 72, display: 'block' }}>
+                    <path fill="currentColor" d="M32 56.9l-3.9-3.5C13.1 41 4 33.6 4 24.3c0-8.4 6.6-15 15-15 4.7 0 9.2 2.2 12 5.7 2.8-3.5 7.3-5.7 12-5.7 8.4 0 15 6.6 15 15 0 9.3-9.1 16.7-24.1 29.1L32 56.9z"/>
+                  </svg>
+                ),
+                community_impact: (
+                  <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={{ width: 72, height: 72, display: 'block' }}>
+                    <path fill="currentColor" d="M32 5.3C17.3 5.3 5.3 17.3 5.3 32S17.3 58.7 32 58.7 58.7 46.7 58.7 32 46.7 5.3 32 5.3zm-2.7 47.9c-9.2-1.2-16.7-7.6-19.5-16.5h5.5c2.1 6.2 7 11 13.3 13v-3.1c-4.7-1.7-8.4-5.9-9.6-11h9.3v17.6zm0-22.9H12c.3-1.4.7-2.8 1.3-4h16v4zm0-9.3H15.5c2.7-5.3 7.4-9.2 13.1-10.7v10.7zm5.4 0V10.3c5.7 1.5 10.4 5.4 13.1 10.7H34.7zm0 4h16c.6 1.2 1 2.6 1.3 4H34.7v-4zm2.7 27.2V35.4h9.3c-1.2 5.1-4.9 9.3-9.6 11v3.1c6.3-2 11.2-6.8 13.3-13h5.5c-2.8 8.9-10.3 15.3-19.5 16.5z"/>
+                  </svg>
+                ),
+              };
+              return (
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: cols,
+                  gap: '12px',
+                  marginTop: Array.isArray(business.services) && business.services.length > 0 ? '4px' : '0',
+                  alignItems: 'stretch',
+                }}>
+                  {statementCards.map((card, idx) => (
+                    <div
+                      key={card.key}
+                      style={{
+                        position: 'relative',
+                        overflow: 'hidden',
+                        background: '#f8fafc',
+                        border: '1px solid #e9eef5',
+                        borderRadius: '14px',
+                        padding: '18px',
+                        gridColumn: count === 3 && idx === 2 ? '1 / -1' : undefined,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        minHeight: count <= 2 ? '160px' : '130px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', color: '#0047cc' }}>
+                        {card.icon}
+                        <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: '#334155' }}>{card.title}</span>
+                      </div>
+                      <p style={{ fontSize: '13px', color: '#475569', lineHeight: 1.65, margin: 0, flex: 1, position: 'relative', zIndex: 1 }}>{card.value}</p>
+                      <div style={{
+                        position: 'absolute',
+                        bottom: '-8px',
+                        right: '-4px',
+                        color: '#0047cc',
+                        opacity: 0.07,
+                        pointerEvents: 'none',
+                        lineHeight: 1,
+                      }}>
+                        {CARD_ILLUSTRATIONS[card.key] || null}
+                      </div>
                     </div>
-                    <p style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.5, margin: 0 }}>{card.value}</p>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              );
+            })()}
 
             {(!Array.isArray(business.services) || business.services.length === 0) && statementCards.length === 0 && (
               <div className="statement-card statement-card--placeholder">No information provided yet.</div>
