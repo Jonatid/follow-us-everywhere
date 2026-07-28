@@ -105,6 +105,30 @@ const buildR2ProxyDownloadPath = (key) => {
   return `/api/r2/public-download/${key}?redirect=1`;
 };
 
+const serviceImageUploadRootDir = path.join(__dirname, '..', 'uploads', 'service_images');
+fs.mkdirSync(serviceImageUploadRootDir, { recursive: true });
+
+const serviceImageStorage = multer.diskStorage({
+  destination: (req, file, cb) => { cb(null, serviceImageUploadRootDir); },
+  filename: (req, file, cb) => {
+    const timestamp = Date.now();
+    const extension = path.extname(file.originalname || '').toLowerCase();
+    const safeExt = ['.jpg', '.jpeg', '.png', '.webp'].includes(extension) ? extension : '';
+    cb(null, `${req.businessId}-${timestamp}-svc${safeExt}`);
+  }
+});
+
+const serviceImageUpload = multer({
+  storage: isR2Configured() ? multer.memoryStorage() : serviceImageStorage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) {
+      return cb(new Error('Unsupported image type. Use JPG, PNG, or WebP.'));
+    }
+    cb(null, true);
+  }
+});
+
 const handleDocumentUpload = (req, res) => {
   documentUpload.single('document')(req, res, async (uploadErr) => {
     if (uploadErr) {
@@ -969,6 +993,55 @@ router.post('/logo/upload', authenticateToken, (req, res) => {
       console.error('Error uploading business logo:', error);
       return res.status(500).json({ error: 'Failed to upload logo' });
     }
+  });
+});
+
+router.post('/services/image-upload', authenticateToken, (req, res) => {
+  serviceImageUpload.single('image')(req, res, async (uploadErr) => {
+    if (uploadErr) {
+      if (uploadErr instanceof multer.MulterError && uploadErr.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({
+          message: 'File exceeds the maximum allowed size of 10 MB.',
+          code: 'FILE_TOO_LARGE',
+        });
+      }
+      return res.status(400).json({ error: uploadErr.message || 'Invalid image upload' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'Image file is required' });
+    }
+
+    const fileExtension = path.extname(req.file.originalname || '').toLowerCase();
+    const safeExt = ['.jpg', '.jpeg', '.png', '.webp'].includes(fileExtension) ? fileExtension : '';
+    const fallbackFilename = req.file.filename || `${req.businessId}-${Date.now()}-svc${safeExt}`;
+
+    let imageUrl = `/uploads/service_images/${fallbackFilename}`;
+
+    if (isR2Configured()) {
+      try {
+        const r2Key = `service-images/${req.businessId}/${Date.now()}-svc${safeExt}`;
+        await uploadBuffer({
+          key: r2Key,
+          buffer: req.file.buffer,
+          contentType: req.file.mimetype,
+          cacheControl: 'public, max-age=31536000, immutable',
+        });
+        imageUrl = buildR2PublicUrlFromKey(r2Key) || `/api/r2/public-download/${r2Key}?redirect=1`;
+      } catch (r2Error) {
+        console.error('Error uploading service image to R2:', r2Error);
+        try {
+          const localFilename = `${req.businessId}-${Date.now()}-svc${safeExt}`;
+          fs.writeFileSync(path.join(serviceImageUploadRootDir, localFilename), req.file.buffer);
+          imageUrl = `/uploads/service_images/${localFilename}`;
+        } catch (localErr) {
+          console.error('Error saving service image locally:', localErr);
+          return res.status(502).json({ error: 'Failed to upload image' });
+        }
+      }
+    }
+
+    return res.status(200).json({ image_url: imageUrl });
   });
 });
 
