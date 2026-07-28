@@ -252,17 +252,17 @@ export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh })
       setServiceFormError('Image must be JPG, PNG, or WebP.');
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setServiceFormError('Image must be under 5 MB.');
+    if (file.size > 10 * 1024 * 1024) {
+      setServiceFormError('Image must be under 10 MB.');
       return;
     }
     setServiceImageUploading(true);
     setServiceFormError('');
     try {
       const fd = new FormData();
-      fd.append('logo', file);
-      const res = await api.post('/businesses/logo/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-      setServiceForm(p => ({ ...p, image_url: res.data.logo_url || '' }));
+      fd.append('image', file);
+      const res = await api.post('/businesses/services/image-upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setServiceForm(p => ({ ...p, image_url: res.data.image_url || '' }));
     } catch (err) {
       setServiceFormError(err?.response?.data?.message || 'Image upload failed.');
     } finally {
@@ -754,6 +754,7 @@ export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh })
                           </div>
                         )}
                         <input type="file" accept=".jpg,.jpeg,.png,.webp" disabled={serviceImageUploading} onChange={e => handleServiceImageUpload(e.target.files[0])} style={{ fontSize: 12 }} />
+                        <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>Max 10 MB · JPG, PNG, or WebP</p>
                         {serviceImageUploading && <p style={{ fontSize: 11, color: '#60719a', marginTop: 3 }}>Uploading…</p>}
                       </div>
                       <div style={{ display: 'flex', gap: 6 }}>
@@ -797,6 +798,7 @@ export const BusinessDashboard = ({ business, onNavigate, onLogout, onRefresh })
                     </div>
                   )}
                   <input type="file" accept=".jpg,.jpeg,.png,.webp" disabled={serviceImageUploading} onChange={e => handleServiceImageUpload(e.target.files[0])} style={{ fontSize: 12 }} />
+                  <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>Max 10 MB · JPG, PNG, or WebP</p>
                   {serviceImageUploading && <p style={{ fontSize: 11, color: '#60719a', marginTop: 3 }}>Uploading…</p>}
                 </div>
                 <button type="submit" className="button button-primary button-sm" style={{ fontSize: 13 }} disabled={serviceSaving || serviceImageUploading}>{serviceSaving ? 'Saving...' : 'Add service'}</button>
