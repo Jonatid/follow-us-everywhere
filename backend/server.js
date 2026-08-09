@@ -78,8 +78,9 @@ app.get('/api/health', async (req, res) => {
     dbStatus = 'down';
   }
 
-  res.status(200).json({
-    ok: true,
+  const isHealthy = dbStatus === 'ok';
+  res.status(isHealthy ? 200 : 503).json({
+    ok: isHealthy,
     service: 'api',
     timestamp: new Date().toISOString(),
     db: dbStatus
@@ -88,14 +89,10 @@ app.get('/api/health', async (req, res) => {
 
 app.use('/', uploadRoutes);
 
-app.get('/files/:key', async (req, res, next) => {
-  try {
-    const downloadUrl = await getDownloadUrl(req.params.key);
-    res.json({ key: req.params.key, downloadUrl, expiresIn: 600 });
-  } catch (error) {
-    next(error);
-  }
-});
+// Removed unauthenticated /files/:key route — it returned signed download URLs
+// for any arbitrary storage key without authentication or ownership checks,
+// which could expose private business documents. Use the authenticated
+// GET /api/r2/download/* endpoint instead.
 
 // API Routes
 

@@ -96,7 +96,8 @@ router.get('/public-download/*', async (req, res) => {
       return res.status(400).json({ message: 'key is required', code: 'KEY_REQUIRED' });
     }
 
-    if (!requestedKey.startsWith('business-logos/')) {
+    const allowedPublicPrefixes = ['business-logos/', 'service-images/'];
+    if (!allowedPublicPrefixes.some((prefix) => requestedKey.startsWith(prefix))) {
       return res.status(403).json({ message: 'Access denied for requested file', code: 'SCOPE_DENIED' });
     }
 
