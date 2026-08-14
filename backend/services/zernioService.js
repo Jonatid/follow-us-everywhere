@@ -9,7 +9,7 @@
 require('dotenv').config({ path: `${__dirname}/../.env` });
 
 const db = require('../config/db');
-const Zernio = require('@zernio/node');
+const { Zernio } = require('@zernio/node');
 
 const API_KEY_ENV_NAME = 'ZERNIO_API_KEY';
 const DEFAULT_PROVIDER = 'zernio';
