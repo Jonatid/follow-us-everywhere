@@ -96,4 +96,13 @@ router.get('/posts/history', async (req, res) => {
   }
 });
 
+router.post('/sync-accounts', async (req, res) => {
+  try {
+    const accounts = await zernioService.syncConnectedAccounts({ businessId: req.businessId });
+    return res.json({ success: true, accounts });
+  } catch (error) {
+    return res.status(error.status || 500).json({ error: error.message || 'Failed to sync accounts.' });
+  }
+});
+
 module.exports = router;
