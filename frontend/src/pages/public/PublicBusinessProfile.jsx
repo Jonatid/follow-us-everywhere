@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import QrCard from '../business/components/QrCard';
+import ExternalLinkConfirmModal from '../../components/ExternalLinkConfirmModal';
 
 const BRAND = {
   blue:      '#003594',
@@ -35,6 +36,12 @@ export default function PublicBusinessProfile({
   socialLinks  = [],
 }) {
   const [qrExpanded, setQrExpanded] = useState(false);
+  const [externalLink, setExternalLink] = useState({ open: false, url: '', label: '' });
+
+  const requestExternalLink = (label, url) => {
+    if (!url) return;
+    setExternalLink({ open: true, url, label });
+  };
 
   return (
     <div style={{
@@ -127,6 +134,13 @@ export default function PublicBusinessProfile({
                 href={link.url}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={(event) => {
+                  event.preventDefault();
+                  requestExternalLink(
+                    link.platform === 'Website' ? businessName : `${businessName} on ${link.platform}`,
+                    link.url
+                  );
+                }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 14,
                   background: BRAND.offWhite,
@@ -254,6 +268,13 @@ export default function PublicBusinessProfile({
         {' · '}
         <a href="https://fuse101.com" style={{ color: BRAND.midGray }}>Follow Us Everywhere</a>
       </div>
+
+      <ExternalLinkConfirmModal
+        open={externalLink.open}
+        url={externalLink.url}
+        destinationName={externalLink.label}
+        onClose={() => setExternalLink({ open: false, url: '', label: '' })}
+      />
 
       <style>{`
         @keyframes fadeUp {
