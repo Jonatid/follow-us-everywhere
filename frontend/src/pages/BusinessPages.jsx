@@ -6,6 +6,7 @@ import { PlatformIcon } from '../components/PlatformIcon';
 import { ServiceIcon, ServiceIconPicker } from '../components/ServiceIcon';
 import { api, customerApi, getApiErrorMessage, buildPublicBusinessUrl, normalizePublicBusinessKey, normalizePublicBusinessPayload, resolvePublicBusinessKey, toAbsoluteAssetUrl, normalizeLogoUrlValue, LOGO_UPLOAD_ACCEPT, LOGO_UPLOAD_MAX_BYTES, ALLOWED_LOGO_MIME_TYPES, normalizeWidgetSettings, PASSWORD_HELPER, PASSWORD_REGEX } from '../services/appApi';
 import { BackLink } from '../components/BackLink';
+import ExternalLinkConfirmModal from '../components/ExternalLinkConfirmModal';
 import businessVerifiedIcon from '../assets/business-verified.svg';
 import impactVerifiedIcon from '../assets/impact-verified.svg';
 import communityImpactIcon from '../assets/community-impact.svg';
@@ -892,6 +893,7 @@ export const PublicFollowPage = ({ slug, onNavigate }) => {
   const [error, setError] = useState('');
   const [logoLoadError, setLogoLoadError] = useState(false);
   const [impactOpen, setImpactOpen] = useState(false);
+  const [externalLink, setExternalLink] = useState({ open: false, url: '', label: '' });
   const hasBusinessToken = Boolean(localStorage.getItem('token'));
   const publicFallbackPath = hasBusinessToken ? '/business' : '/discover';
   const handlePublicFallback = () => {
@@ -943,7 +945,17 @@ export const PublicFollowPage = ({ slug, onNavigate }) => {
       alert(`${platform} link not configured yet`);
       return;
     }
-    window.open(url, '_blank');
+
+    const destinationLabel =
+      platform === 'Website'
+        ? business?.name || 'this business'
+        : `${business?.name || 'this business'} on ${platform}`;
+
+    setExternalLink({
+      open: true,
+      url,
+      label: destinationLabel,
+    });
   };
   if (loading) {
     return (
@@ -2137,6 +2149,13 @@ export const BusinessProfilePage = ({ business, onNavigate, onLogout, onBusiness
           </div>
         </div>
       </div>
+
+      <ExternalLinkConfirmModal
+        open={externalLink.open}
+        url={externalLink.url}
+        destinationName={externalLink.label}
+        onClose={() => setExternalLink({ open: false, url: '', label: '' })}
+      />
     </div>
   );
 };
